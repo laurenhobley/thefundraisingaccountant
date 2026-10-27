@@ -56,3 +56,11 @@ venv/
 npm-debug.log*
 *.tmp
 *.temp
+
+# ---------- FAC reference documents (contain member data; keep private) ----------
+reference/
+
+# ---------- Project notes (keep private) ----------
+CLAUDE.md
+PROGRESS.md
+DECISIONS.md
