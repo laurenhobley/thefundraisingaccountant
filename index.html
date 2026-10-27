@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en" data-download="on">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Impact Statement Builder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: ledger worksheet. Numbered form sections on the left, a sticky "finished prompt" slip on the right; stacks on phones. */
+:root {
+  --paper: #F4F6F2;
+  --field: #FFFFFF;
+  --ink: #1B2A25;
+  --muted: #586A63;
+  --line: #D3DCD6;
+  --accent: #1E6A54;
+  --accent-ink: #FFFFFF;
+  --mark: #A86E0C;
+  --mark-bg: #FBF1DC;
+  --danger: #A8352A;
+  --slip: #E9EEE9;
+  --display: "Young Serif", Georgia, "Times New Roman", serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111816; --field: #18211E; --ink: #E4EBE7; --muted: #98AAA3; --line: #2B3833;
+    --accent: #5CC09E; --accent-ink: #0D1A15; --mark: #E6B04F; --mark-bg: #2E2614; --danger: #F0857A; --slip: #16201C;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111816; --field: #18211E; --ink: #E4EBE7; --muted: #98AAA3; --line: #2B3833;
+  --accent: #5CC09E; --accent-ink: #0D1A15; --mark: #E6B04F; --mark-bg: #2E2614; --danger: #F0857A; --slip: #16201C;
+  color-scheme: dark;
+}
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 28px; }
+header { display: grid; gap: 8px; max-width: 68ch; }
+.eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(28px, 4vw, 40px); line-height: 1.1; margin: 0; text-wrap: balance; }
+header p { margin: 0; color: var(--muted); }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 440px); gap: 28px; align-items: start; }
+@media (max-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+
+form { display: grid; gap: 20px; min-width: 0; }
+fieldset { border: 1px solid var(--line); border-radius: 10px; background: var(--field); padding: 20px; margin: 0; display: grid; gap: 16px; min-width: 0; }
+legend { padding: 0 6px; margin-left: -6px; font-family: var(--display); font-size: 20px; display: flex; gap: 10px; align-items: baseline; }
+legend .num { font-family: var(--mono); font-size: 13px; color: var(--accent); }
+.hint { margin: -6px 0 0; color: var(--muted); font-size: 14px; max-width: 65ch; }
+.row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+.f { display: grid; gap: 6px; min-width: 0; }
+label, .lbl { font-weight: 600; font-size: 14px; }
+.req { color: var(--danger); font-weight: 700; margin-left: 2px; }
+.opt { color: var(--muted); font-weight: 400; font-size: 13px; }
+input[type=text], input[type=url], input[type=number], textarea, select {
+  font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px;
+  padding: 9px 11px; width: 100%; min-width: 0;
+}
+textarea { min-height: 72px; resize: vertical; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.money { position: relative; }
+.money span { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.money input { padding-left: 24px; }
+.pct input { padding-right: 28px; }
+.pct { position: relative; }
+.pct span { position: absolute; right: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.invalid { border-color: var(--danger) !important; box-shadow: 0 0 0 1px var(--danger); }
+
+.choice { display: flex; flex-wrap: wrap; gap: 8px; }
+.choice label { display: flex; gap: 8px; align-items: center; font-weight: 500; border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; background: var(--paper); }
+.choice label:has(input:checked) { border-color: var(--accent); color: var(--accent); }
+.choice input { accent-color: var(--accent); margin: 0; }
+.sub { border-left: 2px solid var(--line); padding-left: 16px; display: grid; gap: 16px; }
+
+.results { display: grid; gap: 10px; }
+.result { display: grid; grid-template-columns: 140px minmax(0, 1fr) auto; gap: 10px; align-items: end; }
+@media (max-width: 520px) { .result { grid-template-columns: 1fr auto; } .result .what { grid-column: 1 / -1; grid-row: 2; } }
+.icon-btn { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; width: 40px; height: 40px; cursor: pointer; font-size: 18px; }
+.icon-btn:hover { color: var(--danger); border-color: var(--danger); }
+
+button.btn { font: inherit; font-weight: 600; border-radius: 6px; padding: 10px 16px; cursor: pointer; border: 1px solid var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.quiet { background: transparent; color: var(--muted); border-color: var(--line); }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+
+aside { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: grid; gap: 12px; min-width: 0; }
+@media (max-width: 900px) { aside { position: static; } }
+.slip { background: var(--slip); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.slip h2 { font-family: var(--display); font-weight: 400; font-size: 20px; margin: 0; }
+.status { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.pill { font-size: 12px; font-weight: 600; border-radius: 999px; padding: 2px 10px; background: var(--mark-bg); color: var(--mark); }
+.pill.ok { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+pre#prompt { font-family: var(--mono); font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; margin: 0; max-height: 62vh; overflow: auto; background: var(--field); border: 1px solid var(--line); border-radius: 6px; padding: 14px; }
+@media (max-width: 900px) { pre#prompt { max-height: none; } }
+pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius: 3px; padding: 0 2px; }
+#msg { font-size: 14px; min-height: 1.5em; }
+#msg.bad { color: var(--danger); }
+#msg.good { color: var(--accent); }
+@media (prefers-reduced-motion: no-preference) { button { transition: background .15s, color .15s, border-color .15s; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Fundraising toolkit · Steps 1.1 and 1.2</div>
+    <h1>Build your impact statement prompt</h1>
+    <p id="intro">Answer the questions below. The prompt on the right updates as you type. When every required field is filled in, copy or download it and paste it into ROI.bot to write your pain statement and tangible results.</p>
+  </header>
+
+  <div class="cols">
+    <form id="form" novalidate>
+      <fieldset>
+        <legend><span class="num">00</span>Your organization</legend>
+        <div class="row">
+          <div class="f"><label for="orgName">Organization name<span class="req">*</span></label><input type="text" id="orgName" autocomplete="organization"></div>
+          <div class="f"><label for="website">Website <span class="opt">(optional)</span></label><input type="url" id="website" placeholder="https://"></div>
+        </div>
+        <div class="f"><label for="program">Program or service this gift would fund<span class="req">*</span></label><input type="text" id="program" placeholder="Name of the program"></div>
+        <div class="f"><label for="population">Who you serve <span class="opt">(optional)</span></label><input type="text" id="population" placeholder="The people and community you serve"></div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">1.1</span>Your pain statement</legend>
+        <p class="hint">Pain statements create urgency. They show a donor what is happening right now and what is at risk if funding doesn't come through.</p>
+
+        <div class="f">
+          <span class="lbl">What is driving the need?<span class="req">*</span></span>
+          <div class="choice" role="radiogroup" aria-label="What is driving the need">
+            <label><input type="radio" name="driver" id="driverLoss" value="loss"> We lost funding</label>
+            <label><input type="radio" name="driver" id="driverDemand" value="demand"> Demand increased</label>
+            <label><input type="radio" name="driver" id="driverBoth" value="both"> Both</label>
+          </div>
+        </div>
+
+        <div class="sub" id="lossBox" hidden>
+          <div class="row">
+            <div class="f"><label for="lossAmount">Funding lost<span class="req">*</span></label><div class="money"><span>$</span><input type="number" id="lossAmount" min="0" step="1" inputmode="numeric" placeholder="Total dollars lost"></div></div>
+          </div>
+          <div class="f">
+            <span class="lbl">Type of loss<span class="req">*</span></span>
+            <div class="choice" id="lossTypes">
+              <label><input type="checkbox" id="lossGov" value="government"> Government</label>
+              <label><input type="checkbox" id="lossGrants" value="grant"> Grants</label>
+              <label><input type="checkbox" id="lossDonations" value="donation"> Donations</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="sub" id="demandBox" hidden>
+          <div class="row">
+            <div class="f"><label for="demandPct">Increase in demand for services<span class="req">*</span></label><div class="pct"><input type="number" id="demandPct" min="0" step="0.1" inputmode="decimal" placeholder="Percent increase"><span>%</span></div></div>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="f"><label for="unserved">People who go unserved<span class="req">*</span></label><input type="number" id="unserved" min="0" step="1" inputmode="numeric" placeholder="Number of people"></div>
+        </div>
+        <div class="f"><label for="servicesLost">What services did they lose?<span class="req">*</span></label><textarea id="servicesLost" placeholder="The services people went without"></textarea></div>
+        <div class="f"><label for="couldNot">What were you not able to do? <span class="opt">(optional)</span></label><textarea id="couldNot" placeholder="Work your organization had to stop or turn down"></textarea></div>
+
+        <div class="row">
+          <div class="f"><label for="servedCount">People you currently serve<span class="req">*</span></label><input type="number" id="servedCount" min="0" step="1" inputmode="numeric" placeholder="Number of people"></div>
+          <div class="f"><label for="servedPeriod">Over what period of time?<span class="req">*</span></label>
+            <select id="servedPeriod">
+              <option value="">Choose a period</option>
+              <option value="per month">Per month</option>
+              <option value="per quarter">Per quarter</option>
+              <option value="per year">Per year</option>
+              <option value="since our founding">Since our founding</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="f"><label for="outcomes">What outcomes does an investment in this program create?<span class="req">*</span></label><textarea id="outcomes" placeholder="The change your program makes for the people you serve"></textarea></div>
+        <div class="row">
+          <div class="f"><label for="saves">Dollars it saves the community <span class="opt">(if known)</span></label><div class="money"><span>$</span><input type="number" id="saves" min="0" step="1" inputmode="numeric" placeholder="Dollars saved"></div></div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">1.2</span>Tangible results</legend>
+        <p class="hint">Donors want to know exactly what their gift produces. Link a dollar amount to a real program outcome. For example, the Fort Bend Women's Center offers a night of safety for $125. Add at least one.</p>
+        <div class="results" id="results"></div>
+        <div><button type="button" class="btn ghost" id="addResult">Add another result</button></div>
+      </fieldset>
+
+      <div class="actions">
+        <button type="submit" class="btn primary">Check and copy prompt</button>
+        <button type="button" class="btn quiet" id="clear">Clear form</button>
+      </div>
+    </form>
+
+    <aside aria-live="polite">
+      <div class="slip">
+        <h2>Your finished prompt</h2>
+        <div class="status"><span class="pill" id="pill">0 of 0 required</span><span id="statusText">Highlighted items still need an answer.</span></div>
+        <pre id="prompt"></pre>
+        <div class="actions">
+          <button type="button" class="btn primary" id="copy">Copy prompt</button>
+          <button type="button" class="btn ghost" id="download" hidden>Download .txt</button>
+        </div>
+        <div id="msg"></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var STORE = "impact-prompt-draft-v1";
+  var FILE_NAME = "impact-statement-prompt.txt";
+  // The file version sets data-download="on" and saves through a plain link.
+  // The claude.ai page leaves it off and saves through the viewer's downloads capability instead.
+  var linkDownload = document.documentElement.getAttribute("data-download") === "on";
+  var claudeDownloads = null;
+  var canDownload = false;
+  var resultsEl = $("results");
+  var fieldIds = ["orgName","website","program","population","lossAmount","demandPct","unserved","servicesLost","couldNot","servedCount","servedPeriod","outcomes","saves"];
+  var introBoth = $("intro").textContent;
+  var introCopy = "Answer the questions below. The prompt on the right updates as you type. When every required field is filled in, copy it and paste it into ROI.bot to write your pain statement and tangible results.";
+
+  function setDownload(on) {
+    canDownload = on;
+    $("download").hidden = !on;
+    $("intro").textContent = on ? introBoth : introCopy;
+  }
+  setDownload(linkDownload);
+  if (!linkDownload && window.claude && window.claude.use) {
+    window.claude.use("downloads").then(function (ns) {
+      if (ns) { claudeDownloads = ns; setDownload(true); update(); }
+    }, function () {});
+  }
+
+  function addResult(amount, what) {
+    var row = document.createElement("div");
+    row.className = "result";
+    var n = resultsEl.children.length + 1;
+    row.innerHTML =
+      '<div class="f"><label for="ra' + n + '">Gift amount</label><div class="money"><span>$</span><input type="number" min="0" step="1" inputmode="numeric" id="ra' + n + '" class="r-amt" placeholder="Amount"></div></div>' +
+      '<div class="f what"><label for="rw' + n + '">What it provides</label><input type="text" id="rw' + n + '" class="r-what" placeholder="What this gift pays for"></div>' +
+      '<button type="button" class="icon-btn" aria-label="Remove this result">×</button>';
+    row.querySelector(".r-amt").value = amount || "";
+    row.querySelector(".r-what").value = what || "";
+    row.querySelector("button").addEventListener("click", function () {
+      if (resultsEl.children.length > 1) row.remove();
+      else { row.querySelector(".r-amt").value = ""; row.querySelector(".r-what").value = ""; }
+      update();
+    });
+    resultsEl.appendChild(row);
+  }
+
+  function driver() {
+    var c = document.querySelector('input[name="driver"]:checked');
+    return c ? c.value : "";
+  }
+  function lossTypes() {
+    return ["lossGov","lossGrants","lossDonations"].filter(function (id) { return $(id).checked; }).map(function (id) { return $(id).value; });
+  }
+  function results() {
+    return Array.prototype.map.call(resultsEl.children, function (r) {
+      return { amount: r.querySelector(".r-amt").value.trim(), what: r.querySelector(".r-what").value.trim(), row: r };
+    });
+  }
+  function v(id) { return $(id).value.trim(); }
+  function money(x) { return "$" + Number(x).toLocaleString("en-US"); }
+  function num(x) { return Number(x).toLocaleString("en-US"); }
+  function listJoin(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
+
+  // Each check: [element to flag, is it filled?, label]
+  function checks() {
+    var d = driver();
+    var list = [
+      [$("orgName"), !!v("orgName"), "Organization name"],
+      [$("program"), !!v("program"), "Program to fund"],
+      [document.querySelector(".choice[role=radiogroup]"), !!d, "What is driving the need"]
+    ];
+    if (d === "loss" || d === "both") {
+      list.push([$("lossAmount"), !!v("lossAmount"), "Funding lost"]);
+      list.push([$("lossTypes"), lossTypes().length > 0, "Type of loss"]);
+    }
+    if (d === "demand" || d === "both") list.push([$("demandPct"), !!v("demandPct"), "Increase in demand"]);
+    list.push(
+      [$("unserved"), !!v("unserved"), "People who go unserved"],
+      [$("servicesLost"), !!v("servicesLost"), "Services lost"],
+      [$("servedCount"), !!v("servedCount"), "People currently served"],
+      [$("servedPeriod"), !!v("servedPeriod"), "Time period served"],
+      [$("outcomes"), !!v("outcomes"), "Outcomes"]
+    );
+    var rs = results();
+    var good = rs.some(function (r) { return r.amount && r.what; });
+    list.push([rs[0].row, good, "At least one tangible result"]);
+    return list;
+  }
+
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  var MISS = "\u0000";
+  function or(val, label) { return val ? val : MISS + "[MISSING: " + label + "]" + MISS; }
+
+  function buildPrompt() {
+    var d = driver();
+    var org = or(v("orgName"), "organization name");
+    var L = [];
+    L.push("You are a nonprofit fundraising writer. Write a donor-facing impact statement for " + org + ".");
+    L.push("");
+    L.push("Rules:");
+    L.push("- Use only the facts and figures given below. Do not invent, estimate or round any number.");
+    L.push("- If any item below is marked MISSING, ask me for it before you write anything.");
+    L.push("- Write in plain, direct language a donor can read in under a minute.");
+    L.push("");
+    L.push("ORGANIZATION");
+    L.push("Name: " + org);
+    if (v("website")) L.push("Website: " + v("website"));
+    L.push("Program this gift would fund: " + or(v("program"), "program"));
+    if (v("population")) L.push("Who we serve: " + v("population"));
+    L.push("");
+    L.push("1.1 PAIN STATEMENT DATA");
+    if (!d) L.push("Driver of need: " + or("", "lost funding or increased demand"));
+    if (d === "loss" || d === "both") {
+      var t = lossTypes();
+      L.push("Funding lost: " + or(v("lossAmount") && money(v("lossAmount")), "amount of funding lost"));
+      L.push("Type of loss: " + or(t.length ? listJoin(t) : "", "government, grant or donation"));
+    }
+    if (d === "demand" || d === "both") L.push("Increase in demand for services: " + or(v("demandPct") && v("demandPct") + "%", "percent increase in demand"));
+    L.push("People who go unserved: " + or(v("unserved") && num(v("unserved")), "number of people unserved"));
+    L.push("Services they lost: " + or(v("servicesLost"), "services lost"));
+    if (v("couldNot")) L.push("What we were not able to do: " + v("couldNot"));
+    L.push("People we currently serve: " + or(v("servedCount") && num(v("servedCount")), "number currently served") + " " + or(v("servedPeriod"), "time period"));
+    L.push("Outcomes an investment creates: " + or(v("outcomes"), "outcomes"));
+    L.push("Dollars saved: " + (v("saves") ? money(v("saves")) : "not provided (leave out the \"saves\" clause; do not estimate)"));
+    L.push("");
+    L.push("1.2 TANGIBLE RESULTS");
+    var rs = results().filter(function (r) { return r.amount || r.what; });
+    if (!rs.length) L.push("- " + or("", "at least one gift amount and what it provides"));
+    rs.forEach(function (r) {
+      L.push("- " + or(r.amount && money(r.amount), "gift amount") + " provides " + or(r.what, "what it provides"));
+    });
+    L.push("");
+    L.push("WRITE THE FOLLOWING");
+    L.push("1. Pain statement. Use this format and fill in the figures:");
+    if (d === "loss" || d === "both" || !d) L.push("   \"[Organization] lost $[amount] in [type] funding. As a result, [number] people go unserved.\"");
+    if (d === "demand" || d === "both" || !d) L.push("   \"Demand has increased [percent]%. As a result, [number] people go unserved.\"");
+    L.push("   Follow it with one sentence on the services people lost" + (v("couldNot") ? " and what we could not do." : "."));
+    L.push("2. Investment statement: \"An investment in [program] helps create [outcomes]" + (v("saves") ? " and saves [dollars]." : ".") + "\"");
+    L.push("3. Tangible results: one line per gift amount, in the form \"$[amount] provides [result].\"");
+    L.push("4. A short impact paragraph (3 to 4 sentences) that combines the above for a donor appeal, ending with a clear call to give.");
+    return L.join("\n");
+  }
+
+  function render() {
+    var text = buildPrompt();
+    var parts = text.split(MISS);
+    $("prompt").innerHTML = parts.map(function (p, i) { return i % 2 ? "<mark>" + esc(p) + "</mark>" : esc(p); }).join("");
+    return parts.join("");
+  }
+
+  function update() {
+    var d = driver();
+    $("lossBox").hidden = !(d === "loss" || d === "both");
+    $("demandBox").hidden = !(d === "demand" || d === "both");
+    var cs = checks();
+    var done = cs.filter(function (c) { return c[1]; }).length;
+    cs.forEach(function (c) { if (c[1]) c[0].classList.remove("invalid"); });
+    var pill = $("pill");
+    pill.textContent = done + " of " + cs.length + " required";
+    pill.className = "pill" + (done === cs.length ? " ok" : "");
+    $("statusText").textContent = done === cs.length ? "Ready to " + (canDownload ? "copy or download." : "copy.") : "Highlighted items still need an answer.";
+    render();
+    save();
+  }
+
+  function save() {
+    try {
+      var data = { driver: driver(), types: lossTypes(), results: results().map(function (r) { return [r.amount, r.what]; }) };
+      fieldIds.forEach(function (id) { data[id] = $(id).value; });
+      localStorage.setItem(STORE, JSON.stringify(data));
+    } catch (e) {}
+  }
+  function load() {
+    var data = null;
+    try { data = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) {}
+    if (data) {
+      fieldIds.forEach(function (id) { if (data[id] != null) $(id).value = data[id]; });
+      if (data.driver) { var r = document.querySelector('input[name="driver"][value="' + data.driver + '"]'); if (r) r.checked = true; }
+      ["lossGov","lossGrants","lossDonations"].forEach(function (id) { $(id).checked = (data.types || []).indexOf($(id).value) > -1; });
+      (data.results && data.results.length ? data.results : [["", ""]]).forEach(function (r) { addResult(r[0], r[1]); });
+    } else addResult();
+  }
+
+  function say(cls, text) { $("msg").className = cls; $("msg").textContent = text; }
+
+  // Returns the finished prompt, or null after flagging what is still missing.
+  function readyPrompt() {
+    var cs = checks();
+    var missing = cs.filter(function (c) { return !c[1]; });
+    cs.forEach(function (c) { c[0].classList.toggle("invalid", !c[1]); });
+    var text = render();
+    if (!missing.length) return text;
+    say("bad", "Fill in " + missing.length + " more: " + missing.map(function (c) { return c[2]; }).join(", ") + ".");
+    var first = missing[0][0];
+    first.scrollIntoView({ block: "center", behavior: "smooth" });
+    var focusable = first.matches("input,select,textarea") ? first : first.querySelector("input,select,textarea");
+    if (focusable) focusable.focus({ preventScroll: true });
+    return null;
+  }
+
+  function copyPrompt() {
+    var text = readyPrompt();
+    if (!text) return;
+    function fallback() {
+      var range = document.createRange();
+      range.selectNodeContents($("prompt"));
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      say("good", "The prompt is selected. Press Ctrl+C (or ⌘C) to copy it.");
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () {
+        say("good", "Copied. Paste it into ROI.bot to write your impact statement.");
+      }, fallback);
+    } catch (e) { fallback(); }
+  }
+
+  function downloadPrompt() {
+    var text = readyPrompt();
+    if (!text) return;
+    if (claudeDownloads) {
+      claudeDownloads.save({ filename: FILE_NAME, data: text }).then(function () {
+        say("good", "Downloaded " + FILE_NAME + ". Open it and paste the prompt into ROI.bot.");
+      }, function (err) {
+        var code = err && err.code;
+        if (code === "declined") say("", "Download canceled.");
+        else if (code === "rate_limited") say("bad", "A download is already waiting for your answer. Finish that one, then try again.");
+        else { setDownload(false); update(); say("bad", "Downloads aren't available here. Use Copy prompt instead."); }
+      });
+      return;
+    }
+    var url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = FILE_NAME;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    say("good", "Downloaded " + FILE_NAME + ". Open it and paste the prompt into ROI.bot.");
+  }
+
+  $("form").addEventListener("input", update);
+  $("form").addEventListener("change", update);
+  $("form").addEventListener("submit", function (e) { e.preventDefault(); copyPrompt(); });
+  $("copy").addEventListener("click", copyPrompt);
+  $("download").addEventListener("click", downloadPrompt);
+  $("addResult").addEventListener("click", function () { addResult(); update(); resultsEl.lastChild.querySelector("input").focus(); });
+
+  var clearArmed = false;
+  $("clear").addEventListener("click", function () {
+    if (!clearArmed) { clearArmed = true; $("clear").textContent = "Click again to clear everything"; setTimeout(function () { clearArmed = false; $("clear").textContent = "Clear form"; }, 4000); return; }
+    clearArmed = false; $("clear").textContent = "Clear form";
+    $("form").reset(); resultsEl.innerHTML = ""; addResult();
+    document.querySelectorAll(".invalid").forEach(function (el) { el.classList.remove("invalid"); });
+    say("", "");
+    update();
+  });
+
+  load();
+  update();
+})();
+</script>
+</body>
+</html>
