@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prompt Builder Tests</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../styles.css">
+<style>
+.sum { font-weight: 700; font-size: 18px; padding: 12px 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--field); }
+.sum.ok { color: var(--accent); border-color: var(--accent); }
+.sum.bad { color: var(--danger); border-color: var(--danger); }
+.report { display: grid; gap: 24px; }
+.report section { display: grid; gap: 8px; }
+.report ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 14px; }
+.report li.pass::before { content: "✓  "; color: var(--accent); font-weight: 700; }
+.report li.fail { color: var(--danger); font-weight: 600; }
+.report li.fail::before { content: "✗  "; font-weight: 700; }
+.report li.note { color: var(--muted); font-style: italic; }
+/* The builder and the live form run off screen while the tests type and click on them. */
+.sandbox { position: absolute; left: -10000px; top: 0; width: 760px; height: 1200px; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Fundraising toolkit · Tests</div>
+    <h1>Prompt builder tests</h1>
+    <p>Each check shows a green ✓ or a red ✗. Any drafts saved in this browser are put aside while the tests run and put back afterwards.</p>
+  </header>
+  <div class="sum" id="summary">Running…</div>
+  <div class="report" id="report"></div>
+</div>
+
+<!-- A hidden copy of builder.html's controls, so builder.js can run here. Keep the ids the same as builder.html. -->
+<div class="sandbox" aria-hidden="true">
+  <p id="intro"></p>
+  <div id="counter"></div>
+  <form id="screen" novalidate onsubmit="return false"></form>
+  <button type="button" id="clear">Start over</button>
+  <button type="button" id="back">Back</button>
+  <button type="button" id="next">Next</button>
+</div>
+
+<!-- run.js first: it puts aside saved drafts before the builder loads. -->
+<script src="run.js"></script>
+<script src="../js/questions.js"></script>
+<script src="../js/sheet.js"></script>
+<script src="../js/builder.js"></script>
+<script src="test-questions.js"></script>
+<script src="test-sheet.js"></script>
+<script src="test-builder.js"></script>
+<script src="test-form.js"></script>
+<script>T.end();</script>
+</body>
+</html>
