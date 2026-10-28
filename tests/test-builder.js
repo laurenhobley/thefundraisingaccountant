@@ -80,6 +80,14 @@ T.run("Builder screens (builder.html)", function (check) {
   type("f-programs-0-description", "Beds and meals");
   check("removing the filler word hides the follow-up", fu("f-programs-0-description") === "");
 
+  // ---------- Outputs: a number and a year ----------
+  type("f-programs-0-outputs", "37,260 meals provided");
+  $("next").click();
+  check("Outputs with no year: Next blocked with the no-year follow-up", $("counter").textContent === "Step 2 of 5" && fu("f-programs-0-outputs") === F.outputNoYear[0] && shown(".fu") === 1);
+  type("f-programs-0-outputs", "37,260 meals provided in FY24");
+  check("adding a fiscal year hides it", fu("f-programs-0-outputs") === "");
+  type("f-programs-0-outputs", "Served 414 families in 2024");
+
   act("addProgram");
   check("Add another program goes to Program 2 of 2", $("counter").textContent === "Step 3 of 6" && /Program 2 of 2/.test(title()));
   type("f-programs-1-outputs", "About 50 people");
@@ -96,7 +104,10 @@ T.run("Builder screens (builder.html)", function (check) {
   $("next").click(); $("next").click();
   check("back on Program 2", /Program 2 of 2/.test(title()));
   $("next").click(); $("next").click();
-  skip("f-programs-1-name"); skip("f-programs-1-description");
+  check("Program 2 Outputs \"About 50 people\" asks for a year", fu("f-programs-1-outputs") === F.outputNoYear[1]);
+  check("its button says Keep my answer", $("f-programs-1-outputs-fu").querySelector(".fu-skip").textContent === F.keepButton);
+  skip("f-programs-1-name"); skip("f-programs-1-description"); skip("f-programs-1-outputs");
+  check("kept Outputs shows the missing-number-or-year flag", $("f-programs-1-outputs-skipped").textContent === F.keptOutput);
   $("next").click();
 
   // ---------- Optional sections and the end screen ----------
@@ -121,7 +132,8 @@ T.run("Builder screens (builder.html)", function (check) {
   check("end screen lists everything still needing attention, in sheet order", todo.join(" | ") ===
     "Location: City and state was skipped (Unsupported) | Mission Statement needs a label | " +
     "Program 2: Program Name was skipped (Unsupported) | Program 2: Description was skipped (Unsupported) | " +
-    "Program 2: Outputs is marked Unsupported | Pain statement 1 is vague (Unsupported) | Pain statement 2 needs a label");
+    "Program 2: Outputs has no year (Unsupported) | Program 2: Outputs is marked Unsupported | " +
+    "Pain statement 1 is vague (Unsupported) | Pain statement 2 needs a label");
 
   document.querySelector('#screen .todo button[data-act="goto"]').click();
   check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 6" && document.activeElement.id === "f-org-city");

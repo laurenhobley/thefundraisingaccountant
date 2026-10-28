@@ -116,8 +116,20 @@ var FAC_QUESTIONS = {
     ],
     keepButton: "Keep my answer",
     keptVague: "Unsupported: vague. Edit your answer any time to clear this.",
-    outputNoNumber: "",
-    outputNoYear: "",
+    // A program's Outputs needs a number and a year (2024, 2023-24, FY24).
+    outputNoNumber: [
+      "This output has no number. How many did the program provide or serve?",
+      "We still need a number for this output. If you don't have one, you can keep your answer, and it will be marked Unsupported."
+    ],
+    outputNoYear: [
+      "This output has no year. Which year (or fiscal year) is it from?",
+      "We still need the year for this output. If you don't have it, you can keep your answer, and it will be marked Unsupported."
+    ],
+    outputNoNumberOrYear: [
+      "This output has no number and no year. How many, and in which year?",
+      "We still need a number and a year for this output. If you don't have them, you can keep your answer, and it will be marked Unsupported."
+    ],
+    keptOutput: "Unsupported: missing a number or year. Edit your answer any time to clear this.",
     duplicateProgram: "",
     doubleCount: "",
     ifNoSource: ""

@@ -102,7 +102,9 @@
   function endScreen() {
     var probs = S.problems(state, Q);
     var words = { needsLabel: "needs a label", needsNote: "needs a source note", unsupported: "is marked Unsupported",
-      blank: "is still blank", skipped: "was skipped (Unsupported)", vague: "uses a vague word", keptVague: "is vague (Unsupported)" };
+      blank: "is still blank", skipped: "was skipped (Unsupported)", vague: "uses a vague word", keptVague: "is vague (Unsupported)",
+      outputNoNumber: "has no number", outputNoYear: "has no year", outputNoNumberOrYear: "has no number or year",
+      outputNoNumberKept: "has no number (Unsupported)", outputNoYearKept: "has no year (Unsupported)", outputNoNumberOrYearKept: "has no number or year (Unsupported)" };
     var list = probs.length
       ? '<ul class="todo">' + probs.map(function (p) {
           return '<li><button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, p.path) + '" data-focus="' + idOf(p.path) + '">' +
@@ -147,13 +149,13 @@
     var flag = $(id + "-skipped");
     fu.hidden = !open;
     flag.hidden = !(kind && a.skipped);
-    flag.textContent = kind === "vague" ? F.keptVague : F.skipped;
+    flag.textContent = kind === "vague" ? F.keptVague : kind === "output" ? F.keptOutput : F.skipped;
     $(id).classList.toggle("invalid", open);
     if (open) {
-      var lines = kind === "vague" ? F.vague : path === "org.zip" ? F.missingZip : F.missing;
+      var lines = kind === "vague" ? F.vague : kind === "output" ? F[S.outputGap(a.text)] : path === "org.zip" ? F.missingZip : F.missing;
       fu.querySelector(".fu-q").textContent = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text));
       var btn = fu.querySelector(".fu-skip");
-      btn.textContent = kind === "vague" ? F.keepButton : F.skipButton;
+      btn.textContent = kind === "missing" ? F.skipButton : F.keepButton;
       btn.hidden = !S.canSkip(a);
     }
   }

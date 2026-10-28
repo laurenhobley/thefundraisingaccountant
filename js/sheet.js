@@ -115,6 +115,32 @@ var FACSheet = (function () {
     return "";
   }
 
+  // ---------- Outputs: a number and a year ----------
+
+  // A year is 1900-2099, alone or as a range (2024, 2023-24, 2023-2024), or a
+  // fiscal year (FY24, FY 2024, FY2023-24). Digits inside a bigger number
+  // (37,260 or 120000) are not a year.
+  var FY = /\bFY\s?\d{2}(\d{2})?(\s*[-–—\/]\s*\d{2}(\d{2})?)?(?!\d)/gi;
+  var YEAR = /(^|[^\d,.])(19|20)\d{2}(\s*[-–—\/]\s*(19|20)?\d{2})?(?!\d)(?!,\d)/g;
+
+  function hasYear(text) {
+    FY.lastIndex = 0; YEAR.lastIndex = 0;
+    return FY.test(text || "") || YEAR.test(text || "");
+  }
+  // A number is any digit left once the years are taken out.
+  function hasCount(text) {
+    return /\d/.test(String(text || "").replace(FY, " ").replace(YEAR, "$1 "));
+  }
+
+  function isOutputs(path) { return /^programs\.\d+\.outputs$/.test(path); }
+
+  // Which wording an Outputs answer needs: "outputNoNumber", "outputNoYear",
+  // "outputNoNumberOrYear", or "" when it has both.
+  function outputGap(text) {
+    var n = hasCount(text), y = hasYear(text);
+    return n && y ? "" : !n && !y ? "outputNoNumberOrYear" : !n ? "outputNoNumber" : "outputNoYear";
+  }
+
   function isRequired(Q, path) {
     var p = path.split("."), sec = p[0] === "org" ? section(Q, "org") : p[0] === "programs" ? section(Q, "programs") : null;
     if (!sec) return false;
@@ -123,10 +149,12 @@ var FACSheet = (function () {
     return false;
   }
 
-  // What a follow-up would ask about: "missing", "vague" or "" (nothing).
+  // What a follow-up would ask about: "missing", "vague", "output" (an
+  // Outputs answer with no number or no year) or "" (nothing), in that order.
   function issueOf(Q, path, a) {
     if (isRequired(Q, path) && isMissing(path, a)) return "missing";
     if (vagueWord(Q, a.text)) return "vague";
+    if (isOutputs(path) && trim(a.text) && outputGap(a.text)) return "output";
     return "";
   }
 
@@ -225,7 +253,8 @@ var FACSheet = (function () {
 
   // Every answer that still needs attention, in sheet order. With Q, this
   // includes required answers that are "skipped" or still "blank", and
-  // answers that are "vague" or were kept vague ("keptVague").
+  // answers that are "vague" or were kept vague ("keptVague"), and Outputs
+  // with a gap ("outputNoYear" and so on, plus "Kept" once kept as is).
   function problems(state, Q) {
     var out = [], all = paths(state), req = {}, i, s;
     if (Q) for (s = 0; s < steps(state).length; s++) {
@@ -236,6 +265,7 @@ var FACSheet = (function () {
       var a = get(state, all[i]);
       if (req[all[i]] && isMissing(all[i], a)) { out.push({ path: all[i], status: a.skipped ? "skipped" : "blank" }); continue; }
       if (Q && vagueWord(Q, a.text)) out.push({ path: all[i], status: a.skipped ? "keptVague" : "vague" });
+      else if (Q && issueOf(Q, all[i], a) === "output") out.push({ path: all[i], status: outputGap(a.text) + (a.skipped ? "Kept" : "") });
       if (!needsLabel(all[i])) continue;
       var st = status(a);
       if (st === "needsLabel" || st === "needsNote" || st === "unsupported") out.push({ path: all[i], status: st });
@@ -274,6 +304,7 @@ var FACSheet = (function () {
     hasNumber: hasNumber, zipOk: zipOk, status: status, needsLabel: needsLabel,
     isMissing: isMissing, requiredOn: requiredOn, missing: missing, ask: ask, canSkip: canSkip, skip: skip, setText: setText,
     vagueWord: vagueWord, isRequired: isRequired, issueOf: issueOf, answersOn: answersOn, issues: issues,
+    hasYear: hasYear, hasCount: hasCount, outputGap: outputGap,
     paths: paths, steps: steps, stepOf: stepOf, problems: problems,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear

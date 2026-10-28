@@ -117,6 +117,38 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   S.setText(Q, v, "programs.0.description", "TBD");
   check("blank answer that becomes \"TBD\" starts again at the first follow-up", d.asks === 0 && S.issueOf(Q, "programs.0.description", d) === "vague");
 
+  // Outputs: a number and a year.
+  ["2024", "in 2023–24", "2023-2024", "FY24", "FY 2024", "FY2023-24", "in 2024, we served"].forEach(function (t) {
+    check("counts as a year: " + t, S.hasYear(t));
+  });
+  ["37,260 meals provided", "120000 visits", "$197,000 worth of goods"].forEach(function (t) {
+    check("no year in: " + t, !S.hasYear(t));
+  });
+  check("number found: 414 clients served in 2024", S.hasCount("414 clients served in 2024"));
+  check("number found: $197,000 worth of goods in 2024", S.hasCount("$197,000 worth of goods in 2024"));
+  check("a year alone isn't the number: Served families in 2023–24", !S.hasCount("Served families in 2023–24"));
+  check("a fiscal year alone isn't the number: Meals served in FY24", !S.hasCount("Meals served in FY24"));
+  check("number and year: no follow-up", S.outputGap("414 clients served in 2024") === "");
+  check("number, no year", S.outputGap("37,260 meals provided") === "outputNoYear");
+  check("year, no number", S.outputGap("Therapy sessions in 2024") === "outputNoNumber");
+  check("neither", S.outputGap("Meals provided") === "outputNoNumberOrYear");
+  var o = S.blank(Q), op = "programs.0.outputs";
+  check("blank Outputs: missing-answer follow-up first", S.issueOf(Q, op, S.get(o, op)) === "missing");
+  S.setText(Q, o, op, "TBD");
+  check("Outputs \"TBD\": vague follow-up first", S.issueOf(Q, op, S.get(o, op)) === "vague");
+  S.setText(Q, o, op, "Meals provided");
+  check("Outputs with no number or year: output follow-up", S.issueOf(Q, op, S.get(o, op)) === "output");
+  S.setText(Q, o, "programs.0.description", "Meals provided");
+  check("only Outputs is checked for a number and year", S.issueOf(Q, "programs.0.description", S.get(o, "programs.0.description")) === "");
+  var out2 = S.get(o, op);
+  S.ask(Q, o, 1); S.ask(Q, o, 1); S.skip(o, op);
+  check("kept as is after two follow-ups", out2.skipped && S.issues(Q, o, 1).indexOf(op) === -1);
+  check("end screen list: no number or year (Unsupported)", S.problems(o, Q).some(function (p) { return p.path === op && p.status === "outputNoNumberOrYearKept"; }));
+  S.setText(Q, o, op, "Meals provided in 2024");
+  check("adding only the year: still kept, now just no number", out2.skipped && S.outputGap(out2.text) === "outputNoNumber");
+  S.setText(Q, o, op, "37,260 meals provided in 2024");
+  check("adding the number too: flag cleared", !out2.skipped && out2.asks === 0 && S.issueOf(Q, op, out2) === "");
+
   // Saving and loading, with a stand-in for the browser's storage.
   var store = {}, fake = { setItem: function (k, v) { store[k] = v; }, getItem: function (k) { return store[k] || null; }, removeItem: function (k) { delete store[k]; } };
   S.save(r, fake);
