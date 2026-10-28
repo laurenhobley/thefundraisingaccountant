@@ -57,7 +57,6 @@ T.run("Builder screens (builder.html)", function (check) {
 
   // ---------- Programs and labels ----------
   check("no Remove button with only one program", !document.querySelector('#screen [data-act="removeProgram"]'));
-  check("Current Impact Statement (optional) has no follow-up", !$("f-programs-0-impact-fu"));
   type("f-programs-0-name", "Emergency shelter");
   type("f-programs-0-outputs", "Served 414 families in 2024");
   pick("f-programs-0-outputs", "known");
@@ -67,7 +66,19 @@ T.run("Builder screens (builder.html)", function (check) {
   check("source filled in: no longer flagged", $("f-programs-0-outputs-lab").getAttribute("data-status") === "ok");
   $("next").click();
   check("Next blocked by the one missing answer, Description", $("counter").textContent === "Step 2 of 5" && shown(".fu") === 1 && fu("f-programs-0-description") !== "");
+  check("blank optional Current Impact Statement gets no follow-up", $("f-programs-0-impact-fu").hidden);
+
+  // ---------- Filler words ----------
+  type("f-programs-0-description", "Various services");
+  check("blank answer that becomes vague: follow-up waits for Next", fu("f-programs-0-description") === "");
+  $("next").click();
+  check("first Next: vague follow-up names the word", $("counter").textContent === "Step 2 of 5" && fu("f-programs-0-description") === F.vague[0].replace("{word}", "Various"));
+  check("no Keep button after one follow-up", shown(".fu-skip") === 0);
+  $("next").click();
+  check("second Next: second vague follow-up", fu("f-programs-0-description") === F.vague[1].replace("{word}", "Various"));
+  check("button says Keep my answer", $("f-programs-0-description-fu").querySelector(".fu-skip").textContent === F.keepButton && shown(".fu-skip") === 1);
   type("f-programs-0-description", "Beds and meals");
+  check("removing the filler word hides the follow-up", fu("f-programs-0-description") === "");
 
   act("addProgram");
   check("Add another program goes to Program 2 of 2", $("counter").textContent === "Step 3 of 6" && /Program 2 of 2/.test(title()));
@@ -95,6 +106,12 @@ T.run("Builder screens (builder.html)", function (check) {
   act("addItem");
   check("Add another pain statement", document.querySelectorAll("#screen textarea.ans").length === 2);
   type("f-pain-1", "We lost $800,000 in 2023");
+  type("f-pain-0", "TBD");
+  $("next").click();
+  check("optional answer \"TBD\" blocks Next with a follow-up", /Pain Statements/.test(title()) && fu("f-pain-0") === F.vague[0].replace("{word}", "TBD"));
+  $("next").click();
+  skip("f-pain-0");
+  check("Keep my answer: text stays, flagged Unsupported: vague", $("f-pain-0").value === "TBD" && $("f-pain-0-skipped").textContent === F.keptVague && !$("f-pain-0-skipped").hidden);
   $("next").click();
   check("blank optional section doesn't block Next", /Benchmarks/.test(title()));
   $("next").click();
@@ -104,7 +121,7 @@ T.run("Builder screens (builder.html)", function (check) {
   check("end screen lists everything still needing attention, in sheet order", todo.join(" | ") ===
     "Location: City and state was skipped (Unsupported) | Mission Statement needs a label | " +
     "Program 2: Program Name was skipped (Unsupported) | Program 2: Description was skipped (Unsupported) | " +
-    "Program 2: Outputs is marked Unsupported | Pain statement 2 needs a label");
+    "Program 2: Outputs is marked Unsupported | Pain statement 1 is vague (Unsupported) | Pain statement 2 needs a label");
 
   document.querySelector('#screen .todo button[data-act="goto"]').click();
   check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 6" && document.activeElement.id === "f-org-city");

@@ -103,6 +103,54 @@ var FACSheet = (function () {
   // Blank (or only spaces) counts as missing. A ZIP code must be 5 digits.
   function isMissing(path, a) { return path === "org.zip" ? !zipOk(a.text) : !trim(a.text); }
 
+  // The first filler word from Q.vagueWords in the text, as the member typed
+  // it, or "". Whole words only, in any capitals.
+  function vagueWord(Q, text) {
+    var words = Q.vagueWords || [];
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      var m = new RegExp("(^|[^A-Za-z0-9])(" + w + ")(?![A-Za-z0-9])", "i").exec(text || "");
+      if (m) return m[2];
+    }
+    return "";
+  }
+
+  function isRequired(Q, path) {
+    var p = path.split("."), sec = p[0] === "org" ? section(Q, "org") : p[0] === "programs" ? section(Q, "programs") : null;
+    if (!sec) return false;
+    var id = p[0] === "org" ? p[1] : p[2];
+    for (var i = 0; i < sec.questions.length; i++) if (sec.questions[i].id === id) return !!sec.questions[i].required;
+    return false;
+  }
+
+  // What a follow-up would ask about: "missing", "vague" or "" (nothing).
+  function issueOf(Q, path, a) {
+    if (isRequired(Q, path) && isMissing(path, a)) return "missing";
+    if (vagueWord(Q, a.text)) return "vague";
+    return "";
+  }
+
+  // Every answer on one screen, as paths.
+  function answersOn(state, step) {
+    var st = steps(state)[step], out = [], id, i;
+    if (!st) return out;
+    if (st.kind === "org") for (id in state.org) { if (state.org.hasOwnProperty(id)) out.push("org." + id); }
+    else if (st.kind === "program") { for (id in state.programs[st.index]) if (state.programs[st.index].hasOwnProperty(id)) out.push("programs." + st.index + "." + id); }
+    else if (st.kind === "pain" || st.kind === "benchmarks") for (i = 0; i < state[st.kind].length; i++) out.push(st.kind + "." + i);
+    return out;
+  }
+
+  // Answers on this screen that need a follow-up (missing or vague) and
+  // haven't been skipped or kept.
+  function issues(Q, state, step) {
+    var all = answersOn(state, step), out = [];
+    for (var i = 0; i < all.length; i++) {
+      var a = get(state, all[i]);
+      if (issueOf(Q, all[i], a) && !a.skipped) out.push(all[i]);
+    }
+    return out;
+  }
+
   // The required questions on one screen, as paths.
   function requiredOn(Q, state, step) {
     var st = steps(state)[step], out = [], qs, prefix;
@@ -125,9 +173,9 @@ var FACSheet = (function () {
   }
 
   // Called when the member presses Next: counts one more follow-up for each
-  // missing answer and returns them. An empty list means Next can go ahead.
+  // missing or vague answer and returns them. An empty list means Next can go ahead.
   function ask(Q, state, step) {
-    var m = missing(Q, state, step);
+    var m = issues(Q, state, step);
     for (var i = 0; i < m.length; i++) {
       var a = get(state, m[i]);
       if (a.asks < MAX_ASKS) a.asks++;
@@ -141,11 +189,13 @@ var FACSheet = (function () {
     if (canSkip(a)) a.skipped = true;
   }
 
-  // Stores typed text. A real answer clears the skip and the follow-ups.
-  function setText(state, path, text) {
-    var a = get(state, path);
+  // Stores typed text. Fixing the answer clears the skip and the follow-ups,
+  // and so does a different problem (a blank answer that becomes "TBD"
+  // starts again at the first follow-up).
+  function setText(Q, state, path, text) {
+    var a = get(state, path), before = issueOf(Q, path, a);
     a.text = text;
-    if (!isMissing(path, a)) { a.skipped = false; a.asks = 0; }
+    if (issueOf(Q, path, a) !== before || !before) { a.skipped = false; a.asks = 0; }
   }
 
   function paths(state) {
@@ -174,7 +224,8 @@ var FACSheet = (function () {
   }
 
   // Every answer that still needs attention, in sheet order. With Q, this
-  // includes required answers that are "skipped" or still "blank".
+  // includes required answers that are "skipped" or still "blank", and
+  // answers that are "vague" or were kept vague ("keptVague").
   function problems(state, Q) {
     var out = [], all = paths(state), req = {}, i, s;
     if (Q) for (s = 0; s < steps(state).length; s++) {
@@ -184,6 +235,7 @@ var FACSheet = (function () {
     for (i = 0; i < all.length; i++) {
       var a = get(state, all[i]);
       if (req[all[i]] && isMissing(all[i], a)) { out.push({ path: all[i], status: a.skipped ? "skipped" : "blank" }); continue; }
+      if (Q && vagueWord(Q, a.text)) out.push({ path: all[i], status: a.skipped ? "keptVague" : "vague" });
       if (!needsLabel(all[i])) continue;
       var st = status(a);
       if (st === "needsLabel" || st === "needsNote" || st === "unsupported") out.push({ path: all[i], status: st });
@@ -221,6 +273,7 @@ var FACSheet = (function () {
     section: section, blank: blank, repair: repair, get: get, trim: trim,
     hasNumber: hasNumber, zipOk: zipOk, status: status, needsLabel: needsLabel,
     isMissing: isMissing, requiredOn: requiredOn, missing: missing, ask: ask, canSkip: canSkip, skip: skip, setText: setText,
+    vagueWord: vagueWord, isRequired: isRequired, issueOf: issueOf, answersOn: answersOn, issues: issues,
     paths: paths, steps: steps, stepOf: stepOf, problems: problems,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear

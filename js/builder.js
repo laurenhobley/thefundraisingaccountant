@@ -28,14 +28,14 @@
       '</div>';
   }
 
-  // Follow-up for a missing required answer, plus the "skipped" flag.
+  // Follow-up for a missing or vague answer, plus the flag once it is skipped or kept.
   function followUpBox(path) {
     var id = idOf(path);
     return '<div class="fu" id="' + id + '-fu" aria-live="polite" hidden>' +
       '<p class="fu-q"></p>' +
-      '<button type="button" class="btn quiet fu-skip" data-act="skip" data-path="' + path + '" hidden>' + esc(Q.followUps.skipButton) + '</button>' +
+      '<button type="button" class="btn quiet fu-skip" data-act="skip" data-path="' + path + '" hidden></button>' +
       '</div>' +
-      '<p class="skipped" id="' + id + '-skipped" hidden>' + esc(Q.followUps.skipped) + '</p>';
+      '<p class="skipped" id="' + id + '-skipped" hidden></p>';
   }
 
   function field(q, path) {
@@ -47,7 +47,7 @@
     return '<div class="f">' +
       '<label for="' + id + '">' + esc(q.label) + (q.note ? ' <span class="opt">' + esc(q.note) + '</span>' : "") + (q.required ? '<span class="req">*</span>' : "") + '</label>' +
       (q.help ? '<p class="hint">' + esc(q.help) + '</p>' : "") +
-      input + (q.required ? followUpBox(path) : "") + (S.needsLabel(path) ? labelBox(path) : "") +
+      input + followUpBox(path) + (S.needsLabel(path) ? labelBox(path) : "") +
       '</div>';
   }
 
@@ -78,7 +78,7 @@
       return '<div class="f item">' +
         '<div class="item-head"><label for="' + fid + '">' + esc(sec.itemLabel) + ' ' + (i + 1) + '</label>' +
         '<button type="button" class="icon-btn" data-act="removeItem" data-list="' + id + '" data-index="' + i + '" aria-label="Remove ' + esc(sec.itemLabel.toLowerCase()) + ' ' + (i + 1) + '">×</button></div>' +
-        '<textarea class="ans" id="' + fid + '" data-path="' + path + '"></textarea>' + labelBox(path) +
+        '<textarea class="ans" id="' + fid + '" data-path="' + path + '"></textarea>' + followUpBox(path) + labelBox(path) +
         '</div>';
     }).join("");
     return heading(num, sec.title, sec.note) +
@@ -102,7 +102,7 @@
   function endScreen() {
     var probs = S.problems(state, Q);
     var words = { needsLabel: "needs a label", needsNote: "needs a source note", unsupported: "is marked Unsupported",
-      blank: "is still blank", skipped: "was skipped (Unsupported)" };
+      blank: "is still blank", skipped: "was skipped (Unsupported)", vague: "uses a vague word", keptVague: "is vague (Unsupported)" };
     var list = probs.length
       ? '<ul class="todo">' + probs.map(function (p) {
           return '<li><button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, p.path) + '" data-focus="' + idOf(p.path) + '">' +
@@ -137,18 +137,24 @@
     return st;
   }
 
-  // Shows the follow-up while a required answer is missing, or the "skipped" flag.
+  // Shows the follow-up while an answer is missing or vague, or the flag once
+  // it has been skipped or kept.
   function refreshFollowUp(path) {
     var id = idOf(path), fu = $(id + "-fu");
     if (!fu) return;
-    var a = S.get(state, path), open = !a.skipped && a.asks > 0 && S.isMissing(path, a);
+    var F = Q.followUps, a = S.get(state, path), kind = S.issueOf(Q, path, a);
+    var open = !!kind && !a.skipped && a.asks > 0;
+    var flag = $(id + "-skipped");
     fu.hidden = !open;
-    $(id + "-skipped").hidden = !a.skipped;
+    flag.hidden = !(kind && a.skipped);
+    flag.textContent = kind === "vague" ? F.keptVague : F.skipped;
     $(id).classList.toggle("invalid", open);
     if (open) {
-      var lines = path === "org.zip" ? Q.followUps.missingZip : Q.followUps.missing;
-      fu.querySelector(".fu-q").textContent = lines[a.asks - 1];
-      fu.querySelector(".fu-skip").hidden = !S.canSkip(a);
+      var lines = kind === "vague" ? F.vague : path === "org.zip" ? F.missingZip : F.missing;
+      fu.querySelector(".fu-q").textContent = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text));
+      var btn = fu.querySelector(".fu-skip");
+      btn.textContent = kind === "vague" ? F.keepButton : F.skipButton;
+      btn.hidden = !S.canSkip(a);
     }
   }
 
@@ -191,7 +197,7 @@
     var el = e.target, path = el.getAttribute("data-path");
     if (!path) return;
     var a = S.get(state, path);
-    if (el.classList.contains("ans")) S.setText(state, path, el.value);
+    if (el.classList.contains("ans")) S.setText(Q, state, path, el.value);
     else if (el.classList.contains("lab-radio")) a.label = el.value;
     else if (el.classList.contains("lab-note")) a.note = el.value;
     refresh(path);
@@ -220,7 +226,7 @@
   });
 
   $("back").addEventListener("click", function () { go(state.step - 1); });
-  // Next asks a follow-up for each missing required answer instead of moving on.
+  // Next asks a follow-up for each missing or vague answer instead of moving on.
   $("next").addEventListener("click", function () {
     var m = S.ask(Q, state, state.step);
     if (!m.length) { go(state.step + 1); return; }

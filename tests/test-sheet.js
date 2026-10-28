@@ -61,11 +61,11 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("blank program: Program Name, Description, Outputs missing (not Current Impact Statement)",
     S.missing(Q, m, 1).join() === "programs.0.name,programs.0.description,programs.0.outputs");
   check("Pain Statements and Benchmarks never block Next", S.missing(Q, m, 2).length === 0 && S.missing(Q, m, 3).length === 0);
-  S.setText(m, "org.name", "   ");
+  S.setText(Q, m,"org.name", "   ");
   check("an answer of only spaces counts as missing", S.missing(Q, m, 0).indexOf("org.name") > -1);
-  S.setText(m, "org.zip", "7700");
+  S.setText(Q, m,"org.zip", "7700");
   check("ZIP 7700 counts as missing", S.missing(Q, m, 0).indexOf("org.zip") > -1);
-  S.setText(m, "org.zip", "77001");
+  S.setText(Q, m,"org.zip", "77001");
   check("ZIP 77001 is answered", S.missing(Q, m, 0).indexOf("org.zip") === -1);
   var web = S.get(m, "org.website");
   S.ask(Q, m, 0);
@@ -80,13 +80,42 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("skipped answer no longer blocks Next", web.skipped && S.missing(Q, m, 0).indexOf("org.website") === -1);
   check("end screen list shows it as skipped", S.problems(m, Q).some(function (p) { return p.path === "org.website" && p.status === "skipped"; }));
   check("and other missing answers as still blank", S.problems(m, Q).some(function (p) { return p.path === "org.city" && p.status === "blank"; }));
-  S.setText(m, "org.website", " ");
+  S.setText(Q, m,"org.website", " ");
   check("typing only a space keeps the skip", web.skipped);
-  S.setText(m, "org.website", "https://example.org");
+  S.setText(Q, m,"org.website", "https://example.org");
   check("a real answer clears the skip and the follow-ups", !web.skipped && web.asks === 0);
   var r2 = S.repair(Q, { org: { city: { text: "", asks: 2, skipped: true }, name: { asks: "lots", skipped: "yes" } } });
   check("old draft: follow-ups and skips kept", r2.org.city.asks === 2 && r2.org.city.skipped === true);
   check("old draft: bad follow-up values dropped", r2.org.name.asks === 0 && r2.org.name.skipped === false);
+
+  // Filler words: found as whole words, in any capitals.
+  check("finds \"Various\" in \"Various programs\"", S.vagueWord(Q, "Various programs") === "Various");
+  check("finds \"tbd\" and \"TBD.\"", S.vagueWord(Q, "tbd") === "tbd" && S.vagueWord(Q, "Cost: TBD.") === "TBD");
+  check("ignores \"variously\" and \"T B D\"", S.vagueWord(Q, "variously") === "" && S.vagueWord(Q, "T B D") === "");
+  check("nothing in a blank answer", S.vagueWord(Q, "") === "");
+  var v = S.blank(Q);
+  S.setText(Q, v, "programs.0.outputs", "TBD");
+  S.setText(Q, v, "pain.0", "Various cuts");
+  check("required answer \"TBD\" is vague, not missing", S.issueOf(Q, "programs.0.outputs", S.get(v, "programs.0.outputs")) === "vague");
+  check("optional answers are checked too", S.issues(Q, v, 2).join() === "pain.0");
+  check("blank optional answer needs no follow-up", S.issueOf(Q, "benchmarks.0", S.get(v, "benchmarks.0")) === "");
+  check("Next on a program counts vague and missing together",
+    S.issues(Q, v, 1).join() === "programs.0.name,programs.0.description,programs.0.outputs");
+  var pain = S.get(v, "pain.0");
+  S.ask(Q, v, 2); S.ask(Q, v, 2);
+  check("two follow-ups, then Keep my answer is allowed", pain.asks === 2 && S.canSkip(pain));
+  S.skip(v, "pain.0");
+  check("kept vague answer no longer blocks Next, and its text stays", S.issues(Q, v, 2).length === 0 && pain.text === "Various cuts");
+  check("end screen list shows it as kept vague", S.problems(v, Q).some(function (p) { return p.path === "pain.0" && p.status === "keptVague"; }));
+  S.setText(Q, v, "pain.0", "Various state cuts");
+  check("still vague after an edit: stays kept", pain.skipped);
+  S.setText(Q, v, "pain.0", "State budget cuts");
+  check("edited to remove the filler word: flag cleared", !pain.skipped && pain.asks === 0 && S.problems(v, Q).every(function (p) { return p.path !== "pain.0"; }));
+  var d = S.get(v, "programs.0.description");
+  S.ask(Q, v, 1);
+  check("blank Description asked once", d.asks === 1);
+  S.setText(Q, v, "programs.0.description", "TBD");
+  check("blank answer that becomes \"TBD\" starts again at the first follow-up", d.asks === 0 && S.issueOf(Q, "programs.0.description", d) === "vague");
 
   // Saving and loading, with a stand-in for the browser's storage.
   var store = {}, fake = { setItem: function (k, v) { store[k] = v; }, getItem: function (k) { return store[k] || null; }, removeItem: function (k) { delete store[k]; } };

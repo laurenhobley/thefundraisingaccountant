@@ -91,6 +91,10 @@ var FAC_QUESTIONS = {
     text: "Your answers are saved in this browser. Review and export are coming next."
   },
 
+  // Filler words that get a follow-up wherever they appear in an answer.
+  // Whole words only, in any capitals. Steve can add more (open question 9).
+  vagueWords: ["various", "TBD"],
+
   // Follow-up wording. The blank ones are for Steve (open questions 9 and 10).
   // missing and missingZip each have two lines: the first and second time the
   // member presses Next with the answer still missing. Draft wording for Steve.
@@ -105,7 +109,13 @@ var FAC_QUESTIONS = {
     ],
     skipButton: "Skip this question",
     skipped: "Unsupported: skipped. Add an answer any time to clear this.",
-    vague: "",
+    // {word} is replaced with the filler word the member typed.
+    vague: [
+      "“{word}” is vague. Can you be more specific?",
+      "We still need more detail than “{word}”. If you can't be more specific, you can keep your answer, and it will be marked Unsupported."
+    ],
+    keepButton: "Keep my answer",
+    keptVague: "Unsupported: vague. Edit your answer any time to clear this.",
     outputNoNumber: "",
     outputNoYear: "",
     duplicateProgram: "",
