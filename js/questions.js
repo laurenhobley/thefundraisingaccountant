@@ -97,6 +97,11 @@ var FAC_QUESTIONS = {
   // Whole words only, in any capitals. Steve can add more (open question 9).
   vagueWords: ["various", "TBD"],
 
+  // Words that mark an assumption ("If a stay costs $50/day..."). An answer
+  // with one of these and a figure needs a source or the Unsupported label.
+  // Whole words only, in any capitals. Draft for Steve.
+  assumptionWords: ["if"],
+
   // Follow-up wording. missing and missingZip each have two lines: the first
   // and second time the member presses Next with the answer still missing.
   followUps: {
@@ -140,7 +145,11 @@ var FAC_QUESTIONS = {
     overlapDifferent: "Different groups",
     overlapSame: "Same group, both programs",
     overlapSameNote: "Noted: {program} counts the same group. The finished prompt will tell ROI.bot not to add the two together.",
-    ifNoSource: ""
+    // Draft for Steve. Settled with the label box, so there is no button.
+    ifNoSource: [
+      "This answer is based on an “if…” assumption. Where does the figure come from? Choose a label below and add the source, or mark it Unsupported.",
+      "We still need a source for this assumption. If you don't have one, choose Unsupported below."
+    ]
   },
 
   // FAC's Final Prompt, word for word. Goes under the member's answers.

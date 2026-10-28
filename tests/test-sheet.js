@@ -219,6 +219,30 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   S.setText(Q, dc, o3, "831 kids");
   check("changing the earlier program's number clears it", S.sharedCount(dc, o3) === null);
 
+  // "If..." assumptions with no source.
+  function assumed(path, text) { return S.isAssumption(Q, path, { text: text }); }
+  check("\"If a stay costs $50/day, then 414 × 90 × $50\" is an assumption", assumed("pain.0", "If a stay costs $50/day, then 414 × 90 × $50"));
+  check("capitals don't matter: \"IF a voucher costs $8,000\"", assumed("pain.0", "IF a voucher costs $8,000"));
+  check("\"if\" with only a year isn't: \"if funding returns in 2025\"", !assumed("pain.0", "if funding returns in 2025"));
+  check("\"if\" with no figure isn't: \"even if we close\"", !assumed("pain.0", "even if we close"));
+  check("a word containing \"if\" isn't: \"gift of 500 blankets\"", !assumed("pain.0", "gift of 500 blankets"));
+  check("the ZIP code is never an assumption", !assumed("org.zip", "if 77001"));
+  var as = S.blank(Q), ap = "benchmarks.0", aa = S.get(as, ap);
+  S.setText(Q, as, ap, "If a voucher costs $8,000 a year, 200 units cost $1,600,000");
+  check("no label yet: assumption follow-up", S.issueOf(Q, ap, aa, as) === "assumption");
+  check("it blocks Next on its screen", S.issues(Q, as, 3).join() === ap);
+  check("end screen lists it once, not also as \"needs a label\"", S.problems(as, Q).filter(function (p) { return p.path === ap; }).map(function (p) { return p.status; }).join() === "assumption");
+  S.ask(Q, as, 3);
+  S.setLabel(Q, as, ap, "estimate");
+  check("Reasonable estimate with no source: still open, follow-up count kept", S.issueOf(Q, ap, aa, as) === "assumption" && aa.asks === 1);
+  S.setNote(Q, as, ap, "County housing authority, 2024");
+  check("source added: settled, count starts again", S.issueOf(Q, ap, aa, as) === "" && aa.asks === 0 && S.problems(as, Q).every(function (p) { return p.path !== ap; }));
+  S.setNote(Q, as, ap, "");
+  S.setLabel(Q, as, ap, "unsupported");
+  check("Unsupported settles it, and stays flagged", S.issueOf(Q, ap, aa, as) === "" && S.problems(as, Q).some(function (p) { return p.path === ap && p.status === "unsupported"; }));
+  S.setText(Q, as, ap, "TBD if 50 units");
+  check("\"TBD\" comes first: vague follow-up", S.issueOf(Q, ap, aa, as) === "vague");
+
   // Saving and loading, with a stand-in for the browser's storage.
   var store = {}, fake = { setItem: function (k, v) { store[k] = v; }, getItem: function (k) { return store[k] || null; }, removeItem: function (k) { delete store[k]; } };
   S.save(r, fake);

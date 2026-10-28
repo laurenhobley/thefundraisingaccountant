@@ -107,6 +107,7 @@
     var words = { needsLabel: "needs a label", needsNote: "needs a source note", unsupported: "is marked Unsupported",
       blank: "is still blank", skipped: "was skipped (Unsupported)", vague: "uses a vague word", keptVague: "is vague (Unsupported)",
       outputNoNumber: "has no number", outputNoYear: "has no year", outputNoNumberOrYear: "has no number or year",
+      assumption: "is an “if” assumption with no source",
       outputNoNumberKept: "has no number (Unsupported)", outputNoYearKept: "has no year (Unsupported)", outputNoNumberOrYearKept: "has no number or year (Unsupported)" };
     var list = probs.length
       ? '<ul class="todo">' + probs.map(function (p) {
@@ -164,7 +165,11 @@
     if (!open) return;
     var btn = fu.querySelector(".fu-skip"), alt = fu.querySelector(".fu-alt"), text;
     alt.hidden = true;
-    if (kind === "overlap") {
+    if (kind === "assumption") {
+      // Settled with the label box just below, so no button.
+      text = F.ifNoSource[a.asks - 1];
+      btn.hidden = true;
+    } else if (kind === "overlap") {
       text = F.overlap.replace(/\{program\}/g, programName(shared.other)).replace(/\{number\}/g, shared.value);
       btn.textContent = F.overlapDifferent;
       alt.textContent = F.overlapSame;
@@ -222,8 +227,8 @@
     if (!path) return;
     var a = S.get(state, path);
     if (el.classList.contains("ans")) S.setText(Q, state, path, el.value);
-    else if (el.classList.contains("lab-radio")) a.label = el.value;
-    else if (el.classList.contains("lab-note")) a.note = el.value;
+    else if (el.classList.contains("lab-radio")) S.setLabel(Q, state, path, el.value);
+    else if (el.classList.contains("lab-note")) S.setNote(Q, state, path, el.value);
     refresh(path);
     save();
   }

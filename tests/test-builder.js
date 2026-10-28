@@ -148,6 +148,18 @@ T.run("Builder screens (builder.html)", function (check) {
   check("Keep my answer: text stays, flagged Unsupported: vague", $("f-pain-0").value === "TBD" && $("f-pain-0-skipped").textContent === F.keptVague && !$("f-pain-0-skipped").hidden);
   $("next").click();
   check("blank optional section doesn't block Next", /Benchmarks/.test(title()));
+
+  // ---------- "If..." assumptions ----------
+  type("f-benchmarks-0", "If a voucher costs $8,000 a year, then 200 units cost $1,600,000");
+  $("next").click();
+  check("\"if…\" with no source: Next blocked with the follow-up", /Benchmarks/.test(title()) && fu("f-benchmarks-0") === F.ifNoSource[0]);
+  check("no button: it's settled with the label box", $("f-benchmarks-0-fu").querySelector(".fu-skip").hidden && $("f-benchmarks-0-fu").querySelector(".fu-alt").hidden);
+  $("next").click();
+  check("second Next: second line", fu("f-benchmarks-0") === F.ifNoSource[1]);
+  pick("f-benchmarks-0", "estimate");
+  check("Reasonable estimate without a source: follow-up stays", fu("f-benchmarks-0") === F.ifNoSource[1]);
+  type("f-benchmarks-0-note", "County housing authority, 2024");
+  check("source added: follow-up gone", fu("f-benchmarks-0") === "");
   $("next").click();
 
   check("end screen is last: Next is hidden", $("next").hidden && $("counter").textContent === "Step 6 of 6");

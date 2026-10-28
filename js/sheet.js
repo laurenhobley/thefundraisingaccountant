@@ -146,6 +146,27 @@ var FACSheet = (function () {
     return n && y ? "" : !n && !y ? "outputNoNumberOrYear" : !n ? "outputNoNumber" : "outputNoYear";
   }
 
+  // ---------- "If..." assumptions ----------
+
+  // An answer with an assumption word ("if") and a figure (years don't
+  // count). Whole words only, so "even if" counts but "gift" doesn't.
+  function isAssumption(Q, path, a) {
+    if (!needsLabel(path) || !hasCount(a.text)) return false;
+    var words = Q.assumptionWords || [];
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i].replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      if (new RegExp("(^|[^A-Za-z0-9])" + w + "(?![A-Za-z0-9])", "i").test(a.text)) return true;
+    }
+    return false;
+  }
+
+  // Settled once the label box has a source (Known or Reasonable estimate
+  // with a note) or says Unsupported.
+  function assumptionOpen(Q, path, a) {
+    var st = status(a);
+    return isAssumption(Q, path, a) && (st === "needsLabel" || st === "needsNote");
+  }
+
   // ---------- Duplicate programs ----------
 
   // Capitals, spaces and punctuation don't count: "Housing Assistance" and
@@ -222,13 +243,15 @@ var FACSheet = (function () {
   }
 
   // The next unsettled problem a follow-up should ask about: the answer's
-  // own problem, then (with state) "duplicate" (same as an earlier program)
-  // and "overlap" (shares a number with an earlier program), or "".
-  // A kept answer still gets the duplicate and overlap checks.
+  // own problem, then "assumption" (an "if..." figure with no source), then
+  // (with state) "duplicate" (same as an earlier program) and "overlap"
+  // (shares a number with an earlier program), or "".
+  // A kept answer still gets the later checks.
   function issueOf(Q, path, a, state) {
     var base = baseIssue(Q, path, a);
     if (base && !a.skipped) return base;
     if (base === "missing") return "";
+    if (assumptionOpen(Q, path, a)) return "assumption";
     if (state && !a.separate && duplicateOf(state, path) > -1) return "duplicate";
     if (state && !a.overlap && sharedCount(state, path)) return "overlap";
     return "";
@@ -318,6 +341,16 @@ var FACSheet = (function () {
     if (now !== before || !now) a.asks = 0;
   }
 
+  // Label and source changes go through here, so a settled assumption
+  // starts its follow-up count again for any later check.
+  function setLabel(Q, state, path, label) { relabel(Q, state, path, function (a) { a.label = label; }); }
+  function setNote(Q, state, path, note) { relabel(Q, state, path, function (a) { a.note = note; }); }
+  function relabel(Q, state, path, change) {
+    var a = get(state, path), before = issueOf(Q, path, a, state);
+    change(a);
+    if (issueOf(Q, path, a, state) !== before) a.asks = 0;
+  }
+
   function paths(state) {
     var out = [], id, i;
     for (id in state.org) if (state.org.hasOwnProperty(id)) out.push("org." + id);
@@ -359,10 +392,13 @@ var FACSheet = (function () {
       var base = Q ? baseIssue(Q, all[i], a) : "";
       if (base === "vague") out.push({ path: all[i], status: a.skipped ? "keptVague" : "vague" });
       else if (base === "output") out.push({ path: all[i], status: outputGap(a.text) + (a.skipped ? "Kept" : "") });
+      // An open "if..." assumption is listed once, instead of "needs a label".
+      var assumed = Q && assumptionOpen(Q, all[i], a);
+      if (assumed) out.push({ path: all[i], status: "assumption" });
       if (Q && !a.separate && duplicateOf(state, all[i]) > -1) out.push({ path: all[i], status: "duplicate", other: duplicateOf(state, all[i]) });
       var shared = Q && !a.overlap && sharedCount(state, all[i]);
       if (shared) out.push({ path: all[i], status: "overlap", other: shared.other, value: shared.value });
-      if (!needsLabel(all[i])) continue;
+      if (assumed || !needsLabel(all[i])) continue;
       var st = status(a);
       if (st === "needsLabel" || st === "needsNote" || st === "unsupported") out.push({ path: all[i], status: st });
     }
@@ -403,6 +439,7 @@ var FACSheet = (function () {
     hasYear: hasYear, hasCount: hasCount, outputGap: outputGap,
     same: same, duplicateOf: duplicateOf, canConfirmSeparate: canConfirmSeparate, confirmSeparate: confirmSeparate,
     baseIssue: baseIssue, numbersIn: numbersIn, sharedCount: sharedCount, sameGroups: sameGroups, resolveOverlap: resolveOverlap,
+    isAssumption: isAssumption, assumptionOpen: assumptionOpen, setLabel: setLabel, setNote: setNote,
     paths: paths, steps: steps, stepOf: stepOf, problems: problems,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear
