@@ -88,6 +88,8 @@
       '<div><button type="button" class="btn ghost" data-act="addItem" data-list="' + id + '">' + esc(sec.addLabel) + '</button></div>';
   }
 
+  function programName(i) { return S.section(Q, "programs").itemLabel + " " + (i + 1); }
+
   // Names an answer for the end screen list, e.g. "Program 2: Outputs".
   function nameOf(path) {
     var p = path.split(".");
@@ -108,7 +110,7 @@
     var list = probs.length
       ? '<ul class="todo">' + probs.map(function (p) {
           return '<li><button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, p.path) + '" data-focus="' + idOf(p.path) + '">' +
-            esc(nameOf(p.path)) + '</button> ' + words[p.status] + '</li>';
+            esc(nameOf(p.path)) + '</button> ' + (p.status === "duplicate" ? "is the same as " + esc(programName(p.other)) : words[p.status]) + '</li>';
         }).join("") + '</ul>'
       : '<p>Every figure has a label and a source.</p>';
     return heading("✓", Q.endScreen.title) + '<p>' + esc(Q.endScreen.text) + '</p>' + list;
@@ -144,20 +146,26 @@
   function refreshFollowUp(path) {
     var id = idOf(path), fu = $(id + "-fu");
     if (!fu) return;
-    var F = Q.followUps, a = S.get(state, path), kind = S.issueOf(Q, path, a);
+    var F = Q.followUps, a = S.get(state, path), kind = S.issueOf(Q, path, a, state);
     var open = !!kind && !a.skipped && a.asks > 0;
     var flag = $(id + "-skipped");
     fu.hidden = !open;
-    flag.hidden = !(kind && a.skipped);
+    flag.hidden = !(kind && kind !== "duplicate" && a.skipped);
     flag.textContent = kind === "vague" ? F.keptVague : kind === "output" ? F.keptOutput : F.skipped;
     $(id).classList.toggle("invalid", open);
-    if (open) {
+    if (!open) return;
+    var btn = fu.querySelector(".fu-skip"), text;
+    if (kind === "duplicate") {
+      text = (/\.name$/.test(path) ? F.duplicateName : F.duplicateDescription).replace(/\{program\}/g, programName(S.duplicateOf(state, path)));
+      btn.textContent = F.separateButton;
+      btn.hidden = !S.canConfirmSeparate(a);
+    } else {
       var lines = kind === "vague" ? F.vague : kind === "output" ? F[S.outputGap(a.text)] : path === "org.zip" ? F.missingZip : F.missing;
-      fu.querySelector(".fu-q").textContent = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text));
-      var btn = fu.querySelector(".fu-skip");
+      text = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text));
       btn.textContent = kind === "missing" ? F.skipButton : F.keepButton;
       btn.hidden = !S.canSkip(a);
     }
+    fu.querySelector(".fu-q").textContent = text;
   }
 
   // Shows or hides the label box for one answer, without rebuilding the screen.
@@ -222,7 +230,9 @@
     else if (act === "goto") { go(+b.getAttribute("data-step"), b.getAttribute("data-focus")); }
     else if (act === "skip") {
       var path = b.getAttribute("data-path");
-      S.skip(state, path); refresh(path); save();
+      if (S.issueOf(Q, path, S.get(state, path), state) === "duplicate") S.confirmSeparate(state, path);
+      else S.skip(state, path);
+      refresh(path); save();
       $(idOf(path)).focus();
     }
   });

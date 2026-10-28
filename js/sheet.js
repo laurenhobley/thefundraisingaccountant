@@ -12,7 +12,9 @@ var FACSheet = (function () {
   var MAX_ASKS = 2;
 
   function trim(s) { return String(s || "").replace(/^\s+|\s+$/g, ""); }
-  function answer() { return { text: "", label: "", note: "", asks: 0, skipped: false }; }
+  // separate: the member confirmed this program is separate from an earlier
+  // one with the same name or description.
+  function answer() { return { text: "", label: "", note: "", asks: 0, skipped: false, separate: false }; }
 
   function section(Q, id) {
     for (var i = 0; i < Q.sections.length; i++) if (Q.sections[i].id === id) return Q.sections[i];
@@ -44,6 +46,7 @@ var FACSheet = (function () {
       if (typeof from.note === "string") a.note = from.note;
       if (from.asks === 1 || from.asks === 2) a.asks = from.asks;
       if (from.skipped === true) a.skipped = true;
+      if (from.separate === true) a.separate = true;
     }
     return a;
   }
@@ -141,6 +144,23 @@ var FACSheet = (function () {
     return n && y ? "" : !n && !y ? "outputNoNumberOrYear" : !n ? "outputNoNumber" : "outputNoYear";
   }
 
+  // ---------- Duplicate programs ----------
+
+  // Capitals, spaces and punctuation don't count: "Housing Assistance" and
+  // "housing  assistance." are the same.
+  function same(text) { return String(text || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").replace(/^ | $/g, ""); }
+
+  // For a program's name or description, the index of the first earlier
+  // program with the same text, or -1. Blank answers are never compared.
+  function duplicateOf(state, path) {
+    var p = path.split(".");
+    if (p[0] !== "programs" || (p[2] !== "name" && p[2] !== "description")) return -1;
+    var mine = same(state.programs[+p[1]][p[2]].text);
+    if (!mine) return -1;
+    for (var i = 0; i < +p[1]; i++) if (same(state.programs[i][p[2]].text) === mine) return i;
+    return -1;
+  }
+
   function isRequired(Q, path) {
     var p = path.split("."), sec = p[0] === "org" ? section(Q, "org") : p[0] === "programs" ? section(Q, "programs") : null;
     if (!sec) return false;
@@ -150,11 +170,13 @@ var FACSheet = (function () {
   }
 
   // What a follow-up would ask about: "missing", "vague", "output" (an
-  // Outputs answer with no number or no year) or "" (nothing), in that order.
-  function issueOf(Q, path, a) {
+  // Outputs answer with no number or no year), "duplicate" (same as an
+  // earlier program; needs state) or "" (nothing), in that order.
+  function issueOf(Q, path, a, state) {
     if (isRequired(Q, path) && isMissing(path, a)) return "missing";
     if (vagueWord(Q, a.text)) return "vague";
     if (isOutputs(path) && trim(a.text) && outputGap(a.text)) return "output";
+    if (state && !a.separate && duplicateOf(state, path) > -1) return "duplicate";
     return "";
   }
 
@@ -174,7 +196,7 @@ var FACSheet = (function () {
     var all = answersOn(state, step), out = [];
     for (var i = 0; i < all.length; i++) {
       var a = get(state, all[i]);
-      if (issueOf(Q, all[i], a) && !a.skipped) out.push(all[i]);
+      if (issueOf(Q, all[i], a, state) && !a.skipped) out.push(all[i]);
     }
     return out;
   }
@@ -217,13 +239,23 @@ var FACSheet = (function () {
     if (canSkip(a)) a.skipped = true;
   }
 
+  // A matching program only needs one follow-up: the member can confirm
+  // straight away that it is separate. No Unsupported flag; it isn't a figure.
+  function canConfirmSeparate(a) { return a.asks >= 1; }
+  function confirmSeparate(state, path) {
+    var a = get(state, path);
+    if (canConfirmSeparate(a)) { a.separate = true; a.asks = 0; }
+  }
+
   // Stores typed text. Fixing the answer clears the skip and the follow-ups,
   // and so does a different problem (a blank answer that becomes "TBD"
-  // starts again at the first follow-up).
+  // starts again at the first follow-up). Any edit asks again whether a
+  // matching program is separate.
   function setText(Q, state, path, text) {
-    var a = get(state, path), before = issueOf(Q, path, a);
+    var a = get(state, path), before = issueOf(Q, path, a, state);
+    if (a.text !== text) a.separate = false;
     a.text = text;
-    if (issueOf(Q, path, a) !== before || !before) { a.skipped = false; a.asks = 0; }
+    if (issueOf(Q, path, a, state) !== before || !before) { a.skipped = false; a.asks = 0; }
   }
 
   function paths(state) {
@@ -266,6 +298,7 @@ var FACSheet = (function () {
       if (req[all[i]] && isMissing(all[i], a)) { out.push({ path: all[i], status: a.skipped ? "skipped" : "blank" }); continue; }
       if (Q && vagueWord(Q, a.text)) out.push({ path: all[i], status: a.skipped ? "keptVague" : "vague" });
       else if (Q && issueOf(Q, all[i], a) === "output") out.push({ path: all[i], status: outputGap(a.text) + (a.skipped ? "Kept" : "") });
+      else if (Q && issueOf(Q, all[i], a, state) === "duplicate") out.push({ path: all[i], status: "duplicate", other: duplicateOf(state, all[i]) });
       if (!needsLabel(all[i])) continue;
       var st = status(a);
       if (st === "needsLabel" || st === "needsNote" || st === "unsupported") out.push({ path: all[i], status: st });
@@ -305,6 +338,7 @@ var FACSheet = (function () {
     isMissing: isMissing, requiredOn: requiredOn, missing: missing, ask: ask, canSkip: canSkip, skip: skip, setText: setText,
     vagueWord: vagueWord, isRequired: isRequired, issueOf: issueOf, answersOn: answersOn, issues: issues,
     hasYear: hasYear, hasCount: hasCount, outputGap: outputGap,
+    same: same, duplicateOf: duplicateOf, canConfirmSeparate: canConfirmSeparate, confirmSeparate: confirmSeparate,
     paths: paths, steps: steps, stepOf: stepOf, problems: problems,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear

@@ -12,6 +12,9 @@
   "required: true" means the builder asks a follow-up if the answer is
   missing. After two follow-ups the member can skip, and the field is marked
   Unsupported.
+
+  Steve approved all wording in this file on 2026-10-28. Anything added after
+  that is marked "draft for Steve".
 */
 var FAC_QUESTIONS = {
   intro: "Use this form to enter your organization’s information. Once complete, copy + paste your information into ROI.bot to generate outputs, outcomes, and donor-ready impact statements.",
@@ -77,7 +80,6 @@ var FAC_QUESTIONS = {
   ],
 
   // Every figure gets one of these labels. Wording from the plan.
-  // labelPrompt and noteLabel are draft wording for Steve to approve.
   labelPrompt: "This answer includes a number. Where does it come from?",
   labels: {
     known: { name: "Known", help: "A source is recorded.", noteLabel: "Source", tag: null }, // tag waiting on Steve (open question 7)
@@ -95,9 +97,8 @@ var FAC_QUESTIONS = {
   // Whole words only, in any capitals. Steve can add more (open question 9).
   vagueWords: ["various", "TBD"],
 
-  // Follow-up wording. The blank ones are for Steve (open questions 9 and 10).
-  // missing and missingZip each have two lines: the first and second time the
-  // member presses Next with the answer still missing. Draft wording for Steve.
+  // Follow-up wording. missing and missingZip each have two lines: the first
+  // and second time the member presses Next with the answer still missing.
   followUps: {
     missing: [
       "This question is still blank. Please add an answer.",
@@ -130,7 +131,10 @@ var FAC_QUESTIONS = {
       "We still need a number and a year for this output. If you don't have them, you can keep your answer, and it will be marked Unsupported."
     ],
     keptOutput: "Unsupported: missing a number or year. Edit your answer any time to clear this.",
-    duplicateProgram: "",
+    // Draft for Steve. {program} becomes the earlier program, e.g. "Program 4".
+    duplicateName: "{program} has the same name. Is this a separate program? If it is, give it a different name, or confirm below.",
+    duplicateDescription: "{program} has the same description. Is this a separate program? If it is, describe what's different, or confirm below.",
+    separateButton: "These are separate programs",
     doubleCount: "",
     ifNoSource: ""
   },

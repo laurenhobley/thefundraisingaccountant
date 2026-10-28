@@ -149,6 +149,41 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   S.setText(Q, o, op, "37,260 meals provided in 2024");
   check("adding the number too: flag cleared", !out2.skipped && out2.asks === 0 && S.issueOf(Q, op, out2) === "");
 
+  // Duplicate programs: same name or description as an earlier program.
+  check("\"Housing Assistance\" and \"housing  assistance.\" count as the same", S.same("Housing Assistance") === S.same("housing  assistance."));
+  check("\"Housing Assistance\" and \"Housing Help\" don't", S.same("Housing Assistance") !== S.same("Housing Help"));
+  var dp = S.blank(Q);
+  S.addProgram(Q, dp); S.addProgram(Q, dp);
+  S.setText(Q, dp, "programs.0.name", "Housing Assistance");
+  S.setText(Q, dp, "programs.0.description", "Rental help for families");
+  S.setText(Q, dp, "programs.1.name", "Youth Programs");
+  S.setText(Q, dp, "programs.2.name", "housing assistance.");
+  S.setText(Q, dp, "programs.2.description", "Rental help for families");
+  check("program 3's name matches program 1", S.duplicateOf(dp, "programs.2.name") === 0);
+  check("program 3's description matches program 1", S.duplicateOf(dp, "programs.2.description") === 0);
+  check("program 1 is never the duplicate", S.duplicateOf(dp, "programs.0.name") === -1);
+  check("a different name doesn't match", S.duplicateOf(dp, "programs.1.name") === -1);
+  check("blank descriptions aren't compared", S.duplicateOf(dp, "programs.1.description") === -1);
+  check("Outputs aren't compared", S.duplicateOf(dp, "programs.2.outputs") === -1);
+  var dn = S.get(dp, "programs.2.name");
+  check("matching name: duplicate follow-up", S.issueOf(Q, "programs.2.name", dn, dp) === "duplicate");
+  S.ask(Q, dp, 3);
+  check("one follow-up, then \"These are separate programs\" is allowed", dn.asks === 1 && S.canConfirmSeparate(dn));
+  S.confirmSeparate(dp, "programs.2.name");
+  check("confirmed separate: no longer blocks Next, no Unsupported flag", S.issues(Q, dp, 3).indexOf("programs.2.name") === -1 && !dn.skipped);
+  check("end screen still lists the matching description", S.problems(dp, Q).some(function (p) { return p.path === "programs.2.description" && p.status === "duplicate" && p.other === 0; }));
+  check("but not the confirmed name", S.problems(dp, Q).every(function (p) { return p.path !== "programs.2.name"; }));
+  S.setText(Q, dp, "programs.2.name", "Housing Assistance");
+  check("editing a confirmed name asks again", S.issueOf(Q, "programs.2.name", dn, dp) === "duplicate");
+  S.setText(Q, dp, "programs.2.name", "Youth Housing");
+  check("renaming it clears the follow-up", S.issueOf(Q, "programs.2.name", dn, dp) === "");
+  S.removeProgram(dp, 0);
+  check("removing program 1 clears the matching description", S.duplicateOf(dp, "programs.1.description") === -1);
+  var dv = S.blank(Q);
+  S.addProgram(Q, dv);
+  S.setText(Q, dv, "programs.0.name", "TBD"); S.setText(Q, dv, "programs.1.name", "TBD");
+  check("\"TBD\" in both: vague follow-up comes first", S.issueOf(Q, "programs.1.name", S.get(dv, "programs.1.name"), dv) === "vague");
+
   // Saving and loading, with a stand-in for the browser's storage.
   var store = {}, fake = { setItem: function (k, v) { store[k] = v; }, getItem: function (k) { return store[k] || null; }, removeItem: function (k) { delete store[k]; } };
   S.save(r, fake);

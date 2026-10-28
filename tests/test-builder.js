@@ -103,6 +103,15 @@ T.run("Builder screens (builder.html)", function (check) {
 
   $("next").click(); $("next").click();
   check("back on Program 2", /Program 2 of 2/.test(title()));
+  // ---------- Duplicate programs ----------
+  type("f-programs-1-name", "emergency  shelter.");
+  $("next").click();
+  check("same name as Program 1: follow-up names it", fu("f-programs-1-name") === F.duplicateName.replace("{program}", "Program 1"));
+  check("\"These are separate programs\" shows after one follow-up", $("f-programs-1-name-fu").querySelector(".fu-skip").textContent === F.separateButton && !$("f-programs-1-name-fu").querySelector(".fu-skip").hidden);
+  skip("f-programs-1-name");
+  check("confirming hides it, with no Unsupported flag", fu("f-programs-1-name") === "" && $("f-programs-1-name-skipped").hidden && saved().programs[1].name.separate === true);
+  type("f-programs-1-name", "");
+
   $("next").click(); $("next").click();
   check("Program 2 Outputs \"About 50 people\" asks for a year", fu("f-programs-1-outputs") === F.outputNoYear[1]);
   check("its button says Keep my answer", $("f-programs-1-outputs-fu").querySelector(".fu-skip").textContent === F.keepButton);

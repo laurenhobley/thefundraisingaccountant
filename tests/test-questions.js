@@ -52,6 +52,8 @@ T.run("Questions (js/questions.js)", function (check) {
   check("Outputs follow-ups: two lines each for no number, no year, and neither",
     ["outputNoNumber", "outputNoYear", "outputNoNumberOrYear"].every(function (k) { var l = Q.followUps[k]; return l.length === 2 && !!l[0] && !!l[1]; }));
   check("kept-output flag has wording", !!Q.followUps.keptOutput);
+  check("duplicate follow-ups name the other {program}", [Q.followUps.duplicateName, Q.followUps.duplicateDescription].every(function (l) { return l.indexOf("{program}") > -1; }));
+  check("These are separate programs button has wording", !!Q.followUps.separateButton);
   // Rule 2: example figures belong only in the examples list, never in a question's help.
   var helps = [];
   Q.sections.forEach(function (s) { helps.push(s.help || ""); (s.questions || []).forEach(function (q) { helps.push(q.help || ""); }); });
