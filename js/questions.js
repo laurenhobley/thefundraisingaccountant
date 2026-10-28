@@ -52,6 +52,7 @@ var FAC_QUESTIONS = {
       note: "(optional)",
       optional: true,
       kind: "list",
+      itemLabel: "Pain statement",
       addLabel: "Add another pain statement",
       help: "",
       examples: [
@@ -65,6 +66,7 @@ var FAC_QUESTIONS = {
       note: "(optional)",
       optional: true,
       kind: "list",
+      itemLabel: "Benchmark",
       addLabel: "Add another benchmark",
       help: "",
       examples: [
@@ -75,10 +77,18 @@ var FAC_QUESTIONS = {
   ],
 
   // Every figure gets one of these labels. Wording from the plan.
+  // labelPrompt and noteLabel are draft wording for Steve to approve.
+  labelPrompt: "This answer includes a number. Where does it come from?",
   labels: {
-    known: { name: "Known", help: "A source is recorded.", tag: null }, // tag waiting on Steve (open question 7)
-    estimate: { name: "Reasonable estimate", help: "Requires a note on where the number came from.", tag: "[Estimate]" },
+    known: { name: "Known", help: "A source is recorded.", noteLabel: "Source", tag: null }, // tag waiting on Steve (open question 7)
+    estimate: { name: "Reasonable estimate", help: "Requires a note on where the number came from.", noteLabel: "Where this number came from", tag: "[Estimate]" },
     unsupported: { name: "Unsupported", help: "Stays visibly flagged.", tag: "[Unsupported]" }
+  },
+
+  // Last screen. Placeholder until the review and export stage is built.
+  endScreen: {
+    title: "You've reached the end of the sheet",
+    text: "Your answers are saved in this browser. Review and export are coming next."
   },
 
   // Follow-up wording. Left blank for Steve (open questions 9 and 10).

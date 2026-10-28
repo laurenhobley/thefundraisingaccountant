@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ROI.bot Prompt Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Fundraising toolkit · ROI.bot Prompt Builder</div>
+    <h1>Build your ROI.bot prompt sheet</h1>
+    <p id="intro"></p>
+  </header>
+
+  <div class="counter" id="counter" aria-live="polite"></div>
+  <form id="screen" novalidate onsubmit="return false"></form>
+
+  <div class="nav">
+    <button type="button" class="btn quiet" id="clear">Start over</button>
+    <div class="actions">
+      <button type="button" class="btn ghost" id="back">Back</button>
+      <button type="button" class="btn primary" id="next">Next</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/questions.js"></script>
+<script src="js/sheet.js"></script>
+<script src="js/builder.js"></script>
+</body>
+</html>
