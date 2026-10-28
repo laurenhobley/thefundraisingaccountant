@@ -130,6 +130,10 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
           <div class="f"><label for="orgName">Organization name<span class="req">*</span></label><input type="text" id="orgName" autocomplete="organization"></div>
           <div class="f"><label for="website">Website <span class="opt">(optional)</span></label><input type="url" id="website" placeholder="https://"></div>
         </div>
+        <div class="row">
+          <div class="f"><label for="city">City and state<span class="req">*</span></label><input type="text" id="city" autocomplete="address-level2" placeholder="City, State"></div>
+          <div class="f"><label for="zip">ZIP code<span class="req">*</span></label><input type="text" id="zip" autocomplete="postal-code" inputmode="numeric" maxlength="10" placeholder="5-digit ZIP"></div>
+        </div>
         <div class="f"><label for="program">Program or service this gift would fund<span class="req">*</span></label><input type="text" id="program" placeholder="Name of the program"></div>
         <div class="f"><label for="population">Who you serve <span class="opt">(optional)</span></label><input type="text" id="population" placeholder="The people and community you serve"></div>
       </fieldset>
@@ -231,7 +235,7 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
   var claudeDownloads = null;
   var canDownload = false;
   var resultsEl = $("results");
-  var fieldIds = ["orgName","website","program","population","lossAmount","demandPct","unserved","servicesLost","couldNot","servedCount","servedPeriod","outcomes","saves"];
+  var fieldIds = ["orgName","website","city","zip","program","population","lossAmount","demandPct","unserved","servicesLost","couldNot","servedCount","servedPeriod","outcomes","saves"];
   var introBoth = $("intro").textContent;
   var introCopy = "Answer the questions below. The prompt on the right updates as you type. When every required field is filled in, copy it and paste it into ROI.bot to write your pain statement and tangible results.";
 
@@ -280,6 +284,7 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
   function v(id) { return $(id).value.trim(); }
   function money(x) { return "$" + Number(x).toLocaleString("en-US"); }
   function num(x) { return Number(x).toLocaleString("en-US"); }
+  function zipOk() { return /^\d{5}(-\d{4})?$/.test(v("zip")); }
   function listJoin(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
 
   // Each check: [element to flag, is it filled?, label]
@@ -287,6 +292,8 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
     var d = driver();
     var list = [
       [$("orgName"), !!v("orgName"), "Organization name"],
+      [$("city"), !!v("city"), "City and state"],
+      [$("zip"), zipOk(), "ZIP code (5 digits)"],
       [$("program"), !!v("program"), "Program to fund"],
       [document.querySelector(".choice[role=radiogroup]"), !!d, "What is driving the need"]
     ];
@@ -325,6 +332,7 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
     L.push("");
     L.push("ORGANIZATION");
     L.push("Name: " + org);
+    L.push("Location: " + or(v("city"), "city and state") + " " + or(zipOk() && v("zip"), "5-digit ZIP code"));
     if (v("website")) L.push("Website: " + v("website"));
     L.push("Program this gift would fund: " + or(v("program"), "program"));
     if (v("population")) L.push("Who we serve: " + v("population"));
