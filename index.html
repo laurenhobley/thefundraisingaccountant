@@ -282,8 +282,15 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
     });
   }
   function v(id) { return $(id).value.trim(); }
-  function money(x) { return "$" + Number(x).toLocaleString("en-US"); }
-  function num(x) { return Number(x).toLocaleString("en-US"); }
+  // Numbers go into the prompt exactly as the member typed them. Only commas are added; nothing is rounded.
+  // Anything that isn't plain digits (like 1e3 or -5, which number boxes accept) counts as missing.
+  function plain(x) { return /^\d+(\.\d+)?$/.test(x); }
+  function nv(id) { return plain(v(id)) ? v(id) : ""; }
+  function badNum(id) { return !!v(id) && !plain(v(id)); }
+  function commas(x) { var p = x.split("."); return p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (p.length > 1 ? "." + p[1] : ""); }
+  function money(x) { return "$" + commas(x); }
+  function num(x) { return commas(x); }
+  function numLabel(id, label) { return badNum(id) ? label + " (digits only)" : label; }
   function zipOk() { return /^\d{5}(-\d{4})?$/.test(v("zip")); }
   function listJoin(a) { return a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
 
@@ -298,20 +305,23 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
       [document.querySelector(".choice[role=radiogroup]"), !!d, "What is driving the need"]
     ];
     if (d === "loss" || d === "both") {
-      list.push([$("lossAmount"), !!v("lossAmount"), "Funding lost"]);
+      list.push([$("lossAmount"), !!nv("lossAmount"), numLabel("lossAmount", "Funding lost")]);
       list.push([$("lossTypes"), lossTypes().length > 0, "Type of loss"]);
     }
-    if (d === "demand" || d === "both") list.push([$("demandPct"), !!v("demandPct"), "Increase in demand"]);
+    if (d === "demand" || d === "both") list.push([$("demandPct"), !!nv("demandPct"), numLabel("demandPct", "Increase in demand")]);
     list.push(
-      [$("unserved"), !!v("unserved"), "People who go unserved"],
+      [$("unserved"), !!nv("unserved"), numLabel("unserved", "People who go unserved")],
       [$("servicesLost"), !!v("servicesLost"), "Services lost"],
-      [$("servedCount"), !!v("servedCount"), "People currently served"],
+      [$("servedCount"), !!nv("servedCount"), numLabel("servedCount", "People currently served")],
       [$("servedPeriod"), !!v("servedPeriod"), "Time period served"],
       [$("outcomes"), !!v("outcomes"), "Outcomes"]
     );
+    // Dollars saved is optional, but a number that isn't plain digits must be fixed, not dropped.
+    if (badNum("saves")) list.push([$("saves"), false, "Dollars saved (digits only)"]);
     var rs = results();
-    var good = rs.some(function (r) { return r.amount && r.what; });
+    var good = rs.some(function (r) { return plain(r.amount) && r.what; });
     list.push([rs[0].row, good, "At least one tangible result"]);
+    rs.forEach(function (r) { if (r.amount && !plain(r.amount)) list.push([r.row, false, "Gift amount (digits only)"]); });
     return list;
   }
 
@@ -341,22 +351,22 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
     if (!d) L.push("Driver of need: " + or("", "lost funding or increased demand"));
     if (d === "loss" || d === "both") {
       var t = lossTypes();
-      L.push("Funding lost: " + or(v("lossAmount") && money(v("lossAmount")), "amount of funding lost"));
+      L.push("Funding lost: " + or(nv("lossAmount") && money(nv("lossAmount")), "amount of funding lost"));
       L.push("Type of loss: " + or(t.length ? listJoin(t) : "", "government, grant or donation"));
     }
-    if (d === "demand" || d === "both") L.push("Increase in demand for services: " + or(v("demandPct") && v("demandPct") + "%", "percent increase in demand"));
-    L.push("People who go unserved: " + or(v("unserved") && num(v("unserved")), "number of people unserved"));
+    if (d === "demand" || d === "both") L.push("Increase in demand for services: " + or(nv("demandPct") && nv("demandPct") + "%", "percent increase in demand"));
+    L.push("People who go unserved: " + or(nv("unserved") && num(nv("unserved")), "number of people unserved"));
     L.push("Services they lost: " + or(v("servicesLost"), "services lost"));
     if (v("couldNot")) L.push("What we were not able to do: " + v("couldNot"));
-    L.push("People we currently serve: " + or(v("servedCount") && num(v("servedCount")), "number currently served") + " " + or(v("servedPeriod"), "time period"));
+    L.push("People we currently serve: " + or(nv("servedCount") && num(nv("servedCount")), "number currently served") + " " + or(v("servedPeriod"), "time period"));
     L.push("Outcomes an investment creates: " + or(v("outcomes"), "outcomes"));
-    L.push("Dollars saved: " + (v("saves") ? money(v("saves")) : "not provided (leave out the \"saves\" clause; do not estimate)"));
+    L.push("Dollars saved: " + (nv("saves") ? money(nv("saves")) : badNum("saves") ? or("", "dollars saved, digits only") : "not provided (leave out the \"saves\" clause; do not estimate)"));
     L.push("");
     L.push("1.2 TANGIBLE RESULTS");
     var rs = results().filter(function (r) { return r.amount || r.what; });
     if (!rs.length) L.push("- " + or("", "at least one gift amount and what it provides"));
     rs.forEach(function (r) {
-      L.push("- " + or(r.amount && money(r.amount), "gift amount") + " provides " + or(r.what, "what it provides"));
+      L.push("- " + or(plain(r.amount) && money(r.amount), "gift amount") + " provides " + or(r.what, "what it provides"));
     });
     L.push("");
     L.push("WRITE THE FOLLOWING");
@@ -364,7 +374,7 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
     if (d === "loss" || d === "both" || !d) L.push("   \"[Organization] lost $[amount] in [type] funding. As a result, [number] people go unserved.\"");
     if (d === "demand" || d === "both" || !d) L.push("   \"Demand has increased [percent]%. As a result, [number] people go unserved.\"");
     L.push("   Follow it with one sentence on the services people lost" + (v("couldNot") ? " and what we could not do." : "."));
-    L.push("2. Investment statement: \"An investment in [program] helps create [outcomes]" + (v("saves") ? " and saves [dollars]." : ".") + "\"");
+    L.push("2. Investment statement: \"An investment in [program] helps create [outcomes]" + (nv("saves") ?" and saves [dollars]." : ".") + "\"");
     L.push("3. Tangible results: one line per gift amount, in the form \"$[amount] provides [result].\"");
     L.push("4. A short impact paragraph (3 to 4 sentences) that combines the above for a donor appeal, ending with a clear call to give.");
     return L.join("\n");
