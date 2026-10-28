@@ -28,6 +28,16 @@
       '</div>';
   }
 
+  // Follow-up for a missing required answer, plus the "skipped" flag.
+  function followUpBox(path) {
+    var id = idOf(path);
+    return '<div class="fu" id="' + id + '-fu" aria-live="polite" hidden>' +
+      '<p class="fu-q"></p>' +
+      '<button type="button" class="btn quiet fu-skip" data-act="skip" data-path="' + path + '" hidden>' + esc(Q.followUps.skipButton) + '</button>' +
+      '</div>' +
+      '<p class="skipped" id="' + id + '-skipped" hidden>' + esc(Q.followUps.skipped) + '</p>';
+  }
+
   function field(q, path) {
     var id = idOf(path);
     var input = q.kind === "long"
@@ -37,7 +47,7 @@
     return '<div class="f">' +
       '<label for="' + id + '">' + esc(q.label) + (q.note ? ' <span class="opt">' + esc(q.note) + '</span>' : "") + (q.required ? '<span class="req">*</span>' : "") + '</label>' +
       (q.help ? '<p class="hint">' + esc(q.help) + '</p>' : "") +
-      input + (S.needsLabel(path) ? labelBox(path) : "") +
+      input + (q.required ? followUpBox(path) : "") + (S.needsLabel(path) ? labelBox(path) : "") +
       '</div>';
   }
 
@@ -90,8 +100,9 @@
   }
 
   function endScreen() {
-    var probs = S.problems(state);
-    var words = { needsLabel: "needs a label", needsNote: "needs a source note", unsupported: "is marked Unsupported" };
+    var probs = S.problems(state, Q);
+    var words = { needsLabel: "needs a label", needsNote: "needs a source note", unsupported: "is marked Unsupported",
+      blank: "is still blank", skipped: "was skipped (Unsupported)" };
     var list = probs.length
       ? '<ul class="todo">' + probs.map(function (p) {
           return '<li><button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, p.path) + '" data-focus="' + idOf(p.path) + '">' +
@@ -126,8 +137,24 @@
     return st;
   }
 
+  // Shows the follow-up while a required answer is missing, or the "skipped" flag.
+  function refreshFollowUp(path) {
+    var id = idOf(path), fu = $(id + "-fu");
+    if (!fu) return;
+    var a = S.get(state, path), open = !a.skipped && a.asks > 0 && S.isMissing(path, a);
+    fu.hidden = !open;
+    $(id + "-skipped").hidden = !a.skipped;
+    $(id).classList.toggle("invalid", open);
+    if (open) {
+      var lines = path === "org.zip" ? Q.followUps.missingZip : Q.followUps.missing;
+      fu.querySelector(".fu-q").textContent = lines[a.asks - 1];
+      fu.querySelector(".fu-skip").hidden = !S.canSkip(a);
+    }
+  }
+
   // Shows or hides the label box for one answer, without rebuilding the screen.
   function refresh(path) {
+    refreshFollowUp(path);
     var box = $(idOf(path) + "-lab");
     if (!box) return;
     var a = S.get(state, path), st = S.status(a);
@@ -164,7 +191,7 @@
     var el = e.target, path = el.getAttribute("data-path");
     if (!path) return;
     var a = S.get(state, path);
-    if (el.classList.contains("ans")) a.text = el.value;
+    if (el.classList.contains("ans")) S.setText(state, path, el.value);
     else if (el.classList.contains("lab-radio")) a.label = el.value;
     else if (el.classList.contains("lab-note")) a.note = el.value;
     refresh(path);
@@ -185,10 +212,22 @@
     else if (act === "addItem") { S.addItem(state, list); render(idOf(list + "." + (state[list].length - 1))); }
     else if (act === "removeItem") { S.removeItem(state, list, i); render(); }
     else if (act === "goto") { go(+b.getAttribute("data-step"), b.getAttribute("data-focus")); }
+    else if (act === "skip") {
+      var path = b.getAttribute("data-path");
+      S.skip(state, path); refresh(path); save();
+      $(idOf(path)).focus();
+    }
   });
 
   $("back").addEventListener("click", function () { go(state.step - 1); });
-  $("next").addEventListener("click", function () { go(state.step + 1); });
+  // Next asks a follow-up for each missing required answer instead of moving on.
+  $("next").addEventListener("click", function () {
+    var m = S.ask(Q, state, state.step);
+    if (!m.length) { go(state.step + 1); return; }
+    m.forEach(refresh);
+    save();
+    $(idOf(m[0])).focus();
+  });
 
   var clearArmed = false;
   $("clear").addEventListener("click", function () {

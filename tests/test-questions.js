@@ -43,6 +43,9 @@ T.run("Questions (js/questions.js)", function (check) {
     Q.guardrail.indexOf(Q.labels.estimate.tag) > -1 && Q.guardrail.indexOf(Q.labels.unsupported.tag) > -1);
   check("Known and Reasonable estimate ask for a source note", !!Q.labels.known.noteLabel && !!Q.labels.estimate.noteLabel);
   check("ROI.bot link goes to ChatGPT", /^https:\/\/chatgpt\.com\//.test(Q.roiBotUrl));
+  check("missing-answer follow-ups: two lines each, for any answer and for the ZIP code",
+    [Q.followUps.missing, Q.followUps.missingZip].every(function (l) { return l.length === 2 && !!l[0] && !!l[1]; }));
+  check("Skip button and skipped flag have wording", !!Q.followUps.skipButton && !!Q.followUps.skipped);
   // Rule 2: example figures belong only in the examples list, never in a question's help.
   var helps = [];
   Q.sections.forEach(function (s) { helps.push(s.help || ""); (s.questions || []).forEach(function (q) { helps.push(q.help || ""); }); });

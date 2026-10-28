@@ -91,11 +91,21 @@ var FAC_QUESTIONS = {
     text: "Your answers are saved in this browser. Review and export are coming next."
   },
 
-  // Follow-up wording. Left blank for Steve (open questions 9 and 10).
+  // Follow-up wording. The blank ones are for Steve (open questions 9 and 10).
+  // missing and missingZip each have two lines: the first and second time the
+  // member presses Next with the answer still missing. Draft wording for Steve.
   followUps: {
-    missing: "",
+    missing: [
+      "This question is still blank. Please add an answer.",
+      "We still need this answer. If you don't have it, you can skip it, and it will be marked Unsupported."
+    ],
+    missingZip: [
+      "Please enter a 5-digit ZIP code.",
+      "We still need a 5-digit ZIP code. If you don't have it, you can skip it, and it will be marked Unsupported."
+    ],
+    skipButton: "Skip this question",
+    skipped: "Unsupported: skipped. Add an answer any time to clear this.",
     vague: "",
-    missingZip: "",
     outputNoNumber: "",
     outputNoYear: "",
     duplicateProgram: "",
