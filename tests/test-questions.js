@@ -54,6 +54,8 @@ T.run("Questions (js/questions.js)", function (check) {
   check("kept-output flag has wording", !!Q.followUps.keptOutput);
   check("duplicate follow-ups name the other {program}", [Q.followUps.duplicateName, Q.followUps.duplicateDescription].every(function (l) { return l.indexOf("{program}") > -1; }));
   check("These are separate programs button has wording", !!Q.followUps.separateButton);
+  check("shared-number follow-up names the {program} and the {number}", Q.followUps.overlap.indexOf("{program}") > -1 && Q.followUps.overlap.indexOf("{number}") > -1);
+  check("Different groups / Same group buttons and the noted line have wording", !!Q.followUps.overlapDifferent && !!Q.followUps.overlapSame && Q.followUps.overlapSameNote.indexOf("{program}") > -1);
   // Rule 2: example figures belong only in the examples list, never in a question's help.
   var helps = [];
   Q.sections.forEach(function (s) { helps.push(s.help || ""); (s.questions || []).forEach(function (q) { helps.push(q.help || ""); }); });

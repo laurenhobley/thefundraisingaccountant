@@ -69,6 +69,7 @@ input:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px
 .fu { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
 .fu-q { margin: 0; color: var(--danger); font-size: 14px; font-weight: 600; flex: 1 1 260px; }
 .fu-skip { padding: 6px 12px; font-size: 14px; }
+.skipped.noted { color: var(--accent); background: transparent; border-color: var(--accent); }
 .skipped { margin: 0; font-size: 13px; font-weight: 600; color: var(--mark); background: var(--mark-bg); border: 1px solid var(--mark); border-radius: 6px; padding: 6px 10px; }
 
 .item-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }

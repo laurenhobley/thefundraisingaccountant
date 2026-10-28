@@ -135,7 +135,11 @@ var FAC_QUESTIONS = {
     duplicateName: "{program} has the same name. Is this a separate program? If it is, give it a different name, or confirm below.",
     duplicateDescription: "{program} has the same description. Is this a separate program? If it is, describe what's different, or confirm below.",
     separateButton: "These are separate programs",
-    doubleCount: "",
+    // Draft for Steve. {program} is the earlier program, {number} the shared number.
+    overlap: "{program} also reports {number}. Is this the same group counted in both programs?",
+    overlapDifferent: "Different groups",
+    overlapSame: "Same group, both programs",
+    overlapSameNote: "Noted: {program} counts the same group. The finished prompt will tell ROI.bot not to add the two together.",
     ifNoSource: ""
   },
 

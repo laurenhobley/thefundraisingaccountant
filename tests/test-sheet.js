@@ -184,6 +184,41 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   S.setText(Q, dv, "programs.0.name", "TBD"); S.setText(Q, dv, "programs.1.name", "TBD");
   check("\"TBD\" in both: vague follow-up comes first", S.issueOf(Q, "programs.1.name", S.get(dv, "programs.1.name"), dv) === "vague");
 
+  // The same count in two programs.
+  function keys(t) { return S.numbersIn(t).map(function (n) { return n.key; }).join(); }
+  check("numbers found, years left out: 831 youth served in 2024", keys("831 youth served in 2024") === "831");
+  check("commas don't matter: 1,680 and 1680", keys("1,680 nights") === keys("1680 nights"));
+  check("numbers under 10 are left out: 2 locations, 5 staff", keys("2 locations and 5 staff") === "");
+  check("dollars are kept apart from counts: $831 vs 831", keys("$831 in goods") === "$831" && keys("$831 in goods") !== keys("831 children"));
+  check("fiscal years left out: FY24 meals 120", keys("FY24 meals 120") === "120");
+  var dc = S.blank(Q);
+  S.addProgram(Q, dc); S.addProgram(Q, dc);
+  S.setText(Q, dc, "programs.0.outputs", "831 youth received housing in 2024");
+  S.setText(Q, dc, "programs.1.outputs", "90 families in 2024");
+  S.setText(Q, dc, "programs.2.outputs", "831 children received counseling");
+  var o3 = "programs.2.outputs", a3 = S.get(dc, o3);
+  check("program 3 shares 831 with program 1", JSON.stringify(S.sharedCount(dc, o3)) === JSON.stringify({ value: "831", other: 0 }));
+  check("program 2 shares nothing", S.sharedCount(dc, "programs.1.outputs") === null);
+  check("the same year in two programs isn't a shared number", S.sharedCount(dc, "programs.1.outputs") === null && S.numbersIn("in 2024").length === 0);
+  check("no year comes first: output follow-up", S.issueOf(Q, o3, a3, dc) === "output");
+  S.ask(Q, dc, 3); S.ask(Q, dc, 3); S.skip(dc, o3);
+  check("kept with no year: still asked about the shared 831", S.issueOf(Q, o3, a3, dc) === "overlap" && a3.asks === 0);
+  check("end screen lists both: no year, then shares 831", S.problems(dc, Q).filter(function (p) { return p.path === o3; }).map(function (p) { return p.status; }).join().indexOf("outputNoYearKept,overlap") === 0);
+  S.resolveOverlap(dc, o3, "same");
+  check("can't answer before the follow-up is shown", a3.overlap === "");
+  S.ask(Q, dc, 3);
+  S.resolveOverlap(dc, o3, "same");
+  check("Same group, both programs: settled, no Unsupported added", a3.overlap === "same" && S.issueOf(Q, o3, a3, dc) === "");
+  check("saved for the export: 831 is the same group as program 1", JSON.stringify(S.sameGroups(dc)) === JSON.stringify([{ path: o3, value: "831", other: 0 }]));
+  S.setText(Q, dc, o3, "831 children received counseling in 2024");
+  check("editing the answer asks again", a3.overlap === "" && S.issueOf(Q, o3, a3, dc) === "overlap");
+  S.ask(Q, dc, 3);
+  S.resolveOverlap(dc, o3, "different");
+  check("Different groups: settled, not saved for the export", S.issueOf(Q, o3, a3, dc) === "" && S.sameGroups(dc).length === 0);
+  S.setText(Q, dc, "programs.0.outputs", "830 youth received housing in 2024");
+  S.setText(Q, dc, o3, "831 kids");
+  check("changing the earlier program's number clears it", S.sharedCount(dc, o3) === null);
+
   // Saving and loading, with a stand-in for the browser's storage.
   var store = {}, fake = { setItem: function (k, v) { store[k] = v; }, getItem: function (k) { return store[k] || null; }, removeItem: function (k) { delete store[k]; } };
   S.save(r, fake);

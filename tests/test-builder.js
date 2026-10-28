@@ -117,6 +117,20 @@ T.run("Builder screens (builder.html)", function (check) {
   check("its button says Keep my answer", $("f-programs-1-outputs-fu").querySelector(".fu-skip").textContent === F.keepButton);
   skip("f-programs-1-name"); skip("f-programs-1-description"); skip("f-programs-1-outputs");
   check("kept Outputs shows the missing-number-or-year flag", $("f-programs-1-outputs-skipped").textContent === F.keptOutput);
+
+  // ---------- The same count in two programs ----------
+  type("f-programs-1-outputs", "Served 414 families in 2024");
+  check("adding the year clears the kept flag", $("f-programs-1-outputs-skipped").hidden);
+  $("next").click();
+  check("shares 414 with Program 1: Next blocked with the follow-up", /Program 2 of 2/.test(title()) &&
+    fu("f-programs-1-outputs") === F.overlap.replace("{program}", "Program 1").replace("{number}", "414"));
+  var ofu = $("f-programs-1-outputs-fu");
+  check("two buttons: Different groups, Same group", !ofu.querySelector(".fu-skip").hidden && !ofu.querySelector(".fu-alt").hidden &&
+    ofu.querySelector(".fu-skip").textContent === F.overlapDifferent && ofu.querySelector(".fu-alt").textContent === F.overlapSame);
+  ofu.querySelector(".fu-alt").click();
+  check("Same group: follow-up gone, noted line shown", fu("f-programs-1-outputs") === "" &&
+    $("f-programs-1-outputs-skipped").textContent === F.overlapSameNote.replace("{program}", "Program 1") && $("f-programs-1-outputs-skipped").classList.contains("noted"));
+  check("saved for the export", FACSheet.sameGroups(FACSheet.load(FAC_QUESTIONS)).length === 1);
   $("next").click();
 
   // ---------- Optional sections and the end screen ----------
@@ -141,7 +155,7 @@ T.run("Builder screens (builder.html)", function (check) {
   check("end screen lists everything still needing attention, in sheet order", todo.join(" | ") ===
     "Location: City and state was skipped (Unsupported) | Mission Statement needs a label | " +
     "Program 2: Program Name was skipped (Unsupported) | Program 2: Description was skipped (Unsupported) | " +
-    "Program 2: Outputs has no year (Unsupported) | Program 2: Outputs is marked Unsupported | " +
+    "Program 2: Outputs is marked Unsupported | " +
     "Pain statement 1 is vague (Unsupported) | Pain statement 2 needs a label");
 
   document.querySelector('#screen .todo button[data-act="goto"]').click();

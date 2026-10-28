@@ -13,8 +13,9 @@ var FACSheet = (function () {
 
   function trim(s) { return String(s || "").replace(/^\s+|\s+$/g, ""); }
   // separate: the member confirmed this program is separate from an earlier
-  // one with the same name or description.
-  function answer() { return { text: "", label: "", note: "", asks: 0, skipped: false, separate: false }; }
+  // one with the same name or description. overlap: for a number shared with
+  // an earlier program's Outputs, "different" or "same" group.
+  function answer() { return { text: "", label: "", note: "", asks: 0, skipped: false, separate: false, overlap: "" }; }
 
   function section(Q, id) {
     for (var i = 0; i < Q.sections.length; i++) if (Q.sections[i].id === id) return Q.sections[i];
@@ -47,6 +48,7 @@ var FACSheet = (function () {
       if (from.asks === 1 || from.asks === 2) a.asks = from.asks;
       if (from.skipped === true) a.skipped = true;
       if (from.separate === true) a.separate = true;
+      if (from.overlap === "different" || from.overlap === "same") a.overlap = from.overlap;
     }
     return a;
   }
@@ -161,6 +163,46 @@ var FACSheet = (function () {
     return -1;
   }
 
+  // ---------- The same count in two programs ----------
+
+  // The numbers in an answer, leaving out years and anything under 10.
+  // Commas don't matter (1,680 = 1680). Dollars are only compared with
+  // dollars ($831 is not the same as 831 children).
+  function numbersIn(text) {
+    var t = String(text || "").replace(FY, " ").replace(YEAR, "$1 "), out = [], m;
+    var re = /(\$\s?)?(\d[\d,]*(?:\.\d+)?)/g;
+    while ((m = re.exec(t))) {
+      var digits = m[2].replace(/,+$/, ""), value = parseFloat(digits.replace(/,/g, ""));
+      if (value < 10) continue;
+      out.push({ key: (m[1] ? "$" : "") + value, shown: (m[1] ? "$" : "") + digits });
+    }
+    return out;
+  }
+
+  // For a program's Outputs, the first number it shares with an earlier
+  // program's Outputs, as { value, other }, or null.
+  function sharedCount(state, path) {
+    if (!isOutputs(path)) return null;
+    var n = +path.split(".")[1], mine = numbersIn(state.programs[n].outputs.text);
+    for (var j = 0; j < mine.length; j++)
+      for (var i = 0; i < n; i++) {
+        var theirs = numbersIn(state.programs[i].outputs.text);
+        for (var k = 0; k < theirs.length; k++) if (theirs[k].key === mine[j].key) return { value: mine[j].shown, other: i };
+      }
+    return null;
+  }
+
+  // Shared numbers the member said are the same group in both programs, so
+  // the export can tell ROI.bot not to add them together.
+  function sameGroups(state) {
+    var out = [];
+    for (var i = 0; i < state.programs.length; i++) {
+      var path = "programs." + i + ".outputs", s = state.programs[i].outputs.overlap === "same" && sharedCount(state, path);
+      if (s) out.push({ path: path, value: s.value, other: s.other });
+    }
+    return out;
+  }
+
   function isRequired(Q, path) {
     var p = path.split("."), sec = p[0] === "org" ? section(Q, "org") : p[0] === "programs" ? section(Q, "programs") : null;
     if (!sec) return false;
@@ -169,14 +211,26 @@ var FACSheet = (function () {
     return false;
   }
 
-  // What a follow-up would ask about: "missing", "vague", "output" (an
-  // Outputs answer with no number or no year), "duplicate" (same as an
-  // earlier program; needs state) or "" (nothing), in that order.
-  function issueOf(Q, path, a, state) {
+  // The answer's own problem: "missing", "vague", "output" (an Outputs answer
+  // with no number or no year) or "", in that order. Skip or Keep my answer
+  // settles it (a.skipped).
+  function baseIssue(Q, path, a) {
     if (isRequired(Q, path) && isMissing(path, a)) return "missing";
     if (vagueWord(Q, a.text)) return "vague";
     if (isOutputs(path) && trim(a.text) && outputGap(a.text)) return "output";
+    return "";
+  }
+
+  // The next unsettled problem a follow-up should ask about: the answer's
+  // own problem, then (with state) "duplicate" (same as an earlier program)
+  // and "overlap" (shares a number with an earlier program), or "".
+  // A kept answer still gets the duplicate and overlap checks.
+  function issueOf(Q, path, a, state) {
+    var base = baseIssue(Q, path, a);
+    if (base && !a.skipped) return base;
+    if (base === "missing") return "";
     if (state && !a.separate && duplicateOf(state, path) > -1) return "duplicate";
+    if (state && !a.overlap && sharedCount(state, path)) return "overlap";
     return "";
   }
 
@@ -190,14 +244,10 @@ var FACSheet = (function () {
     return out;
   }
 
-  // Answers on this screen that need a follow-up (missing or vague) and
-  // haven't been skipped or kept.
+  // Answers on this screen with an unsettled problem.
   function issues(Q, state, step) {
     var all = answersOn(state, step), out = [];
-    for (var i = 0; i < all.length; i++) {
-      var a = get(state, all[i]);
-      if (issueOf(Q, all[i], a, state) && !a.skipped) out.push(all[i]);
-    }
+    for (var i = 0; i < all.length; i++) if (issueOf(Q, all[i], get(state, all[i]), state)) out.push(all[i]);
     return out;
   }
 
@@ -234,9 +284,11 @@ var FACSheet = (function () {
   }
 
   function canSkip(a) { return a.asks >= MAX_ASKS; }
+  // Skipping (or keeping) starts the count again, so a later check on the
+  // same answer begins at its first follow-up.
   function skip(state, path) {
     var a = get(state, path);
-    if (canSkip(a)) a.skipped = true;
+    if (canSkip(a)) { a.skipped = true; a.asks = 0; }
   }
 
   // A matching program only needs one follow-up: the member can confirm
@@ -247,15 +299,23 @@ var FACSheet = (function () {
     if (canConfirmSeparate(a)) { a.separate = true; a.asks = 0; }
   }
 
-  // Stores typed text. Fixing the answer clears the skip and the follow-ups,
-  // and so does a different problem (a blank answer that becomes "TBD"
-  // starts again at the first follow-up). Any edit asks again whether a
-  // matching program is separate.
+  // A shared number also needs one follow-up. "different" (different groups)
+  // or "same" (same group, both programs; the export says not to add them).
+  function resolveOverlap(state, path, choice) {
+    var a = get(state, path);
+    if (a.asks >= 1 && (choice === "different" || choice === "same")) { a.overlap = choice; a.asks = 0; }
+  }
+
+  // Stores typed text. Fixing the answer clears the skip, and a different
+  // problem (a blank answer that becomes "TBD") starts again at the first
+  // follow-up. Any edit asks again about a matching program or shared number.
   function setText(Q, state, path, text) {
-    var a = get(state, path), before = issueOf(Q, path, a, state);
-    if (a.text !== text) a.separate = false;
+    var a = get(state, path), baseBefore = baseIssue(Q, path, a), before = issueOf(Q, path, a, state);
+    if (a.text !== text) { a.separate = false; a.overlap = ""; }
     a.text = text;
-    if (issueOf(Q, path, a, state) !== before || !before) { a.skipped = false; a.asks = 0; }
+    var base = baseIssue(Q, path, a), now = issueOf(Q, path, a, state);
+    if (base !== baseBefore || !base) a.skipped = false;
+    if (now !== before || !now) a.asks = 0;
   }
 
   function paths(state) {
@@ -296,9 +356,12 @@ var FACSheet = (function () {
     for (i = 0; i < all.length; i++) {
       var a = get(state, all[i]);
       if (req[all[i]] && isMissing(all[i], a)) { out.push({ path: all[i], status: a.skipped ? "skipped" : "blank" }); continue; }
-      if (Q && vagueWord(Q, a.text)) out.push({ path: all[i], status: a.skipped ? "keptVague" : "vague" });
-      else if (Q && issueOf(Q, all[i], a) === "output") out.push({ path: all[i], status: outputGap(a.text) + (a.skipped ? "Kept" : "") });
-      else if (Q && issueOf(Q, all[i], a, state) === "duplicate") out.push({ path: all[i], status: "duplicate", other: duplicateOf(state, all[i]) });
+      var base = Q ? baseIssue(Q, all[i], a) : "";
+      if (base === "vague") out.push({ path: all[i], status: a.skipped ? "keptVague" : "vague" });
+      else if (base === "output") out.push({ path: all[i], status: outputGap(a.text) + (a.skipped ? "Kept" : "") });
+      if (Q && !a.separate && duplicateOf(state, all[i]) > -1) out.push({ path: all[i], status: "duplicate", other: duplicateOf(state, all[i]) });
+      var shared = Q && !a.overlap && sharedCount(state, all[i]);
+      if (shared) out.push({ path: all[i], status: "overlap", other: shared.other, value: shared.value });
       if (!needsLabel(all[i])) continue;
       var st = status(a);
       if (st === "needsLabel" || st === "needsNote" || st === "unsupported") out.push({ path: all[i], status: st });
@@ -339,6 +402,7 @@ var FACSheet = (function () {
     vagueWord: vagueWord, isRequired: isRequired, issueOf: issueOf, answersOn: answersOn, issues: issues,
     hasYear: hasYear, hasCount: hasCount, outputGap: outputGap,
     same: same, duplicateOf: duplicateOf, canConfirmSeparate: canConfirmSeparate, confirmSeparate: confirmSeparate,
+    baseIssue: baseIssue, numbersIn: numbersIn, sharedCount: sharedCount, sameGroups: sameGroups, resolveOverlap: resolveOverlap,
     paths: paths, steps: steps, stepOf: stepOf, problems: problems,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear

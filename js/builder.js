@@ -34,6 +34,7 @@
     return '<div class="fu" id="' + id + '-fu" aria-live="polite" hidden>' +
       '<p class="fu-q"></p>' +
       '<button type="button" class="btn quiet fu-skip" data-act="skip" data-path="' + path + '" hidden></button>' +
+      '<button type="button" class="btn quiet fu-alt" data-act="alt" data-path="' + path + '" hidden></button>' +
       '</div>' +
       '<p class="skipped" id="' + id + '-skipped" hidden></p>';
   }
@@ -110,7 +111,8 @@
     var list = probs.length
       ? '<ul class="todo">' + probs.map(function (p) {
           return '<li><button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, p.path) + '" data-focus="' + idOf(p.path) + '">' +
-            esc(nameOf(p.path)) + '</button> ' + (p.status === "duplicate" ? "is the same as " + esc(programName(p.other)) : words[p.status]) + '</li>';
+            esc(nameOf(p.path)) + '</button> ' + (p.status === "duplicate" ? "is the same as " + esc(programName(p.other)) :
+              p.status === "overlap" ? "shares " + esc(p.value) + " with " + esc(programName(p.other)) : words[p.status]) + '</li>';
         }).join("") + '</ul>'
       : '<p>Every figure has a label and a source.</p>';
     return heading("✓", Q.endScreen.title) + '<p>' + esc(Q.endScreen.text) + '</p>' + list;
@@ -147,15 +149,27 @@
     var id = idOf(path), fu = $(id + "-fu");
     if (!fu) return;
     var F = Q.followUps, a = S.get(state, path), kind = S.issueOf(Q, path, a, state);
-    var open = !!kind && !a.skipped && a.asks > 0;
-    var flag = $(id + "-skipped");
+    var open = !!kind && a.asks > 0;
     fu.hidden = !open;
-    flag.hidden = !(kind && kind !== "duplicate" && a.skipped);
-    flag.textContent = kind === "vague" ? F.keptVague : kind === "output" ? F.keptOutput : F.skipped;
+
+    // The flag under the answer: kept as is (Unsupported), or a noted same group.
+    var flag = $(id + "-skipped"), base = S.baseIssue(Q, path, a), shared = S.sharedCount(state, path);
+    var noted = a.overlap === "same" && !!shared;
+    flag.hidden = !((a.skipped && base) || noted);
+    flag.classList.toggle("noted", noted && !(a.skipped && base));
+    flag.textContent = a.skipped && base ? (base === "vague" ? F.keptVague : base === "output" ? F.keptOutput : F.skipped)
+      : noted ? F.overlapSameNote.replace(/\{program\}/g, programName(shared.other)) : "";
+
     $(id).classList.toggle("invalid", open);
     if (!open) return;
-    var btn = fu.querySelector(".fu-skip"), text;
-    if (kind === "duplicate") {
+    var btn = fu.querySelector(".fu-skip"), alt = fu.querySelector(".fu-alt"), text;
+    alt.hidden = true;
+    if (kind === "overlap") {
+      text = F.overlap.replace(/\{program\}/g, programName(shared.other)).replace(/\{number\}/g, shared.value);
+      btn.textContent = F.overlapDifferent;
+      alt.textContent = F.overlapSame;
+      btn.hidden = alt.hidden = false;
+    } else if (kind === "duplicate") {
       text = (/\.name$/.test(path) ? F.duplicateName : F.duplicateDescription).replace(/\{program\}/g, programName(S.duplicateOf(state, path)));
       btn.textContent = F.separateButton;
       btn.hidden = !S.canConfirmSeparate(a);
@@ -230,10 +244,18 @@
     else if (act === "goto") { go(+b.getAttribute("data-step"), b.getAttribute("data-focus")); }
     else if (act === "skip") {
       var path = b.getAttribute("data-path");
-      if (S.issueOf(Q, path, S.get(state, path), state) === "duplicate") S.confirmSeparate(state, path);
+      var kind = S.issueOf(Q, path, S.get(state, path), state);
+      if (kind === "duplicate") S.confirmSeparate(state, path);
+      else if (kind === "overlap") S.resolveOverlap(state, path, "different");
       else S.skip(state, path);
       refresh(path); save();
       $(idOf(path)).focus();
+    }
+    else if (act === "alt") {
+      var p2 = b.getAttribute("data-path");
+      S.resolveOverlap(state, p2, "same");
+      refresh(p2); save();
+      $(idOf(p2)).focus();
     }
   });
 
