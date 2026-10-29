@@ -102,7 +102,9 @@
     return S.section(Q, p[0]).itemLabel + " " + (+p[1] + 1);
   }
 
-  function endScreen() {
+  // The last screen: what still needs attention, the finished prompt, and
+  // the "I reviewed this" lock on Copy and Download.
+  function reviewScreen() {
     var probs = S.problems(state, Q);
     var words = { needsLabel: "needs a label", needsNote: "needs a source note", unsupported: "is marked Unsupported",
       blank: "is still blank", skipped: "was skipped (Unsupported)", vague: "uses a vague word", keptVague: "is vague (Unsupported)",
@@ -116,8 +118,56 @@
             esc(nameOf(p.path)) + '</button> ' + (p.status === "duplicate" ? "is the same as " + esc(programName(p.other)) :
               p.status === "overlap" ? "shares " + esc(p.value) + " with " + esc(programName(p.other)) : words[p.status]) + '</li>';
         }).join("") + '</ul>'
-      : '<p>Every figure has a label and a source.</p>';
-    return heading("✓", Q.endScreen.title) + '<p>' + esc(Q.endScreen.text) + '</p>' + list;
+      : '<p>' + esc(Q.review.allClear) + '</p>';
+    var R = Q.review;
+    return heading("✓", R.title) + '<p>' + esc(R.text) + '</p>' + list +
+      '<div class="f"><span class="lbl">' + esc(R.previewTitle) + '</span><pre id="exportPreview"></pre></div>' +
+      '<label class="review-check"><input type="checkbox" id="reviewed"' + (state.reviewed ? " checked" : "") + '> ' + esc(R.checkbox) + '</label>' +
+      '<div class="actions">' +
+      '<button type="button" class="btn primary" id="copyPrompt" data-act="copy">' + esc(R.copyButton) + '</button>' +
+      '<button type="button" class="btn ghost" id="downloadPrompt" data-act="download">' + esc(R.downloadButton) + '</button>' +
+      '</div>' +
+      '<p id="exportMsg" aria-live="polite"></p>';
+  }
+
+  // Copy and Download stay locked until "I reviewed this" is ticked.
+  function refreshReview() {
+    var pre = $("exportPreview");
+    if (!pre) return;
+    pre.textContent = FACExport.build(Q, state);
+    $("reviewed").checked = state.reviewed;
+    $("copyPrompt").disabled = $("downloadPrompt").disabled = !state.reviewed;
+    if (!state.reviewed) say(Q.review.locked);
+  }
+  function say(text) { var m = $("exportMsg"); if (m) m.textContent = text; }
+
+  // Any change to the answers means the prompt changed: review it again.
+  function unreview() { state.reviewed = false; }
+
+  function copyPrompt() {
+    if (!state.reviewed) return;
+    var text = FACExport.build(Q, state);
+    function fallback() {
+      var range = document.createRange();
+      range.selectNodeContents($("exportPreview"));
+      var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      say(Q.review.selected);
+    }
+    try { navigator.clipboard.writeText(text).then(function () { say(Q.review.copied); }, fallback); }
+    catch (e) { fallback(); }
+  }
+
+  function downloadPrompt() {
+    if (!state.reviewed) return;
+    var url = URL.createObjectURL(new Blob([FACExport.build(Q, state)], { type: "text/plain;charset=utf-8" }));
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = FACExport.FILE_NAME;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    say(Q.review.downloaded);
   }
 
   function render(focusId) {
@@ -128,7 +178,7 @@
       st.kind === "org" ? orgScreen() :
       st.kind === "program" ? programScreen(st.index) :
       st.kind === "pain" ? listScreen("pain", "03") :
-      st.kind === "benchmarks" ? listScreen("benchmarks", "04") : endScreen();
+      st.kind === "benchmarks" ? listScreen("benchmarks", "04") : reviewScreen();
 
     Array.prototype.forEach.call(screen.querySelectorAll(".ans"), function (el) {
       el.value = S.get(state, el.getAttribute("data-path")).text;
@@ -138,6 +188,7 @@
     $("counter").textContent = "Step " + (state.step + 1) + " of " + steps.length;
     $("back").disabled = state.step === 0;
     $("next").hidden = state.step === steps.length - 1;
+    refreshReview();
     save();
 
     var target = focusId && $(focusId);
@@ -225,11 +276,12 @@
   screen.addEventListener("change", onEdit);
   function onEdit(e) {
     var el = e.target, path = el.getAttribute("data-path");
+    if (el.id === "reviewed") { state.reviewed = el.checked; refreshReview(); save(); return; }
     if (!path) return;
-    var a = S.get(state, path);
     if (el.classList.contains("ans")) S.setText(Q, state, path, el.value);
     else if (el.classList.contains("lab-radio")) S.setLabel(Q, state, path, el.value);
     else if (el.classList.contains("lab-note")) S.setNote(Q, state, path, el.value);
+    unreview();
     refresh(path);
     save();
   }
@@ -240,6 +292,10 @@
     var b = e.target.closest("button[data-act]");
     if (!b) return;
     var act = b.getAttribute("data-act"), i = +b.getAttribute("data-index"), list = b.getAttribute("data-list");
+    if (act === "copy") { copyPrompt(); return; }
+    if (act === "download") { downloadPrompt(); return; }
+    // Everything else below changes the answers, except going to a listed item.
+    if (act !== "goto" && !(act === "removeProgram" && armed !== b)) unreview();
     if (act === "addProgram") { go(1 + S.addProgram(Q, state)); }
     else if (act === "removeProgram") {
       if (armed !== b) { armed = b; b.textContent = "Click again to remove this program"; return; }

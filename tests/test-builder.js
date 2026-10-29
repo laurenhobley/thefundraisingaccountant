@@ -179,12 +179,26 @@ T.run("Builder screens (builder.html)", function (check) {
     "Program 2: Outputs is marked Unsupported | " +
     "Pain statement 1 is vague (Unsupported) | Pain statement 2 needs a label");
 
+  // ---------- Review and export ----------
+  var R = FAC_QUESTIONS.review;
+  check("review screen shows the finished prompt", $("exportPreview").textContent === FACExport.build(FAC_QUESTIONS, FACSheet.load(FAC_QUESTIONS)) &&
+    $("exportPreview").textContent.indexOf("Organization Info") === 0);
+  check("Copy and Download are locked until \"I reviewed this\" is ticked", $("copyPrompt").disabled && $("downloadPrompt").disabled && $("exportMsg").textContent === R.locked);
+  $("reviewed").click();
+  check("ticking it unlocks Copy and Download", !$("copyPrompt").disabled && !$("downloadPrompt").disabled && saved().reviewed === true);
+
   document.querySelector('#screen .todo button[data-act="goto"]').click();
   check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 6" && document.activeElement.id === "f-org-city");
+  check("jumping there doesn't clear the tick", saved().reviewed === true);
+  type("f-org-city", "Houston, TX");
+  check("changing an answer clears the tick", saved().reviewed === false);
 
   $("next").click(); $("next").click();
   act("removeProgram");
   check("Remove this program asks for a second click", saved().programs.length === 2);
   act("removeProgram");
   check("second click removes program 2", saved().programs.length === 1);
+  $("next").click(); $("next").click(); $("next").click();
+  check("back on the review screen: still unticked and locked", $("counter").textContent === "Step 5 of 5" && !$("reviewed").checked && $("copyPrompt").disabled);
+  check("the preview now shows the new city", $("exportPreview").textContent.indexOf("Location (include zip): Houston, TX 77001") > -1);
 });

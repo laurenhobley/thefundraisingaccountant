@@ -55,6 +55,11 @@ T.run("Questions (js/questions.js)", function (check) {
   check("duplicate follow-ups name the other {program}", [Q.followUps.duplicateName, Q.followUps.duplicateDescription].every(function (l) { return l.indexOf("{program}") > -1; }));
   check("These are separate programs button has wording", !!Q.followUps.separateButton);
   check("shared-number follow-up names the {program} and the {number}", Q.followUps.overlap.indexOf("{program}") > -1 && Q.followUps.overlap.indexOf("{number}") > -1);
+  check("review screen has its wording (checkbox, Copy, Download, messages)",
+    ["title", "text", "allClear", "previewTitle", "checkbox", "locked", "copyButton", "downloadButton", "copied", "selected", "downloaded"].every(function (k) { return !!Q.review[k]; }));
+  check("export uses FAC's \"Location (include zip)\" line", Q.exportText.location === "Location (include zip)");
+  check("export source note and same-group note have their slots",
+    Q.exportText.source.indexOf("{note}") > -1 && ["{program}", "{other}", "{number}"].every(function (k) { return Q.exportText.sameGroup.indexOf(k) > -1; }));
   check("calculation follow-ups: two lines, each quoting the {calc}", Q.followUps.mathWrong.length === 2 && Q.followUps.mathWrong.every(function (l) { return l.indexOf("{calc}") > -1; }));
   check("kept-calculation flag has wording", !!Q.followUps.keptMath);
   check("assumption words include \"if\"", Q.assumptionWords.indexOf("if") > -1);

@@ -87,10 +87,28 @@ var FAC_QUESTIONS = {
     unsupported: { name: "Unsupported", help: "Stays visibly flagged.", tag: "[Unsupported]" }
   },
 
-  // Last screen. Placeholder until the review and export stage is built.
-  endScreen: {
-    title: "You've reached the end of the sheet",
-    text: "Your answers are saved in this browser. Review and export are coming next."
+  // Last screen: review, then Copy or Download. Draft for Steve.
+  review: {
+    title: "Review your prompt",
+    text: "Check the list and the finished prompt below. When it looks right, tick the box to unlock Copy and Download, then paste the prompt into ROI.bot.",
+    allClear: "Every answer and figure is settled.",
+    previewTitle: "Your finished prompt",
+    checkbox: "I reviewed this",
+    locked: "Tick “I reviewed this” to unlock Copy and Download.",
+    copyButton: "Copy prompt",
+    downloadButton: "Download .txt",
+    copied: "Copied. Paste it into ROI.bot.",
+    selected: "The prompt is selected. Press Ctrl+C (or ⌘C) to copy it.",
+    downloaded: "Downloaded. Open the file and paste the prompt into ROI.bot."
+  },
+
+  // The finished prompt follows FAC's sheet, in plain text. Draft for Steve
+  // where it adds wording the sheet doesn't have.
+  exportText: {
+    location: "Location (include zip)",
+    source: "(source: {note})",
+    // {program} and {other} are e.g. "Program 2" and "Program 1".
+    sameGroup: "Note: {program} and {other} both report {number} for the same group. Do not add them together."
   },
 
   // Filler words that get a follow-up wherever they appear in an answer.

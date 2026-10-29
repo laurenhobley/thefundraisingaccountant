@@ -31,6 +31,7 @@ var FACSheet = (function () {
   function blank(Q) {
     return {
       step: 0,
+      reviewed: false,
       org: group(section(Q, "org").questions),
       programs: [group(section(Q, "programs").questions)],
       pain: [answer()],
@@ -76,6 +77,7 @@ var FACSheet = (function () {
       }
     }
     if (typeof data.step === "number" && data.step >= 0) s.step = data.step;
+    if (data.reviewed === true) s.reviewed = true;
     return s;
   }
 
