@@ -145,6 +145,13 @@ var FAC_QUESTIONS = {
     overlapDifferent: "Different groups",
     overlapSame: "Same group, both programs",
     overlapSameNote: "Noted: {program} counts the same group. The finished prompt will tell ROI.bot not to add the two together.",
+    // Draft for Steve. {calc} is the member's own calculation, quoted. The
+    // correct result is never shown: that would be a figure the member didn't type.
+    mathWrong: [
+      "Please check this calculation: “{calc}”. It doesn't come out to the result written.",
+      "This calculation still doesn't come out to the result written: “{calc}”. If you can't check it now, you can keep your answer, and it will be marked Unsupported."
+    ],
+    keptMath: "Unsupported: a calculation doesn't add up. Edit your answer any time to clear this.",
     // Draft for Steve. Settled with the label box, so there is no button.
     ifNoSource: [
       "This answer is based on an “if…” assumption. Where does the figure come from? Choose a label below and add the source, or mark it Unsupported.",

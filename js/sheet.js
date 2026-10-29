@@ -146,6 +146,90 @@ var FACSheet = (function () {
     return n && y ? "" : !n && !y ? "outputNoNumberOrYear" : !n ? "outputNoNumber" : "outputNoYear";
   }
 
+  // ---------- Arithmetic check ----------
+
+  // Checks only the member's own math. It never works out a figure to show.
+  // Tokens: a number ($ and commas allowed, % marks a percentage), an
+  // operator, "=" or "≈", a word, the end of a sentence, or anything else.
+  var MATH_TOKEN = /(\$?\s?\d[\d,]*(?:\.\d+)?%?)|([×*÷\/+\-−–])|([=≈~])|([A-Za-z][A-Za-z'’]*)|([.;:!?\n])|(\S)/g;
+
+  // Multiplying and dividing before adding and subtracting.
+  function evaluate(nums, ops) {
+    var n = [nums[0]], o = [];
+    for (var i = 0; i < ops.length; i++) {
+      var b = nums[i + 1];
+      if (ops[i] === "×" || ops[i] === "*") n[n.length - 1] *= b;
+      else if (ops[i] === "÷" || ops[i] === "/") n[n.length - 1] /= b;
+      else { o.push(ops[i]); n.push(b); }
+    }
+    var r = n[0];
+    for (var j = 0; j < o.length; j++) r = o[j] === "+" ? r + n[j + 1] : r - n[j + 1];
+    return r;
+  }
+
+  // The calculations written in an answer, like "414 clients × 90 days × $50
+  // = $1,863,000", each as { quote, ok }. Words may sit between the numbers.
+  // "$50/day" is "per day": "/" only divides when a number follows it. The
+  // result must match exactly, to as many decimals as are written. A
+  // calculation with a % in it is left alone.
+  function calculations(text) {
+    var t = String(text || ""), out = [], re = new RegExp(MATH_TOKEN.source, "g"), m;
+    var nums, ops, op, start, words, pct, want, skips;
+    function reset() { nums = []; ops = []; op = null; start = -1; words = 0; pct = false; want = false; skips = 0; }
+    // "$1.6 million" (or 1.6M, 2 thousand, 3K, 1 billion) counts as 1,600,000.
+    function scale(at) {
+      var w = /^\s*(million|billion|thousand|m|b|k)\b/i.exec(t.slice(at));
+      if (!w) return 1;
+      var s = w[1].toLowerCase();
+      return s === "thousand" || s === "k" ? 1e3 : s === "million" || s === "m" ? 1e6 : 1e9;
+    }
+    function val(s, at) { return parseFloat(s.replace(/[$,\s%]/g, "")) * scale(at); }
+    reset();
+    while ((m = re.exec(t))) {
+      if (want) {
+        // After "=": the next number is the written result. Skips "≈", "$" or bold marks.
+        if (m[1]) {
+          var written = m[1].replace(/,+$/, ""), end = m.index + written.length, x = scale(end);
+          if (!pct && written.indexOf("%") < 0) {
+            // Exact to the decimals written; a scaled result ("1.6 million") to the whole number.
+            var f = x > 1 ? 1 : Math.pow(10, (written.split(".")[1] || "").length);
+            var unit = x > 1 ? /^\s*\S+/.exec(t.slice(end))[0] : "";
+            out.push({
+              quote: t.slice(start, end + unit.length).replace(/^\s+/, ""),
+              ok: Math.abs(Math.round(evaluate(nums, ops) * f) / f - Math.round(val(written, end) * f) / f) < 1e-9
+            });
+          }
+          reset();
+        } else if (m[5] || ++skips > 3) reset();
+        continue;
+      }
+      if (m[1]) {
+        var at = m.index + m[1].length;
+        if (nums.length && op) { ops.push(op); nums.push(val(m[1], at)); op = null; }
+        else { reset(); start = m.index; nums.push(val(m[1], at)); }
+        if (m[1].indexOf("%") > -1) pct = true;
+        words = 0;
+      } else if (m[2] || (m[4] && /^x$/i.test(m[4]) && nums.length && !op)) {
+        var o = m[2] ? m[2].replace(/[\-−–]/, "-") : "×";
+        if (!nums.length || op) { reset(); continue; }
+        if (o === "/" && !/^\s*\$?\s?\d/.test(t.slice(m.index + 1))) { words++; continue; }
+        op = o === "x" ? "×" : o; words = 0;
+      } else if (m[3]) {
+        if (nums.length > 1 && !op) { want = true; skips = 0; } else reset();
+      } else if (m[4]) {
+        if (nums.length && ++words > 4) reset();
+      } else if (m[5]) reset();
+    }
+    return out;
+  }
+
+  // The first calculation in the answer that doesn't add up, quoted, or "".
+  function mathProblem(text) {
+    var c = calculations(text);
+    for (var i = 0; i < c.length; i++) if (!c[i].ok) return c[i].quote;
+    return "";
+  }
+
   // ---------- "If..." assumptions ----------
 
   // An answer with an assumption word ("if") and a figure (years don't
@@ -239,6 +323,7 @@ var FACSheet = (function () {
     if (isRequired(Q, path) && isMissing(path, a)) return "missing";
     if (vagueWord(Q, a.text)) return "vague";
     if (isOutputs(path) && trim(a.text) && outputGap(a.text)) return "output";
+    if (mathProblem(a.text)) return "math";
     return "";
   }
 
@@ -392,6 +477,7 @@ var FACSheet = (function () {
       var base = Q ? baseIssue(Q, all[i], a) : "";
       if (base === "vague") out.push({ path: all[i], status: a.skipped ? "keptVague" : "vague" });
       else if (base === "output") out.push({ path: all[i], status: outputGap(a.text) + (a.skipped ? "Kept" : "") });
+      else if (base === "math") out.push({ path: all[i], status: a.skipped ? "keptMath" : "math" });
       // An open "if..." assumption is listed once, instead of "needs a label".
       var assumed = Q && assumptionOpen(Q, all[i], a);
       if (assumed) out.push({ path: all[i], status: "assumption" });
@@ -440,6 +526,7 @@ var FACSheet = (function () {
     same: same, duplicateOf: duplicateOf, canConfirmSeparate: canConfirmSeparate, confirmSeparate: confirmSeparate,
     baseIssue: baseIssue, numbersIn: numbersIn, sharedCount: sharedCount, sameGroups: sameGroups, resolveOverlap: resolveOverlap,
     isAssumption: isAssumption, assumptionOpen: assumptionOpen, setLabel: setLabel, setNote: setNote,
+    calculations: calculations, mathProblem: mathProblem,
     paths: paths, steps: steps, stepOf: stepOf, problems: problems,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear

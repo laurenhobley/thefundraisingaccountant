@@ -219,6 +219,33 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   S.setText(Q, dc, o3, "831 kids");
   check("changing the earlier program's number clears it", S.sharedCount(dc, o3) === null);
 
+  // Arithmetic check: only the member's own calculations, results exact.
+  function calc(t) { return S.calculations(t).map(function (c) { return (c.ok ? "ok: " : "wrong: ") + c.quote; }).join(" | "); }
+  check("right: 300 clients × 60 days × $40 = $720,000", calc("300 clients × 60 days × $40 = $720,000") === "ok: 300 clients × 60 days × $40 = $720,000");
+  check("wrong, quoted as typed: … = ≈ $719,500", calc("300 clients × 60 days × $40 = ≈ $719,500") === "wrong: 300 clients × 60 days × $40 = ≈ $719,500");
+  check("words before the calculation aren't quoted", calc("If a stay costs $40/day, then 300 × 60 × $40 = $720,000") === "ok: 300 × 60 × $40 = $720,000");
+  check("\"x\" counts as times: 2,150 x $100 = $215,000", calc("2,150 x $100 = $215,000").indexOf("ok:") === 0);
+  check("\"$1.2 million\" means 1,200,000", calc("150 units × $8,000 = $1.2 million") === "ok: 150 units × $8,000 = $1.2 million");
+  check("\"$1.1 million\" is wrong for 150 × $8,000", calc("150 units × $8,000 = $1.1 million").indexOf("wrong:") === 0);
+  check("times before plus: 1,000 + 250 × 2 = 1,500", calc("1,000 + 250 × 2 = 1,500").indexOf("ok:") === 0 && calc("1,000 + 250 × 2 = 2,500").indexOf("wrong:") === 0);
+  check("exact to the decimals written: 10 ÷ 3 = 3.33 and = 3.3", calc("10 ÷ 3 = 3.33").indexOf("ok:") === 0 && calc("10 ÷ 3 = 3.3").indexOf("ok:") === 0);
+  check("exact only: 300 × 60 × $40 = $700,000 is wrong", calc("300 × 60 × $40 = $700,000").indexOf("wrong:") === 0);
+  check("\"$40/day\" is per day, not a division", calc("$40/day for 60 days = $2,400") === "");
+  check("calculations with a % are left alone", calc("20% × 500 = 100") === "");
+  check("bold marks around the result are fine: = **$6,000**", calc("1,200 meals × $5 = **$6,000**").indexOf("ok:") === 0);
+  check("a year before the calculation is ignored", calc("In 2024, 300 × $10 = $3,000") === "ok: 300 × $10 = $3,000");
+  check("the first wrong one is the one quoted", S.mathProblem("12 × $5 = $60. 7 × $9 = $62.") === "7 × $9 = $62");
+  var mt = S.blank(Q), mp = "pain.0", ma = S.get(mt, mp);
+  S.setText(Q, mt, mp, "We house 300 × 60 nights × $40 = $719,500");
+  check("wrong calculation: follow-up", S.issueOf(Q, mp, ma, mt) === "math");
+  check("the quote never contains the correct result", S.mathProblem(ma.text).indexOf("720,000") === -1);
+  S.ask(Q, mt, 2); S.ask(Q, mt, 2); S.skip(mt, mp);
+  check("kept: listed as a calculation that doesn't add up (Unsupported)", S.problems(mt, Q).some(function (p) { return p.path === mp && p.status === "keptMath"; }));
+  S.setText(Q, mt, mp, "We house 300 × 60 nights × $40 = $720,000");
+  check("corrected: flag cleared", !ma.skipped && S.issueOf(Q, mp, ma, mt) === "");
+  S.setText(Q, mt, mp, "TBD: 3 × 4 = 13");
+  check("\"TBD\" comes first: vague follow-up", S.issueOf(Q, mp, ma, mt) === "vague");
+
   // "If..." assumptions with no source.
   function assumed(path, text) { return S.isAssumption(Q, path, { text: text }); }
   check("\"If a stay costs $50/day, then 414 × 90 × $50\" is an assumption", assumed("pain.0", "If a stay costs $50/day, then 414 × 90 × $50"));

@@ -160,6 +160,15 @@ T.run("Builder screens (builder.html)", function (check) {
   check("Reasonable estimate without a source: follow-up stays", fu("f-benchmarks-0") === F.ifNoSource[1]);
   type("f-benchmarks-0-note", "County housing authority, 2024");
   check("source added: follow-up gone", fu("f-benchmarks-0") === "");
+
+  // ---------- Arithmetic check ----------
+  type("f-benchmarks-0", "If a voucher costs $8,000 a year, then 200 units × $8,000 = $1,500,000");
+  $("next").click();
+  check("wrong calculation: Next blocked, follow-up quotes it", /Benchmarks/.test(title()) &&
+    fu("f-benchmarks-0") === F.mathWrong[0].replace("{calc}", "200 units × $8,000 = $1,500,000"));
+  check("the follow-up never shows the correct result", fu("f-benchmarks-0").indexOf("1,600,000") === -1);
+  type("f-benchmarks-0", "If a voucher costs $8,000 a year, then 200 units × $8,000 = $1,600,000");
+  check("corrected: follow-up gone", fu("f-benchmarks-0") === "");
   $("next").click();
 
   check("end screen is last: Next is hidden", $("next").hidden && $("counter").textContent === "Step 6 of 6");

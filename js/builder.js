@@ -108,6 +108,7 @@
       blank: "is still blank", skipped: "was skipped (Unsupported)", vague: "uses a vague word", keptVague: "is vague (Unsupported)",
       outputNoNumber: "has no number", outputNoYear: "has no year", outputNoNumberOrYear: "has no number or year",
       assumption: "is an “if” assumption with no source",
+      math: "has a calculation that doesn't add up", keptMath: "has a calculation that doesn't add up (Unsupported)",
       outputNoNumberKept: "has no number (Unsupported)", outputNoYearKept: "has no year (Unsupported)", outputNoNumberOrYearKept: "has no number or year (Unsupported)" };
     var list = probs.length
       ? '<ul class="todo">' + probs.map(function (p) {
@@ -158,7 +159,7 @@
     var noted = a.overlap === "same" && !!shared;
     flag.hidden = !((a.skipped && base) || noted);
     flag.classList.toggle("noted", noted && !(a.skipped && base));
-    flag.textContent = a.skipped && base ? (base === "vague" ? F.keptVague : base === "output" ? F.keptOutput : F.skipped)
+    flag.textContent = a.skipped && base ? (base === "vague" ? F.keptVague : base === "output" ? F.keptOutput : base === "math" ? F.keptMath : F.skipped)
       : noted ? F.overlapSameNote.replace(/\{program\}/g, programName(shared.other)) : "";
 
     $(id).classList.toggle("invalid", open);
@@ -179,8 +180,8 @@
       btn.textContent = F.separateButton;
       btn.hidden = !S.canConfirmSeparate(a);
     } else {
-      var lines = kind === "vague" ? F.vague : kind === "output" ? F[S.outputGap(a.text)] : path === "org.zip" ? F.missingZip : F.missing;
-      text = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text));
+      var lines = kind === "vague" ? F.vague : kind === "output" ? F[S.outputGap(a.text)] : kind === "math" ? F.mathWrong : path === "org.zip" ? F.missingZip : F.missing;
+      text = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text)).replace(/\{calc\}/g, function () { return S.mathProblem(a.text); });
       btn.textContent = kind === "missing" ? F.skipButton : F.keepButton;
       btn.hidden = !S.canSkip(a);
     }

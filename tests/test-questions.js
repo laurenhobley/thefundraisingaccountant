@@ -55,6 +55,8 @@ T.run("Questions (js/questions.js)", function (check) {
   check("duplicate follow-ups name the other {program}", [Q.followUps.duplicateName, Q.followUps.duplicateDescription].every(function (l) { return l.indexOf("{program}") > -1; }));
   check("These are separate programs button has wording", !!Q.followUps.separateButton);
   check("shared-number follow-up names the {program} and the {number}", Q.followUps.overlap.indexOf("{program}") > -1 && Q.followUps.overlap.indexOf("{number}") > -1);
+  check("calculation follow-ups: two lines, each quoting the {calc}", Q.followUps.mathWrong.length === 2 && Q.followUps.mathWrong.every(function (l) { return l.indexOf("{calc}") > -1; }));
+  check("kept-calculation flag has wording", !!Q.followUps.keptMath);
   check("assumption words include \"if\"", Q.assumptionWords.indexOf("if") > -1);
   check("\"if…\" follow-ups: two lines", Q.followUps.ifNoSource.length === 2 && !!Q.followUps.ifNoSource[0] && !!Q.followUps.ifNoSource[1]);
   check("Different groups / Same group buttons and the noted line have wording", !!Q.followUps.overlapDifferent && !!Q.followUps.overlapSame && Q.followUps.overlapSameNote.indexOf("{program}") > -1);
