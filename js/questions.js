@@ -22,17 +22,18 @@ var FAC_QUESTIONS = {
   // Link from FAC's sheet. Waiting on Steve to confirm (open question 13).
   roiBotUrl: "https://chatgpt.com/g/g-68c9c810e72481919f05f0c6964dc678-fundraising-accountant-roi-impact-statements-gpt",
 
+  // Help under each question is draft wording for Steve (added 2026-10-28).
   sections: [
     {
       id: "org",
       title: "Organization Info",
       questions: [
-        { id: "name", label: "Name", kind: "text", required: true, help: "" },
-        { id: "city", label: "Location: City and state", kind: "text", required: true, help: "" },
-        { id: "zip", label: "Location: ZIP code", kind: "zip", required: true, help: "" },
-        { id: "website", label: "Website", kind: "url", required: true, help: "" },
-        { id: "mission", label: "Mission Statement", kind: "long", required: true, help: "" },
-        { id: "keywords", label: "Key Words", kind: "text", required: true, help: "" }
+        { id: "name", label: "Name", kind: "text", required: true, help: "Your organization's name, as donors know it." },
+        { id: "city", label: "Location: City and state", kind: "text", required: true, help: "Where you do most of your work. ROI.bot uses your location to find local and state figures." },
+        { id: "zip", label: "Location: ZIP code", kind: "zip", required: true, help: "The ZIP code of your main office." },
+        { id: "website", label: "Website", kind: "url", required: true, help: "Your main web address." },
+        { id: "mission", label: "Mission Statement", kind: "long", required: true, help: "Your mission statement, as you share it with donors." },
+        { id: "keywords", label: "Key Words", kind: "text", required: true, help: "A few words about your work, separated by commas." }
       ]
     },
     {
@@ -43,10 +44,10 @@ var FAC_QUESTIONS = {
       itemLabel: "Program",
       addLabel: "Add another program",
       questions: [
-        { id: "name", label: "Program Name", kind: "text", required: true, help: "" },
-        { id: "description", label: "Description", kind: "long", required: true, help: "" },
-        { id: "outputs", label: "Outputs", kind: "long", required: true, help: "" },
-        { id: "impact", label: "Current Impact Statement", note: "(if any)", kind: "long", required: false, help: "" }
+        { id: "name", label: "Program Name", kind: "text", required: true, help: "Start with your most important program. You can add more after this one." },
+        { id: "description", label: "Description", kind: "long", required: true, help: "What the program does and who it serves, in a sentence or two." },
+        { id: "outputs", label: "Outputs", kind: "long", required: true, help: "What the program delivered: how many, of what, and in which year." },
+        { id: "impact", label: "Current Impact Statement", note: "(if any)", kind: "long", required: false, help: "A short statement you already use about this program's impact. Leave it blank if you don't have one." }
       ]
     },
     {
@@ -57,7 +58,7 @@ var FAC_QUESTIONS = {
       kind: "list",
       itemLabel: "Pain statement",
       addLabel: "Add another pain statement",
-      help: "",
+      help: "Local facts that show the need, such as funding you lost or people you couldn't serve. Add where each figure comes from.",
       examples: [
         "We lost 800,000 in government funding, 1,680 people were denied shelter due to lack of space.",
         "In [STATE], 1 in 5 families experience housing instability each year."
@@ -71,7 +72,7 @@ var FAC_QUESTIONS = {
       kind: "list",
       itemLabel: "Benchmark",
       addLabel: "Add another benchmark",
-      help: "",
+      help: "Costs or values from a trusted source that help put a dollar value on your work. Add the source for each one.",
       examples: [
         "The average annual cost to shelter a homeless is $18,000–$25,000.",
         "Stable housing reduces social costs (shelters, ER visits, policing) by 30–50%."

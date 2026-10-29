@@ -1,0 +1,24 @@
+MADE-UP TEST ORGANIZATION. Not a real organization; every figure is made up.
+Planted flaws: the same 620 guests counted in two programs; a calculation that doesn't add up.
+
+Organization Info
+Name: Harbor Light Shelter
+Location (include zip): Port Jensen, ME 04999
+Website: https://example.org/harbor
+Mission Statement: Safe shelter and a warm meal for anyone without a home.
+Key Words: shelter, homelessness, meals
+
+Programs (in order of priority)
+1. Program Name: Emergency Beds
+   * Description: Overnight beds for adults
+   * Outputs: 620 guests sheltered in 2024
+   * Current Impact Statement (if any):
+2. Program Name: Hot Meals
+   * Description: Two hot meals a day for shelter guests
+   * Outputs: 620 guests received meals in 2024
+   * Current Impact Statement (if any):
+
+Pain Statements/Local Context (optional)
+* 620 guests × 30 nights × $45 = $830,000 in shelter costs
+
+Benchmarks (optional)

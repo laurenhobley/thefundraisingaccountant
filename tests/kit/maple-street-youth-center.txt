@@ -1,0 +1,24 @@
+MADE-UP TEST ORGANIZATION. Not a real organization; every figure is made up.
+Planted flaws: no ZIP code; two programs with the same name.
+
+Organization Info
+Name: Maple Street Youth Center
+Location (include zip): Maple Falls, OH
+Website: https://example.org/maple
+Mission Statement: We give young people a safe place to learn and grow after school.
+Key Words: youth, after-school, mentoring
+
+Programs (in order of priority)
+1. Program Name: After-School Club
+   * Description: Homework help and snacks for middle schoolers
+   * Outputs: 260 students served in 2024
+   * Current Impact Statement (if any):
+2. Program Name: After-School Club
+   * Description: Weekend sports for teens
+   * Outputs: 140 teens took part in 2024
+   * Current Impact Statement (if any):
+
+Pain Statements/Local Context (optional)
+* We lost $95,000 in city funding in 2024, so 80 students are on our waiting list.
+
+Benchmarks (optional)

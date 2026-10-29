@@ -69,4 +69,6 @@ T.run("Questions (js/questions.js)", function (check) {
   var helps = [];
   Q.sections.forEach(function (s) { helps.push(s.help || ""); (s.questions || []).forEach(function (q) { helps.push(q.help || ""); }); });
   check("no help text contains a number", helps.every(function (h) { return !/\d/.test(h); }));
+  check("every question and optional section has help text",
+    Q.sections.every(function (s) { return s.questions ? s.questions.every(function (q) { return !!q.help; }) : !!s.help; }));
 });

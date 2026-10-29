@@ -1,0 +1,20 @@
+MADE-UP TEST ORGANIZATION. Not a real organization; every figure is made up.
+Planted flaws: a "TBD" mission statement; an output with no year; an "if" figure with no source.
+
+Organization Info
+Name: Prairie Health Clinic
+Location (include zip): Dune City, KS 67999
+Website: https://example.org/prairie
+Mission Statement: TBD
+Key Words: health care, rural, free clinic
+
+Programs (in order of priority)
+1. Program Name: Mobile Clinic
+   * Description: Free checkups in small rural towns
+   * Outputs: 1,150 checkups
+   * Current Impact Statement (if any): Fewer emergency room visits
+
+Pain Statements/Local Context (optional)
+
+Benchmarks (optional)
+* If an emergency room visit costs $1,200, our checkups save $1,380,000 a year
