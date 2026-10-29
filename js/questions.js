@@ -22,6 +22,23 @@ var FAC_QUESTIONS = {
   // Link from FAC's sheet. Waiting on Steve to confirm (open question 13).
   roiBotUrl: "https://chatgpt.com/g/g-68c9c810e72481919f05f0c6964dc678-fundraising-accountant-roi-impact-statements-gpt",
 
+  // The "how to use" page (help.html) and the link to it. Draft for Steve.
+  howTo: {
+    linkText: "New here? Read how to use this page.",
+    title: "How to use the ROI.bot prompt builder",
+    intro: "This page walks you through FAC's ROI.bot prompt sheet, then gives you one finished prompt to paste into ROI.bot.",
+    steps: [
+      "Gather what you need: your mission statement, your programs in order of priority, and what each program delivered, with numbers and the year.",
+      "Answer one section at a time and press Next. Your answers are saved in this browser, so you can stop and come back later.",
+      "If a question appears under an answer, it's asking for something ROI.bot needs, such as a year or a source. Fix the answer, or keep it as it is and it will be marked Unsupported.",
+      "Whenever an answer includes a number, say where it comes from: Known (add the source), Reasonable estimate (say how you got it) or Unsupported.",
+      "On the last screen, read your finished prompt. Tick “I reviewed this”, then copy it or download it.",
+      "Open ROI.bot and paste the prompt in."
+    ],
+    privacy: "Nothing you type is sent anywhere. Your answers stay in this browser until you copy or download them.",
+    back: "Back to the prompt builder"
+  },
+
   // Help under each question is draft wording for Steve (added 2026-10-28).
   sections: [
     {

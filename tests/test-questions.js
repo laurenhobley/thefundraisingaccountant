@@ -69,6 +69,9 @@ T.run("Questions (js/questions.js)", function (check) {
   var helps = [];
   Q.sections.forEach(function (s) { helps.push(s.help || ""); (s.questions || []).forEach(function (q) { helps.push(q.help || ""); }); });
   check("no help text contains a number", helps.every(function (h) { return !/\d/.test(h); }));
+  check("the how-to page has its wording: title, intro, steps, privacy note, back link",
+    ["linkText", "title", "intro", "privacy", "back"].every(function (k) { return !!Q.howTo[k]; }) && Q.howTo.steps.length > 0);
+  check("the how-to page has no numbers in it", !/\d/.test([Q.howTo.linkText, Q.howTo.title, Q.howTo.intro, Q.howTo.privacy, Q.howTo.back].concat(Q.howTo.steps).join(" ")));
   check("every question and optional section has help text",
     Q.sections.every(function (s) { return s.questions ? s.questions.every(function (q) { return !!q.help; }) : !!s.help; }));
 });

@@ -339,5 +339,6 @@
   });
 
   $("intro").textContent = Q.intro;
+  if ($("howToLink")) $("howToLink").textContent = Q.howTo.linkText;
   render();
 })();

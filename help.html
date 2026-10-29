@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How to Use</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- The wording comes from js/questions.js (howTo), like every other word members read. -->
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Fundraising toolkit · ROI.bot Prompt Builder</div>
+    <h1 id="title"></h1>
+    <p id="intro"></p>
+  </header>
+  <div id="screen">
+    <ol class="howto" id="steps"></ol>
+    <p class="hint" id="privacy"></p>
+  </div>
+  <p><a id="back" href="builder.html"></a></p>
+</div>
+
+<script src="js/questions.js"></script>
+<script>
+(function () {
+  var H = FAC_QUESTIONS.howTo;
+  document.getElementById("title").textContent = H.title;
+  document.getElementById("intro").textContent = H.intro;
+  document.getElementById("privacy").textContent = H.privacy;
+  document.getElementById("back").textContent = H.back;
+  var list = document.getElementById("steps");
+  H.steps.forEach(function (s) { var li = document.createElement("li"); li.textContent = s; list.appendChild(li); });
+})();
+</script>
+</body>
+</html>
