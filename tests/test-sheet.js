@@ -8,7 +8,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("blank sheet starts with 1 program", s.programs.length === 1);
   check("blank sheet has every Organization Info question", ["name", "city", "zip", "website", "mission", "keywords"].every(function (id) { return !!s.org[id]; }));
   check("blank sheet has no numbers in it", S.problems(s).length === 0);
-  check("screens: Organization, 1 program, Pain Statements, Benchmarks, end", S.steps(s).length === 5);
+  check("screens: Organization, 1 program, check, Pain Statements, Benchmarks, check, Constraints, check, review", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,check:programs,pain,benchmarks,check:benchmarks,constraints,check:constraints,end");
 
   var out = S.get(s, "programs.0.outputs");
   out.text = "Served 414 families in 2024";
@@ -30,9 +30,9 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   var n = S.addProgram(Q, s);
   check("Add program gives program 2", n === 1 && s.programs.length === 2);
-  check("6 screens with 2 programs", S.steps(s).length === 6);
+  check("10 screens with 2 programs", S.steps(s).length === 10);
   check("program 2 is on screen 3", S.stepOf(s, "programs.1.name") === 2);
-  check("Pain Statements on screen 4, Benchmarks on screen 5", S.stepOf(s, "pain.0") === 3 && S.stepOf(s, "benchmarks.0") === 4);
+  check("with 2 programs: check on screen 4, Pain on 5, Benchmarks on 6, Constraints on 8", S.steps(s)[3].of === "programs" && S.stepOf(s, "pain.0") === 4 && S.stepOf(s, "benchmarks.0") === 5 && S.stepOf(s, "constraints.tone") === 7);
   S.removeProgram(s, 1); S.removeProgram(s, 0);
   check("the last program can't be removed", s.programs.length === 1);
 
@@ -60,7 +60,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("blank Organization Info: all 6 required answers missing", S.missing(Q, m, 0).join() === "org.name,org.city,org.zip,org.website,org.mission,org.keywords");
   check("blank program: Program Name, Description, Outputs missing (not Current Impact Statement)",
     S.missing(Q, m, 1).join() === "programs.0.name,programs.0.description,programs.0.outputs");
-  check("Pain Statements and Benchmarks never block Next", S.missing(Q, m, 2).length === 0 && S.missing(Q, m, 3).length === 0);
+  check("Pain Statements and Benchmarks never block Next", S.missing(Q, m, S.stepOf(m, "pain.0")).length === 0 && S.missing(Q, m, S.stepOf(m, "benchmarks.0")).length === 0);
   S.setText(Q, m,"org.name", "   ");
   check("an answer of only spaces counts as missing", S.missing(Q, m, 0).indexOf("org.name") > -1);
   S.setText(Q, m,"org.zip", "7700");
@@ -97,15 +97,15 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   S.setText(Q, v, "programs.0.outputs", "TBD");
   S.setText(Q, v, "pain.0", "Various cuts");
   check("required answer \"TBD\" is vague, not missing", S.issueOf(Q, "programs.0.outputs", S.get(v, "programs.0.outputs")) === "vague");
-  check("optional answers are checked too", S.issues(Q, v, 2).join() === "pain.0");
+  check("optional answers are checked too", S.issues(Q, v, S.stepOf(v, "pain.0")).join() === "pain.0");
   check("blank optional answer needs no follow-up", S.issueOf(Q, "benchmarks.0", S.get(v, "benchmarks.0")) === "");
   check("Next on a program counts vague and missing together",
     S.issues(Q, v, 1).join() === "programs.0.name,programs.0.description,programs.0.outputs");
   var pain = S.get(v, "pain.0");
-  S.ask(Q, v, 2); S.ask(Q, v, 2);
+  S.ask(Q, v, S.stepOf(v, "pain.0")); S.ask(Q, v, S.stepOf(v, "pain.0"));
   check("two follow-ups, then Keep my answer is allowed", pain.asks === 2 && S.canSkip(pain));
   S.skip(v, "pain.0");
-  check("kept vague answer no longer blocks Next, and its text stays", S.issues(Q, v, 2).length === 0 && pain.text === "Various cuts");
+  check("kept vague answer no longer blocks Next, and its text stays", S.issues(Q, v, S.stepOf(v, "pain.0")).length === 0 && pain.text === "Various cuts");
   check("end screen list shows it as kept vague", S.problems(v, Q).some(function (p) { return p.path === "pain.0" && p.status === "keptVague"; }));
   S.setText(Q, v, "pain.0", "Various state cuts");
   check("still vague after an edit: stays kept", pain.skipped);
@@ -239,7 +239,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   S.setText(Q, mt, mp, "We house 300 × 60 nights × $40 = $719,500");
   check("wrong calculation: follow-up", S.issueOf(Q, mp, ma, mt) === "math");
   check("the quote never contains the correct result", S.mathProblem(ma.text).indexOf("720,000") === -1);
-  S.ask(Q, mt, 2); S.ask(Q, mt, 2); S.skip(mt, mp);
+  S.ask(Q, mt, S.stepOf(mt, "pain.0")); S.ask(Q, mt, S.stepOf(mt, "pain.0")); S.skip(mt, mp);
   check("kept: listed as a calculation that doesn't add up (Unsupported)", S.problems(mt, Q).some(function (p) { return p.path === mp && p.status === "keptMath"; }));
   S.setText(Q, mt, mp, "We house 300 × 60 nights × $40 = $720,000");
   check("corrected: flag cleared", !ma.skipped && S.issueOf(Q, mp, ma, mt) === "");
@@ -257,9 +257,9 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   var as = S.blank(Q), ap = "benchmarks.0", aa = S.get(as, ap);
   S.setText(Q, as, ap, "If a voucher costs $8,000 a year, 200 units cost $1,600,000");
   check("no label yet: assumption follow-up", S.issueOf(Q, ap, aa, as) === "assumption");
-  check("it blocks Next on its screen", S.issues(Q, as, 3).join() === ap);
+  check("it blocks Next on its screen", S.issues(Q, as, S.stepOf(as, "benchmarks.0")).join() === ap);
   check("end screen lists it once, not also as \"needs a label\"", S.problems(as, Q).filter(function (p) { return p.path === ap; }).map(function (p) { return p.status; }).join() === "assumption");
-  S.ask(Q, as, 3);
+  S.ask(Q, as, S.stepOf(as, "benchmarks.0"));
   S.setLabel(Q, as, ap, "estimate");
   check("Reasonable estimate with no source: still open, follow-up count kept", S.issueOf(Q, ap, aa, as) === "assumption" && aa.asks === 1);
   S.setNote(Q, as, ap, "County housing authority, 2024");
@@ -269,6 +269,27 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("Unsupported settles it, and stays flagged", S.issueOf(Q, ap, aa, as) === "" && S.problems(as, Q).some(function (p) { return p.path === ap && p.status === "unsupported"; }));
   S.setText(Q, as, ap, "TBD if 50 units");
   check("\"TBD\" comes first: vague follow-up", S.issueOf(Q, ap, aa, as) === "vague");
+
+  // Step 1.4 Constraints: tone, length, format, audience. All optional.
+  var cs = S.blank(Q);
+  check("a blank sheet has the four constraints", ["tone", "length", "format", "audience"].every(function (id) { return !!cs.constraints[id]; }));
+  check("blank constraints never block Next", S.issues(Q, cs, S.stepOf(cs, "constraints.tone")).length === 0);
+  S.setText(Q, cs, "constraints.length", "About 300 words");
+  check("a number in a constraint needs no label (it's an instruction, not a figure)", !S.needsLabel("constraints.length") &&
+    S.problems(cs, Q).every(function (p) { return p.path !== "constraints.length"; }));
+  S.setText(Q, cs, "constraints.tone", "TBD");
+  check("\"TBD\" as a tone still gets the vague follow-up", S.issueOf(Q, "constraints.tone", S.get(cs, "constraints.tone"), cs) === "vague");
+  check("the checkpoint screens have no answers to check", S.issues(Q, cs, S.stepOf(cs, "benchmarks.0") + 1).length === 0);
+
+  // The flowchart's "Prompt history": versions kept in the browser.
+  var vs = S.blank(Q);
+  S.addVersion(vs, "first prompt", "Nov 4");
+  S.addVersion(vs, "first prompt", "Nov 4");
+  check("the same prompt twice is kept once", vs.versions.length === 1 && vs.versions[0].n === 1);
+  S.addVersion(vs, "second prompt", "Nov 5");
+  check("a changed prompt is kept as version 2", vs.versions.length === 2 && vs.versions[1].n === 2 && vs.versions[1].text === "second prompt");
+  var rv = S.repair(Q, { constraints: { tone: { text: "warm" } }, versions: [{ n: 1, at: "Nov 4", text: "x" }, { n: "two" }, null] });
+  check("old draft: constraints and good versions kept, bad ones dropped", rv.constraints.tone.text === "warm" && rv.versions.length === 1);
 
   // Saving and loading, with a stand-in for the browser's storage.
   var store = {}, fake = { setItem: function (k, v) { store[k] = v; }, getItem: function (k) { return store[k] || null; }, removeItem: function (k) { delete store[k]; } };

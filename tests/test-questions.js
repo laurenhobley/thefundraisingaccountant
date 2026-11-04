@@ -20,7 +20,15 @@ T.run("Questions (js/questions.js)", function (check) {
   };
   function labels(id) { return S.section(Q, id).questions.map(function (q) { return q.label; }).join(", "); }
 
-  check("4 sections in sheet order", Q.sections.map(function (s) { return s.id; }).join(",") === "org,programs,pain,benchmarks");
+  check("5 sections: FAC's sheet, then the flowchart's Constraints", Q.sections.map(function (s) { return s.id; }).join(",") === "org,programs,pain,benchmarks,constraints");
+  check("Constraints asks: Tone, Length, Format, Audience, all optional",
+    labels("constraints") === "Tone, Length, Format, Audience" && S.section(Q, "constraints").questions.every(function (q) { return !q.required; }));
+  check("flowchart step numbers: 1.1 to 1.5", [Q.flow.numbers.org, Q.flow.numbers.program, Q.flow.numbers.benchmarks, Q.flow.numbers.constraints, Q.flow.numbers.review].join() === "1.1,1.2,1.3,1.4,1.5");
+  check("the three \"Happy with…?\" checks have their wording", ["programs", "benchmarks", "constraints"].every(function (k) { return !!Q.flow.checkpoints[k].title && !!Q.flow.checkpoints[k].text; }));
+  check("\"Yes, continue\" and \"Build our story\" buttons have wording", !!Q.flow.checkpointYes && Q.flow.buildStory === "Build our story");
+  check("RTCC headings are there; Role is empty until FAC writes it", ["roleHeading", "contextHeading", "taskHeading", "constraintsHeading"].every(function (k) { return !!Q.rtcc[k]; }) && Q.rtcc.role === "");
+  check("saved versions have their wording", ["versionsTitle", "versionsNone", "versionDownload"].every(function (k) { return !!Q.review[k]; }) &&
+    Q.review.versionLabel.indexOf("{n}") > -1 && Q.review.versionLabel.indexOf("{date}") > -1);
   check("Organization Info asks: Name, City and state, ZIP code, Website, Mission Statement, Key Words",
     labels("org") === "Name, Location: City and state, Location: ZIP code, Website, Mission Statement, Key Words");
   check("every Organization Info question is required", S.section(Q, "org").questions.every(function (q) { return q.required; }));

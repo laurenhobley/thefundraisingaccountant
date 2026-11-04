@@ -1,7 +1,8 @@
 /*
-  Builds the finished prompt in FAC's sheet format, as plain text: the
-  member's answers with their labels, any "same group" notes, then FAC's
-  Final Prompt word for word, then the guardrail line.
+  Builds the finished prompt as plain text, in RTCC parts: Context (the
+  member's answers in FAC's sheet format, with their labels and any "same
+  group" notes), Task (FAC's Final Prompt word for word), and Constraints
+  (the member's own, then the guardrail line). Role is added once FAC writes it.
 
   Every number in it is one the member typed. Labels:
   - Known with a source: "(source: ...)", no tag.
@@ -35,7 +36,26 @@ var FACExport = (function () {
 
   function programName(Q, i) { return S.section(Q, "programs").itemLabel + " " + (i + 1); }
 
+  // The prompt in RTCC parts: Role (only once FAC writes it), Context (the
+  // member's sheet), Task (FAC's Final Prompt, which says "Using the
+  // information above", so it follows the Context), then Constraints (the
+  // member's tone, length, format and audience, ending with the guardrail line).
   function build(Q, state) {
+    var R = Q.rtcc, out = [];
+    if (S.trim(R.role)) out.push(R.roleHeading + ":", R.role, "");
+    out.push(R.contextHeading + ":", context(Q, state), "");
+    out.push(R.taskHeading + ":", Q.finalPrompt, "");
+    out.push(R.constraintsHeading + ":");
+    S.section(Q, "constraints").questions.forEach(function (x) {
+      var text = answerText(Q, state, "constraints." + x.id);
+      if (text) out.push(line(x.label, text));
+    });
+    out.push(Q.guardrail);
+    return out.join("\n");
+  }
+
+  // The member's answers in FAC's sheet format.
+  function context(Q, state) {
     var L = [], org = S.section(Q, "org"), prog = S.section(Q, "programs");
     function q(sec, id) { return sec.questions.filter(function (x) { return x.id === id; })[0]; }
 
@@ -74,7 +94,6 @@ var FACExport = (function () {
       });
     }
 
-    L.push("", Q.finalPrompt, "", Q.guardrail);
     return L.join("\n");
   }
 

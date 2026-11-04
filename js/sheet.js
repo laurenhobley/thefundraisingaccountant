@@ -35,7 +35,10 @@ var FACSheet = (function () {
       org: group(section(Q, "org").questions),
       programs: [group(section(Q, "programs").questions)],
       pain: [answer()],
-      benchmarks: [answer()]
+      benchmarks: [answer()],
+      constraints: group(section(Q, "constraints").questions),
+      // Each prompt the member copied or downloaded: { n, at, text }.
+      versions: []
     };
   }
 
@@ -78,13 +81,28 @@ var FACSheet = (function () {
     }
     if (typeof data.step === "number" && data.step >= 0) s.step = data.step;
     if (data.reviewed === true) s.reviewed = true;
+    copyGroup(s.constraints, data.constraints);
+    if (data.versions && data.versions.length) for (i = 0; i < data.versions.length; i++) {
+      var v = data.versions[i];
+      if (v && typeof v.n === "number" && typeof v.at === "string" && typeof v.text === "string") s.versions.push({ n: v.n, at: v.at, text: v.text });
+    }
     return s;
   }
 
-  // Paths look like "org.zip", "programs.1.outputs" or "pain.0".
+  // Keeps a copy of a prompt the member copied or downloaded, unless it's
+  // the same as the last one kept. Returns the version.
+  function addVersion(state, text, at) {
+    var last = state.versions[state.versions.length - 1];
+    if (last && last.text === text) return last;
+    var v = { n: (last ? last.n : 0) + 1, at: at, text: text };
+    state.versions.push(v);
+    return v;
+  }
+
+  // Paths look like "org.zip", "programs.1.outputs", "pain.0" or "constraints.tone".
   function get(state, path) {
     var p = path.split(".");
-    if (p[0] === "org") return state.org[p[1]];
+    if (p[0] === "org" || p[0] === "constraints") return state[p[0]][p[1]];
     if (p[0] === "programs") return state.programs[+p[1]][p[2]];
     return state[p[0]][+p[1]];
   }
@@ -103,7 +121,8 @@ var FACSheet = (function () {
   }
 
   // The ZIP code is a location, not a figure, so it never needs a label.
-  function needsLabel(path) { return path !== "org.zip"; }
+  // Nor are constraints ("about 300 words" is an instruction, not a figure).
+  function needsLabel(path) { return path !== "org.zip" && path.indexOf("constraints.") !== 0; }
 
   // ---------- Missing answers ----------
 
@@ -351,6 +370,7 @@ var FACSheet = (function () {
     if (st.kind === "org") for (id in state.org) { if (state.org.hasOwnProperty(id)) out.push("org." + id); }
     else if (st.kind === "program") { for (id in state.programs[st.index]) if (state.programs[st.index].hasOwnProperty(id)) out.push("programs." + st.index + "." + id); }
     else if (st.kind === "pain" || st.kind === "benchmarks") for (i = 0; i < state[st.kind].length; i++) out.push(st.kind + "." + i);
+    else if (st.kind === "constraints") for (id in state.constraints) { if (state.constraints.hasOwnProperty(id)) out.push("constraints." + id); }
     return out;
   }
 
@@ -445,22 +465,26 @@ var FACSheet = (function () {
       for (id in state.programs[i]) if (state.programs[i].hasOwnProperty(id)) out.push("programs." + i + "." + id);
     for (i = 0; i < state.pain.length; i++) out.push("pain." + i);
     for (i = 0; i < state.benchmarks.length; i++) out.push("benchmarks." + i);
+    for (id in state.constraints) if (state.constraints.hasOwnProperty(id)) out.push("constraints." + id);
     return out;
   }
 
-  // One screen for Organization Info, one per program, then the two optional
-  // sections, then the end screen.
+  // The screens follow Step 1 of FAC's flowchart: 1.1 Organization Info,
+  // 1.2 one screen per program, a "Happy with programs and keywords?"
+  // check, Pain Statements (from FAC's sheet), 1.3 Benchmarks and its check,
+  // 1.4 Constraints and its check, then 1.5 the review screen.
   function steps(state) {
     var out = [{ kind: "org" }];
     for (var i = 0; i < state.programs.length; i++) out.push({ kind: "program", index: i });
-    out.push({ kind: "pain" }, { kind: "benchmarks" }, { kind: "end" });
+    out.push({ kind: "check", of: "programs" }, { kind: "pain" }, { kind: "benchmarks" }, { kind: "check", of: "benchmarks" },
+      { kind: "constraints" }, { kind: "check", of: "constraints" }, { kind: "end" });
     return out;
   }
   function stepOf(state, path) {
-    var p = path.split(".");
+    var p = path.split("."), n = state.programs.length;
     if (p[0] === "org") return 0;
     if (p[0] === "programs") return 1 + (+p[1]);
-    return state.programs.length + (p[0] === "pain" ? 1 : 2);
+    return n + ({ pain: 2, benchmarks: 3, constraints: 5 })[p[0]];
   }
 
   // Every answer that still needs attention, in sheet order. With Q, this
@@ -529,7 +553,7 @@ var FACSheet = (function () {
     baseIssue: baseIssue, numbersIn: numbersIn, sharedCount: sharedCount, sameGroups: sameGroups, resolveOverlap: resolveOverlap,
     isAssumption: isAssumption, assumptionOpen: assumptionOpen, setLabel: setLabel, setNote: setNote,
     calculations: calculations, mathProblem: mathProblem,
-    paths: paths, steps: steps, stepOf: stepOf, problems: problems,
+    paths: paths, steps: steps, stepOf: stepOf, problems: problems, addVersion: addVersion,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear
   };

@@ -56,14 +56,46 @@
     return '<h2 tabindex="-1"><span class="num">' + esc(num) + '</span>' + esc(title) + (note ? ' <span class="opt">' + esc(note) + '</span>' : "") + '</h2>';
   }
 
+  var N = Q.flow.numbers;
+
   function orgScreen() {
     var sec = S.section(Q, "org");
-    return heading("01", sec.title) + sec.questions.map(function (q) { return field(q, "org." + q.id); }).join("");
+    return heading(N.org, sec.title) + sec.questions.map(function (q) { return field(q, "org." + q.id); }).join("");
+  }
+
+  // Step 1.4: how the member wants the story written.
+  function constraintsScreen() {
+    var sec = S.section(Q, "constraints");
+    return heading(N.constraints, sec.title, sec.note) + sec.questions.map(function (q) { return field(q, "constraints." + q.id); }).join("");
+  }
+
+  // The flowchart's "Happy with...?" checks: a summary with an Edit link for
+  // each answer. Next (Yes, continue / Build our story) moves on.
+  function checkpointScreen(of) {
+    var F = Q.flow, C = F.checkpoints[of], rows = [];
+    function row(label, value, path) {
+      rows.push('<li><span class="lbl">' + esc(label) + ':</span> ' + esc(S.trim(value) || F.empty) +
+        ' <button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, path) + '" data-focus="' + idOf(path) + '">' + esc(F.editLink) + '</button></li>');
+    }
+    if (of === "programs") {
+      row(S.section(Q, "org").questions.filter(function (q) { return q.id === "keywords"; })[0].label, state.org.keywords.text, "org.keywords");
+      state.programs.forEach(function (p, i) {
+        row(programName(i), [p.name.text, p.outputs.text].filter(function (t) { return S.trim(t); }).join(" — "), "programs." + i + ".name");
+      });
+    } else if (of === "benchmarks") {
+      state.benchmarks.forEach(function (b, i) { if (S.trim(b.text)) row(nameOf("benchmarks." + i), b.text, "benchmarks." + i); });
+    } else {
+      var set = S.section(Q, "constraints").questions.filter(function (q) { return S.trim(state.constraints[q.id].text); });
+      set.forEach(function (q) { row(q.label, state.constraints[q.id].text, "constraints." + q.id); });
+    }
+    var none = !rows.length && C.none
+      ? '<p>' + esc(C.none) + ' <button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, of + (of === "benchmarks" ? ".0" : ".tone")) + '">' + esc(F.editLink) + '</button></p>' : "";
+    return heading(N.check, C.title) + '<p>' + esc(C.text) + '</p>' + (rows.length ? '<ul class="checklist">' + rows.join("") + '</ul>' : none);
   }
 
   function programScreen(i) {
     var sec = S.section(Q, "programs"), n = state.programs.length;
-    return heading("02", sec.itemLabel + " " + (i + 1) + " of " + n, sec.note) +
+    return heading(N.program, sec.itemLabel + " " + (i + 1) + " of " + n, sec.note) +
       sec.questions.map(function (q) { return field(q, "programs." + i + "." + q.id); }).join("") +
       '<div class="actions">' +
       '<button type="button" class="btn ghost" data-act="addProgram">' + esc(sec.addLabel) + '</button>' +
@@ -94,7 +126,7 @@
   // Names an answer for the end screen list, e.g. "Program 2: Outputs".
   function nameOf(path) {
     var p = path.split(".");
-    if (p[0] === "org") return S.section(Q, "org").questions.filter(function (q) { return q.id === p[1]; })[0].label;
+    if (p[0] === "org" || p[0] === "constraints") return S.section(Q, p[0]).questions.filter(function (q) { return q.id === p[1]; })[0].label;
     if (p[0] === "programs") {
       var sec = S.section(Q, "programs");
       return sec.itemLabel + " " + (+p[1] + 1) + ": " + sec.questions.filter(function (q) { return q.id === p[2]; })[0].label;
@@ -120,15 +152,38 @@
         }).join("") + '</ul>'
       : '<p>' + esc(Q.review.allClear) + '</p>';
     var R = Q.review;
-    return heading("✓", R.title) + '<p>' + esc(R.text) + '</p>' + list +
+    return heading(N.review, R.title) + '<p>' + esc(R.text) + '</p>' + list +
       '<div class="f"><span class="lbl">' + esc(R.previewTitle) + '</span><pre id="exportPreview"></pre></div>' +
       '<label class="review-check"><input type="checkbox" id="reviewed"' + (state.reviewed ? " checked" : "") + '> ' + esc(R.checkbox) + '</label>' +
       '<div class="actions">' +
       '<button type="button" class="btn primary" id="copyPrompt" data-act="copy">' + esc(R.copyButton) + '</button>' +
       '<button type="button" class="btn ghost" id="downloadPrompt" data-act="download">' + esc(R.downloadButton) + '</button>' +
       '</div>' +
-      '<p id="exportMsg" aria-live="polite"></p>';
+      '<p id="exportMsg" aria-live="polite"></p>' +
+      '<div class="f"><span class="lbl">' + esc(R.versionsTitle) + '</span><div id="versions"></div></div>';
   }
+
+  // The flowchart's "Prompt history": every prompt copied or downloaded,
+  // newest first, kept in this browser only.
+  function refreshVersions() {
+    var box = $("versions"), R = Q.review;
+    if (!box) return;
+    if (!state.versions.length) { box.innerHTML = '<p class="hint">' + esc(R.versionsNone) + '</p>'; return; }
+    box.innerHTML = state.versions.slice().reverse().map(function (v) {
+      return '<details class="version"><summary>' + esc(R.versionLabel.replace(/\{n\}/g, v.n).replace(/\{date\}/g, function () { return v.at; })) + '</summary>' +
+        '<pre class="version-text"></pre>' +
+        '<button type="button" class="btn quiet" data-act="downloadVersion" data-index="' + v.n + '">' + esc(R.versionDownload) + '</button></details>';
+    }).join("");
+    Array.prototype.forEach.call(box.querySelectorAll(".version-text"), function (pre, k) {
+      pre.textContent = state.versions[state.versions.length - 1 - k].text;
+    });
+  }
+
+  function stamp() {
+    try { return new Date().toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }); }
+    catch (e) { return new Date().toLocaleString(); }
+  }
+  function keepVersion(text) { S.addVersion(state, text, stamp()); save(); refreshVersions(); }
 
   // Copy and Download stay locked until "I reviewed this" is ticked.
   function refreshReview() {
@@ -147,6 +202,7 @@
   function copyPrompt() {
     if (!state.reviewed) return;
     var text = FACExport.build(Q, state);
+    keepVersion(text);
     function fallback() {
       var range = document.createRange();
       range.selectNodeContents($("exportPreview"));
@@ -157,17 +213,28 @@
     catch (e) { fallback(); }
   }
 
-  function downloadPrompt() {
-    if (!state.reviewed) return;
-    var url = URL.createObjectURL(new Blob([FACExport.build(Q, state)], { type: "text/plain;charset=utf-8" }));
+  function saveFile(text, name) {
+    var url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
     var link = document.createElement("a");
     link.href = url;
-    link.download = FACExport.FILE_NAME;
+    link.download = name;
     document.body.appendChild(link);
     link.click();
     link.remove();
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  function downloadPrompt() {
+    if (!state.reviewed) return;
+    var text = FACExport.build(Q, state);
+    keepVersion(text);
+    saveFile(text, FACExport.FILE_NAME);
     say(Q.review.downloaded);
+  }
+
+  function downloadVersion(n) {
+    var v = state.versions.filter(function (x) { return x.n === n; })[0];
+    if (v) saveFile(v.text, FACExport.FILE_NAME.replace(/\.txt$/, "-v" + n + ".txt"));
   }
 
   function render(focusId) {
@@ -177,8 +244,10 @@
     screen.innerHTML =
       st.kind === "org" ? orgScreen() :
       st.kind === "program" ? programScreen(st.index) :
-      st.kind === "pain" ? listScreen("pain", "03") :
-      st.kind === "benchmarks" ? listScreen("benchmarks", "04") : reviewScreen();
+      st.kind === "check" ? checkpointScreen(st.of) :
+      st.kind === "pain" ? listScreen("pain", N.pain) :
+      st.kind === "benchmarks" ? listScreen("benchmarks", N.benchmarks) :
+      st.kind === "constraints" ? constraintsScreen() : reviewScreen();
 
     Array.prototype.forEach.call(screen.querySelectorAll(".ans"), function (el) {
       el.value = S.get(state, el.getAttribute("data-path")).text;
@@ -188,7 +257,9 @@
     $("counter").textContent = "Step " + (state.step + 1) + " of " + steps.length;
     $("back").disabled = state.step === 0;
     $("next").hidden = state.step === steps.length - 1;
+    $("next").textContent = st.kind !== "check" ? Q.flow.nextButton : st.of === "constraints" ? Q.flow.buildStory : Q.flow.checkpointYes;
     refreshReview();
+    refreshVersions();
     save();
 
     var target = focusId && $(focusId);
@@ -294,6 +365,7 @@
     var act = b.getAttribute("data-act"), i = +b.getAttribute("data-index"), list = b.getAttribute("data-list");
     if (act === "copy") { copyPrompt(); return; }
     if (act === "download") { downloadPrompt(); return; }
+    if (act === "downloadVersion") { downloadVersion(i); return; }
     // Everything else below changes the answers, except going to a listed item.
     if (act !== "goto" && !(act === "removeProgram" && armed !== b)) unreview();
     if (act === "addProgram") { go(1 + S.addProgram(Q, state)); }

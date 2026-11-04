@@ -94,6 +94,20 @@ var FAC_QUESTIONS = {
         "The average annual cost to shelter a homeless is $18,000–$25,000.",
         "Stable housing reduces social costs (shelters, ER visits, policing) by 30–50%."
       ]
+    },
+    {
+      // Step 1.4 in FAC's flowchart. FAC's workbook section is still blank,
+      // so these four come from FAC's process guide. Draft for Steve.
+      id: "constraints",
+      title: "Constraints",
+      note: "(optional)",
+      optional: true,
+      questions: [
+        { id: "tone", label: "Tone", kind: "text", required: false, help: "How the story should sound, for example warm, urgent or formal." },
+        { id: "length", label: "Length", kind: "text", required: false, help: "How long it should be, for example a short paragraph or one page." },
+        { id: "format", label: "Format", kind: "text", required: false, help: "The shape you need, for example a donor email, a grant paragraph or social posts." },
+        { id: "audience", label: "Audience", kind: "text", required: false, help: "Who will read it, for example major donors, a foundation or your board." }
+      ]
     }
   ],
 
@@ -117,7 +131,43 @@ var FAC_QUESTIONS = {
     downloadButton: "Download .txt",
     copied: "Copied. Paste it into ROI.bot.",
     selected: "The prompt is selected. Press Ctrl+C (or ⌘C) to copy it.",
-    downloaded: "Downloaded. Open the file and paste the prompt into ROI.bot."
+    downloaded: "Downloaded. Open the file and paste the prompt into ROI.bot.",
+    // Each copied or downloaded prompt is kept in this browser, so members can
+    // compare runs (the flowchart's "Prompt history"). Draft for Steve.
+    versionsTitle: "Your saved versions",
+    versionsNone: "Each prompt you copy or download is saved here, so you can compare versions.",
+    versionLabel: "Version {n}, saved {date}",
+    versionDownload: "Download this version"
+  },
+
+  // The screens follow Step 1 of FAC's flowchart (Draft v3, Oct 25, 2026),
+  // which Steve approved. Draft wording for Steve.
+  flow: {
+    // Flowchart step numbers shown on each screen. Pain Statements isn't in
+    // the flowchart's Step 1 (it's in Step 2), so it has no number yet.
+    numbers: { org: "1.1", program: "1.2", pain: "", benchmarks: "1.3", constraints: "1.4", review: "1.5", check: "◆" },
+    nextButton: "Next",
+    checkpointYes: "Yes, continue",
+    buildStory: "Build our story",
+    editLink: "Edit",
+    empty: "(blank)",
+    checkpoints: {
+      programs: { title: "Happy with your programs and keywords?", text: "Check your key words and programs. Edit anything that isn't right, then continue." },
+      benchmarks: { title: "Happy with your benchmarks?", text: "Check your benchmarks. Edit anything that isn't right, then continue.", none: "No benchmarks added." },
+      constraints: { title: "Happy with your constraints?", text: "Check how you want your story written. When you're happy, build your story.", none: "None set. ROI.bot will choose." }
+    }
+  },
+
+  // The finished prompt in RTCC parts: Role, Context, Task, Constraints.
+  // Context comes before Task because FAC's Final Prompt (the Task) says
+  // "Using the information above". Role is left out until FAC writes it
+  // (FAC's guide: wording for Peter to set). Draft for Steve.
+  rtcc: {
+    role: "",
+    roleHeading: "Role",
+    contextHeading: "Context",
+    taskHeading: "Task",
+    constraintsHeading: "Constraints"
   },
 
   // The finished prompt follows FAC's sheet, in plain text. Draft for Steve

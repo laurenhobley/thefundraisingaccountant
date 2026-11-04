@@ -25,8 +25,10 @@ T.run("Export (js/export.js)", function (check) {
   set("pain.0", "If a stay costs $40/day, then 300 × 60 × $40 = $720,000"); source("pain.0", "estimate", "county shelter rates");
   set("benchmarks.0", "TBD"); keep("benchmarks.0");
   set("benchmarks.1", "Meals cost $3 each");
+  set("constraints.tone", "Warm and hopeful"); set("constraints.audience", "Major donors");
 
   var expected = [
+    "Context:",
     "Organization Info",
     "Name: Riverbend Food Bank",
     "Location (include zip): Riverbend, TX 77999",
@@ -57,16 +59,25 @@ T.run("Export (js/export.js)", function (check) {
     "",
     "Note: Program 3 and Program 1 both report 300 for the same group. Do not add them together.",
     "",
+    "Task:",
     Q.finalPrompt,
     "",
+    "Constraints:",
+    "Tone: Warm and hopeful",
+    "Audience: Major donors",
     Q.guardrail
   ];
   var out = E.build(Q, s), lines = out.split("\n");
   var firstDiff = -1;
   for (var i = 0; i < Math.max(lines.length, expected.length); i++) if (lines[i] !== expected[i]) { firstDiff = i; break; }
-  check("matches FAC's sheet format line for line" + (firstDiff > -1 ? " (first difference at line " + (firstDiff + 1) + ": \"" + lines[firstDiff] + "\")" : ""), firstDiff === -1);
-  check("order: answers, then FAC's Final Prompt word for word, then the guardrail line",
-    out.indexOf("Benchmarks (optional)") < out.indexOf(Q.finalPrompt) && out.indexOf(Q.finalPrompt) < out.indexOf(Q.guardrail) && lines[lines.length - 1] === Q.guardrail);
+  check("matches FAC's sheet format line for line, in RTCC parts" + (firstDiff > -1 ? " (first difference at line " + (firstDiff + 1) + ": \"" + lines[firstDiff] + "\")" : ""), firstDiff === -1);
+  check("order: Context (the answers), then Task (FAC's Final Prompt word for word), then Constraints ending with the guardrail line",
+    out.indexOf("Context:") === 0 && out.indexOf("Benchmarks (optional)") < out.indexOf(Q.finalPrompt) && out.indexOf(Q.finalPrompt) < out.indexOf("Constraints:") &&
+    lines[lines.length - 1] === Q.guardrail);
+  check("no Role while FAC's role wording is blank", out.indexOf("Role:") === -1);
+  var withRole = JSON.parse(JSON.stringify(Q)); withRole.rtcc.role = "You are a test role.";
+  check("once FAC writes the Role, it comes first", E.build(withRole, s).indexOf("Role:\nYou are a test role.\n\nContext:") === 0);
+  check("blank constraints are left out; the guardrail line is always there", E.build(Q, S.blank(Q)).split("\n").slice(-2).join("|") === "Constraints:|" + Q.guardrail);
   check("Known with a source: source in brackets, no tag", out.indexOf("in 2024 (source: 2024 annual report)") > -1);
   check("Known with no source: [Unsupported]", E.answerText(Q, { org: {}, programs: [{ outputs: { text: "90 kids in 2024", label: "known", note: "", asks: 0, skipped: false } }] }, "programs.0.outputs") === "90 kids in 2024 [Unsupported]");
   check("blank optional answers are left out of the lists", lines.filter(function (l) { return l === "* "; }).length === 0 && out.split("\n* ").length - 1 === 3);
