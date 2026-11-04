@@ -110,6 +110,23 @@ var FAC_QUESTIONS = {
       ]
     },
     {
+      // Step 2.1 in FAC's workshop workbook: the pain statement questions.
+      // All optional ("sample metrics"). Draft help for Steve.
+      id: "why",
+      title: "What are your pain statements?",
+      optional: true,
+      questions: [
+        { id: "lost", label: "Funding lost ($)", kind: "text", required: false, help: "If you lost funding, how much did you lose?" },
+        { id: "unserved", label: "People not served because of a lack of funding", kind: "text", required: false, help: "How many people you couldn't serve." },
+        { id: "servicesLost", label: "What did they lose? (in a word or two)", kind: "text", required: false, help: "The services those people went without." },
+        { id: "couldNot", label: "What were you NOT able to do?", kind: "text", required: false, help: "For example, no more food, space or seats." },
+        { id: "demandPct", label: "Increase in demand (%)", kind: "text", required: false, help: "If demand for your services went up, by how much." },
+        { id: "demandServices", label: "Which services are in higher demand?", kind: "text", required: false, help: "The services people are asking for more." },
+        { id: "served", label: "How many people do you serve now?", kind: "text", required: false, help: "The number of people you currently serve." },
+        { id: "period", label: "Over what period of time?", kind: "text", required: false, help: "For example, per year or per month." }
+      ]
+    },
+    {
       // Step 1.4 in FAC's flowchart. FAC's workbook section is still blank,
       // so these four come from FAC's process guide. Draft for Steve.
       id: "constraints",
@@ -161,6 +178,7 @@ var FAC_QUESTIONS = {
     // the flowchart's Step 1 (it's in Step 2), so it has no number yet.
     numbers: { org: "1.1", program: "1.2", pain: "", benchmarks: "1.3", constraints: "1.4", review: "1.5", check: "◆" },
     nextButton: "Next",
+    continueStep2: "Continue to Step 2",
     checkpointYes: "Yes, continue",
     buildStory: "Build our story",
     editLink: "Edit",
@@ -170,6 +188,48 @@ var FAC_QUESTIONS = {
       benchmarks: { title: "Happy with your benchmarks?", text: "Check your benchmarks. Edit anything that isn't right, then continue.", none: "No benchmarks added." },
       constraints: { title: "Happy with your constraints?", text: "Check how you want your story written. When you're happy, build your story.", none: "None set. ROI.bot will choose." }
     }
+  },
+
+  // Step 2 of FAC's workshop workbook: "Get the Right Numbers". Comes after
+  // the 1.5 review; the prompt gets these too. Draft wording for Steve.
+  why: {
+    number: "2.1",
+    intro: "Pain statements create urgency. They help a donor understand what is happening right now and what is at risk if funding doesn't come through.",
+    importButton: "Use my answers from the pain statement form",
+    imported: "Brought in your answers from the pain statement form. Check them below.",
+    typesLabel: "What type of loss",
+    types: [{ id: "government", label: "Government" }, { id: "grant", label: "Grants" }, { id: "donation", label: "Donations" }],
+    previewTitle: "Your Why Now statement",
+    // {amount}, {unserved} and {pct} are the member's own answers, as typed.
+    lossSentence: "We lost ${amount} in funding. As a result, {unserved} people go unserved.",
+    demandSentence: "Demand has increased {pct}%. As a result, {unserved} people go unserved.",
+    blank: "___",
+    investSentence: "An investment in <our programs> helps create <Y Outcomes> and saves <Y Dollars>",
+    investNote: "You'll fill in this part in Step 3.",
+    exportTitle: "Pain Statement (Why Now)"
+  },
+  donors: {
+    number: "2.2",
+    title: "Tangible results",
+    intro: "Donors want to know exactly what their gift produces. Tangible results link dollar amounts to real program outcomes.",
+    tableIntro: "Start with the gift amount, then connect it to something specific and tangible. What does a gift fund? What are the outcomes (tangible results) that occur? Then change that into an emotional story.",
+    example: "Example from the Fort Bend Women's Center: $500 provides 2 weeks of support; $250, 25 crisis calls; $125, 1 night of safety; $50, 1 day of meals.",
+    regular: { title: "Regular Donor Table", levelsHint: "FAC's suggested levels: $500, $250, $125, $50. Type your own amounts." },
+    major: { title: "Major Donor Table", intro: "For major donors, you do the same thing with larger program opportunities.", levelsHint: "FAC's suggested levels: $5,000, $10,000, $25,000, $50,000. Type your own amounts." },
+    columns: { amount: "Investment ($)", funds: "What It Funds", result: "Tangible Result", words: "Donor Friendly Language" },
+    rowLabel: "Row",
+    addRow: "Add a row",
+    draftNote: "(draft)"
+  },
+  wand: {
+    number: "2.3",
+    title: "Wave a magic wand",
+    intro: "If you could make a wish, what would you want your donors to invest in?",
+    program: "Program",
+    programHelp: "Pick one of your programs or type another.",
+    amount: "Investment ($)",
+    possible: "What would it make possible?",
+    exportTitle: "Magic Wand"
   },
 
   // Optional stack rank (FAC's process guide, form 1.2), after the programs.

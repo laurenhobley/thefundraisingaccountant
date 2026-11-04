@@ -20,7 +20,10 @@ T.run("Questions (js/questions.js)", function (check) {
   };
   function labels(id) { return S.section(Q, id).questions.map(function (q) { return q.label; }).join(", "); }
 
-  check("5 sections: FAC's sheet, then the flowchart's Constraints", Q.sections.map(function (s) { return s.id; }).join(",") === "org,programs,pain,benchmarks,constraints");
+  check("6 sections: FAC's sheet, the workbook's pain statement questions, then the flowchart's Constraints", Q.sections.map(function (s) { return s.id; }).join(",") === "org,programs,pain,benchmarks,why,constraints");
+  check("Step 2 wording: pain statement questions, Why Now sentences, donor tables, magic wand", S.section(Q, "why").questions.length === 8 &&
+    Q.why.lossSentence.indexOf("{amount}") > -1 && Q.why.demandSentence.indexOf("{pct}") > -1 && !!Q.why.investSentence &&
+    ["amount", "funds", "result", "words"].every(function (k) { return !!Q.donors.columns[k]; }) && !!Q.wand.possible && !!Q.flow.continueStep2);
   check("Constraints asks: Tone, Length, Format, Audience, all optional",
     labels("constraints") === "Tone, Length, Format, Audience" && S.section(Q, "constraints").questions.every(function (q) { return !q.required; }));
   check("flowchart step numbers: 1.1 to 1.5", [Q.flow.numbers.org, Q.flow.numbers.program, Q.flow.numbers.benchmarks, Q.flow.numbers.constraints, Q.flow.numbers.review].join() === "1.1,1.2,1.3,1.4,1.5");

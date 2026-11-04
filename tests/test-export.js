@@ -101,6 +101,27 @@ T.run("Export (js/export.js)", function (check) {
   check("emptying Constraints still leaves the guardrail line", E.build(Q, s).slice(-("Constraints:\n" + Q.guardrail).length) === "Constraints:\n" + Q.guardrail);
   s.rtcc = { role: null, task: null, constraints: null };
   check("back to FAC's wording: the prompt is as before", E.build(Q, s) === out);
+  // Step 2 in the prompt.
+  check("no Step 2 answers: no Step 2 sections", out.indexOf(Q.why.exportTitle) === -1 && out.indexOf(Q.donors.regular.title) === -1 && out.indexOf(Q.wand.exportTitle) === -1);
+  set("why.lost", "$95,000"); set("why.unserved", "80"); set("why.demandPct", "12%"); s.whyTypes = ["grant", "donation"];
+  check("Why Now sentences use the member's own answers, as typed", JSON.stringify(E.whyNow(Q, s)) === JSON.stringify([
+    "We lost $95,000 in funding. As a result, 80 people go unserved.", "Demand has increased 12%. As a result, 80 people go unserved."]));
+  set("why.unserved", "");
+  check("a missing number shows as a blank line, never a made-up one", E.whyNow(Q, s)[0] === "We lost $95,000 in funding. As a result, ___ people go unserved.");
+  set("why.unserved", "80");
+  S.setLabel(Q, s, "why.lost", "known"); S.setNote(Q, s, "why.lost", "2024 audit");
+  set("donors.regular.0.amount", "500"); set("donors.regular.0.funds", "Two weeks of support"); set("donors.regular.0.result", "One survivor stays safe");
+  set("donors.major.0.amount", "$5,000"); set("donors.major.0.result", "10 families housed");
+  set("wand.program", "Weekend Meals"); set("wand.amount", "25,000"); set("wand.possible", "Meals all summer");
+  var s2out = E.build(Q, s);
+  check("the pain statement section, with labels and types of loss", s2out.indexOf(Q.why.exportTitle + "\n* Funding lost ($): $95,000 (source: 2024 audit)\n* What type of loss: Grants, Donations\n* People not served because of a lack of funding: 80 [Unsupported]") > -1);
+  check("the donor tables, marked as drafts, amounts as typed", s2out.indexOf("Regular Donor Table (draft)\n* Investment: $500; What It Funds: Two weeks of support; Tangible Result: One survivor stays safe") > -1 &&
+    s2out.indexOf("Major Donor Table (draft)\n* Investment: $5,000; Tangible Result: 10 families housed [Unsupported]") > -1);
+  check("the magic wand", s2out.indexOf("Magic Wand\n* Program: Weekend Meals\n* Investment: $25,000\n* What would it make possible?: Meals all summer") > -1);
+  check("Step 2 sits in the Context, before the Task", s2out.indexOf(Q.wand.exportTitle) < s2out.indexOf("Task:"));
+  var typed2 = S.paths(s).map(function (p) { var a = S.get(s, p); return a.text + " " + a.note + " " + a.src + " " + a.how; }).join(" ");
+  var strays2 = (s2out.replace(Q.finalPrompt, "").replace(Q.guardrail, "").replace(/^\d+\. /gm, "").replace(/Program \d+/g, "").match(/\d[\d,.]*\d|\d/g) || []).filter(function (n) { return typed2.indexOf(n) === -1; });
+  check("still no number the member didn't type" + (strays2.length ? " (found: " + strays2.join(" ") + ")" : ""), strays2.length === 0);
   check("with no constraint answers, Constraints holds FAC's 10 rules, then the guardrail line", E.build(Q, S.blank(Q)).indexOf("Constraints:\n- " + Q.rtcc.rules[0]) > -1 && E.build(Q, S.blank(Q)).split("\n").slice(-1)[0] === Q.guardrail);
   check("Known with a source: source in brackets, no tag", out.indexOf("in 2024 (source: 2024 annual report)") > -1);
   check("Known with no source: [Unsupported]", E.answerText(Q, { org: {}, programs: [{ outputs: { text: "90 kids in 2024", label: "known", note: "", asks: 0, skipped: false } }] }, "programs.0.outputs") === "90 kids in 2024 [Unsupported]");

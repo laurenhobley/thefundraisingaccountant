@@ -107,6 +107,63 @@
     return html + '<p class="fu-q" id="rank-msg" aria-live="polite"></p>';
   }
 
+  // ---------- Step 2 ----------
+
+  var LIVE_FORM = "impact-prompt-draft-v1";
+  function liveDraft() { try { return JSON.parse(localStorage.getItem(LIVE_FORM) || "null"); } catch (e) { return null; } }
+
+  // 2.1 The pain statement questions, the types of loss, and the Why Now preview.
+  function whyScreen() {
+    var W = Q.why, sec = S.section(Q, "why");
+    var html = heading(W.number, sec.title, sec.note) + '<p class="hint">' + esc(W.intro) + '</p>' +
+      (liveDraft() ? '<div><button type="button" class="btn ghost" data-act="importLive">' + esc(W.importButton) + '</button> <span class="hint" id="why-imported"></span></div>' : "");
+    sec.questions.forEach(function (q) {
+      html += field(q, "why." + q.id);
+      if (q.id === "lost") html += '<div class="f"><span class="lbl">' + esc(W.typesLabel) + '</span><div class="choice">' +
+        W.types.map(function (t) {
+          return '<label><input type="checkbox" class="why-type" value="' + t.id + '"' + (state.whyTypes.indexOf(t.id) > -1 ? " checked" : "") + '> ' + esc(t.label) + '</label>';
+        }).join("") + '</div></div>';
+    });
+    return html + '<div class="why-preview"><span class="lbl">' + esc(W.previewTitle) + '</span><div id="why-black"></div>' +
+      '<p class="why-grey">' + esc(W.investSentence) + ' <span class="hint">' + esc(W.investNote) + '</span></p></div>';
+  }
+  function refreshWhy() {
+    var box = $("why-black");
+    if (!box) return;
+    box.innerHTML = FACExport.whyNow(Q, state).map(function (s) { return '<p>' + esc(s) + '</p>'; }).join("");
+  }
+
+  // 2.2 The Regular and Major donor tables. The member types every amount;
+  // FAC's levels are a grey hint only.
+  function donorsScreen() {
+    var D = Q.donors, C = D.columns;
+    var html = heading(D.number, D.title) + '<p class="hint">' + esc(D.intro) + '</p><p class="hint">' + esc(D.tableIntro) + '</p>' +
+      '<div class="examples"><span class="ex-tag">Example</span><p>' + esc(D.example) + '</p></div>';
+    ["regular", "major"].forEach(function (t) {
+      html += '<div class="donor-table"><span class="lbl">' + esc(D[t].title) + '</span>' + (D[t].intro ? '<p class="hint">' + esc(D[t].intro) + '</p>' : "") +
+        '<p class="hint">' + esc(D[t].levelsHint) + '</p>' +
+        state.donors[t].map(function (r, i) {
+          var base = "donors." + t + "." + i + ".";
+          return '<div class="donor-row"><div class="item-head"><span class="lbl">' + esc(D.rowLabel) + ' ' + (i + 1) + '</span>' +
+            '<button type="button" class="icon-btn" data-act="removeDonorRow" data-table="' + t + '" data-index="' + i + '" aria-label="Remove ' + esc(D.rowLabel.toLowerCase()) + ' ' + (i + 1) + '">×</button></div>' +
+            ["amount", "funds", "result", "words"].map(function (k) { return field({ label: C[k], kind: k === "amount" ? "text" : "long" }, base + k); }).join("") +
+            '</div>';
+        }).join("") +
+        '<div><button type="button" class="btn ghost" data-act="addDonorRow" data-table="' + t + '">' + esc(D.addRow) + '</button></div></div>';
+    });
+    return html;
+  }
+
+  // 2.3 The magic wand.
+  function wandScreen() {
+    var W = Q.wand;
+    var names = state.programs.map(function (p) { return S.trim(p.name.text); }).filter(function (t) { return t; });
+    return heading(W.number, W.title) + '<p class="hint">' + esc(W.intro) + '</p>' +
+      field({ label: W.program, help: W.programHelp, kind: "text" }, "wand.program").replace('id="f-wand-program"', 'id="f-wand-program" list="wand-programs"') +
+      '<datalist id="wand-programs">' + names.map(function (t) { return '<option value="' + esc(t) + '">'; }).join("") + '</datalist>' +
+      field({ label: W.amount, kind: "text" }, "wand.amount") + field({ label: W.possible, kind: "long" }, "wand.possible");
+  }
+
   // Shows what still stops Next on the stack rank screen, and marks the rows.
   function showRankCheck(c) {
     $("rank-msg").textContent = c.msg ? Q.rank[c.msg] : "";
@@ -200,6 +257,9 @@
     var p = path.split(".");
     if (p[0] === "org" || p[0] === "constraints") return S.section(Q, p[0]).questions.filter(function (q) { return q.id === p[1]; })[0].label;
     if (p[0] === "rank") return Q.rank.title;
+    if (p[0] === "why") return S.section(Q, "why").questions.filter(function (q) { return q.id === p[1]; })[0].label;
+    if (p[0] === "wand") return Q.wand.title + ": " + Q.wand[p[1]];
+    if (p[0] === "donors") return Q.donors[p[1]].title + ", " + Q.donors.rowLabel.toLowerCase() + " " + (+p[2] + 1) + ": " + Q.donors.columns[p[3]];
     if (p[0] === "programs") {
       var sec = S.section(Q, "programs");
       return sec.itemLabel + " " + (+p[1] + 1) + ": " + sec.questions.filter(function (q) { return q.id === p[2]; })[0].label;
@@ -335,7 +395,10 @@
       st.kind === "rank" ? rankScreen() :
       st.kind === "pain" ? listScreen("pain", N.pain) :
       st.kind === "benchmarks" ? listScreen("benchmarks", N.benchmarks) :
-      st.kind === "constraints" ? constraintsScreen() : reviewScreen();
+      st.kind === "constraints" ? constraintsScreen() :
+      st.kind === "why" ? whyScreen() :
+      st.kind === "donors" ? donorsScreen() :
+      st.kind === "wand" ? wandScreen() : reviewScreen();
 
     Array.prototype.forEach.call(screen.querySelectorAll(".ans"), function (el) {
       el.value = S.get(state, el.getAttribute("data-path")).text;
@@ -345,7 +408,8 @@
     $("counter").textContent = "Step " + (state.step + 1) + " of " + steps.length;
     $("back").disabled = state.step === 0;
     $("next").hidden = state.step === steps.length - 1;
-    $("next").textContent = st.kind !== "check" ? Q.flow.nextButton : st.of === "constraints" ? Q.flow.buildStory : Q.flow.checkpointYes;
+    $("next").textContent = st.kind === "end" ? Q.flow.continueStep2 : st.kind !== "check" ? Q.flow.nextButton : st.of === "constraints" ? Q.flow.buildStory : Q.flow.checkpointYes;
+    refreshWhy();
     refreshReview();
     refreshVersions();
     save();
@@ -437,6 +501,13 @@
     var el = e.target, path = el.getAttribute("data-path");
     if (el.id === "reviewed") { state.reviewed = el.checked; refreshReview(); save(); return; }
     if (onRankEdit(e)) return;
+    if (el.classList.contains("why-type")) {
+      if (e.type !== "change") return;
+      var at = state.whyTypes.indexOf(el.value);
+      if (el.checked && at < 0) state.whyTypes.push(el.value);
+      if (!el.checked && at > -1) state.whyTypes.splice(at, 1);
+      unreview(); save(); return;
+    }
     if (el.classList.contains("rtcc-edit")) { state.rtcc[el.getAttribute("data-part")] = el.value; unreview(); refreshReview(); save(); return; }
     if (!path) return;
     if (el.classList.contains("ext")) { S.get(state, path)[el.getAttribute("data-ext")] = el.value; unreview(); save(); return; }
@@ -445,6 +516,7 @@
     else if (el.classList.contains("lab-note")) S.setNote(Q, state, path, el.value);
     unreview();
     refresh(path);
+    refreshWhy();
     save();
   }
 
@@ -478,6 +550,13 @@
     if (act === "copy") { copyPrompt(); return; }
     if (act === "download") { downloadPrompt(); return; }
     if (act === "downloadVersion") { downloadVersion(i); return; }
+    if (act === "importLive") {
+      S.importLive(Q, state, liveDraft()); unreview(); render();
+      if ($("why-imported")) $("why-imported").textContent = Q.why.imported;
+      return;
+    }
+    if (act === "addDonorRow") { S.addDonorRow(state, b.getAttribute("data-table")); unreview(); render(); return; }
+    if (act === "removeDonorRow") { S.removeDonorRow(state, b.getAttribute("data-table"), i); unreview(); render(); return; }
     if (act === "rtccReset") { state.rtcc[b.getAttribute("data-part")] = null; unreview(); render(); return; }
     if (act === "rankSort") {
       var ok = S.sortByScore(state);

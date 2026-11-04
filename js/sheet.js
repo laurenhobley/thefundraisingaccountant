@@ -50,9 +50,17 @@ var FACSheet = (function () {
       // The member's own wording for the prompt's Role, Task and
       // Constraints, edited on the review screen. null means FAC's wording
       // (or, for Constraints, the member's constraint answers).
-      rtcc: { role: null, task: null, constraints: null }
+      rtcc: { role: null, task: null, constraints: null },
+      // Step 2 (FAC's workshop workbook): the pain statement questions and
+      // types of loss, the Regular and Major donor tables, and the magic wand.
+      why: group(section(Q, "why").questions),
+      whyTypes: [],
+      donors: { regular: [donorRow(), donorRow(), donorRow(), donorRow()], major: [donorRow(), donorRow(), donorRow(), donorRow()] },
+      wand: { program: answer(), amount: answer(), possible: answer() }
     };
   }
+
+  function donorRow() { return { amount: answer(), funds: answer(), result: answer(), words: answer() }; }
 
   function rankRow() { return { m: {}, score: "" }; }
 
@@ -98,6 +106,14 @@ var FACSheet = (function () {
     if (data.reviewed === true) s.reviewed = true;
     copyGroup(s.constraints, data.constraints);
     ["role", "task", "constraints"].forEach(function (k) { if (data.rtcc && typeof data.rtcc[k] === "string") s.rtcc[k] = data.rtcc[k]; });
+    copyGroup(s.why, data.why);
+    var typeIds = (Q.why.types || []).map(function (t) { return t.id; });
+    if (data.whyTypes && data.whyTypes.length) s.whyTypes = data.whyTypes.filter(function (id) { return typeIds.indexOf(id) > -1; });
+    ["regular", "major"].forEach(function (t) {
+      var rows = data.donors && data.donors[t];
+      if (rows && rows.length) s.donors[t] = rows.map(function (r) { return copyGroup(donorRow(), r); });
+    });
+    copyGroup(s.wand, data.wand);
     var R = data.rank || {}, ids = (Q.rank.measures || []).map(function (m) { return m.id; });
     if (R.use === "yes" || R.use === "no") s.rank.use = R.use;
     if (R.measures && R.measures.length) s.rank.measures = R.measures.filter(function (id) { return ids.indexOf(id) > -1; }).slice(0, 3);
@@ -125,10 +141,12 @@ var FACSheet = (function () {
     return v;
   }
 
-  // Paths look like "org.zip", "programs.1.outputs", "pain.0" or "constraints.tone".
+  // Paths look like "org.zip", "programs.1.outputs", "pain.0", "constraints.tone",
+  // "why.lost", "donors.regular.0.result" or "wand.possible".
   function get(state, path) {
     var p = path.split(".");
-    if (p[0] === "org" || p[0] === "constraints") return state[p[0]][p[1]];
+    if (p[0] === "org" || p[0] === "constraints" || p[0] === "why" || p[0] === "wand") return state[p[0]][p[1]];
+    if (p[0] === "donors") return state.donors[p[1]][+p[2]][p[3]];
     if (p[0] === "programs") return state.programs[+p[1]][p[2]];
     return state[p[0]][+p[1]];
   }
@@ -148,7 +166,14 @@ var FACSheet = (function () {
 
   // The ZIP code is a location, not a figure, so it never needs a label.
   // Nor are constraints ("about 300 words" is an instruction, not a figure).
-  function needsLabel(path) { return path !== "org.zip" && path.indexOf("constraints.") !== 0; }
+  // In the donor tables, only the Tangible Result is a claim that needs a
+  // source; investment amounts are the member's own ask levels. The same
+  // goes for the magic wand's program and amount.
+  function needsLabel(path) {
+    if (path === "org.zip" || path.indexOf("constraints.") === 0 || path === "wand.program" || path === "wand.amount") return false;
+    if (path.indexOf("donors.") === 0) return /\.result$/.test(path);
+    return true;
+  }
 
   // ---------- Missing answers ----------
 
@@ -396,7 +421,16 @@ var FACSheet = (function () {
     if (st.kind === "org") for (id in state.org) { if (state.org.hasOwnProperty(id)) out.push("org." + id); }
     else if (st.kind === "program") { for (id in state.programs[st.index]) if (state.programs[st.index].hasOwnProperty(id)) out.push("programs." + st.index + "." + id); }
     else if (st.kind === "pain" || st.kind === "benchmarks") for (i = 0; i < state[st.kind].length; i++) out.push(st.kind + "." + i);
-    else if (st.kind === "constraints") for (id in state.constraints) { if (state.constraints.hasOwnProperty(id)) out.push("constraints." + id); }
+    else if (st.kind === "constraints" || st.kind === "why" || st.kind === "wand") for (id in state[st.kind]) { if (state[st.kind].hasOwnProperty(id)) out.push(st.kind + "." + id); }
+    else if (st.kind === "donors") out = donorPaths(state);
+    return out;
+  }
+
+  function donorPaths(state) {
+    var out = [];
+    ["regular", "major"].forEach(function (t) {
+      state.donors[t].forEach(function (row, i) { for (var k in row) if (row.hasOwnProperty(k)) out.push("donors." + t + "." + i + "." + k); });
+    });
     return out;
   }
 
@@ -492,6 +526,9 @@ var FACSheet = (function () {
     for (i = 0; i < state.pain.length; i++) out.push("pain." + i);
     for (i = 0; i < state.benchmarks.length; i++) out.push("benchmarks." + i);
     for (id in state.constraints) if (state.constraints.hasOwnProperty(id)) out.push("constraints." + id);
+    for (id in state.why) if (state.why.hasOwnProperty(id)) out.push("why." + id);
+    out = out.concat(donorPaths(state));
+    for (id in state.wand) if (state.wand.hasOwnProperty(id)) out.push("wand." + id);
     return out;
   }
 
@@ -504,14 +541,40 @@ var FACSheet = (function () {
     var out = [{ kind: "org" }];
     for (var i = 0; i < state.programs.length; i++) out.push({ kind: "program", index: i });
     out.push({ kind: "rank" }, { kind: "check", of: "programs" }, { kind: "pain" }, { kind: "benchmarks" }, { kind: "check", of: "benchmarks" },
-      { kind: "constraints" }, { kind: "check", of: "constraints" }, { kind: "end" });
+      { kind: "constraints" }, { kind: "check", of: "constraints" }, { kind: "end" },
+      // Step 2, then the review screen again with Step 2 in the prompt.
+      { kind: "why" }, { kind: "donors" }, { kind: "wand" }, { kind: "end", last: true });
     return out;
   }
   function stepOf(state, path) {
     var p = path.split("."), n = state.programs.length;
     if (p[0] === "org") return 0;
     if (p[0] === "programs") return 1 + (+p[1]);
-    return n + ({ rank: 1, pain: 3, benchmarks: 4, constraints: 6 })[p[0]];
+    return n + ({ rank: 1, pain: 3, benchmarks: 4, constraints: 6, why: 9, donors: 10, wand: 11 })[p[0]];
+  }
+
+  // ---------- Step 2 ----------
+
+  function addDonorRow(state, table) { state.donors[table].push(donorRow()); }
+  // A table always keeps one row; removing the last one just clears it.
+  function removeDonorRow(state, table, i) {
+    if (state.donors[table].length > 1) state.donors[table].splice(i, 1);
+    else state.donors[table][0] = donorRow();
+  }
+
+  // Brings in answers from the live pain statement form's saved draft (same
+  // questions), only into boxes that are still blank. Returns how many it filled.
+  function importLive(Q, state, live) {
+    if (!live) return 0;
+    var map = { lost: "lossAmount", unserved: "unserved", servicesLost: "servicesLost", couldNot: "couldNot", demandPct: "demandPct", served: "servedCount", period: "servedPeriod" };
+    var n = 0;
+    for (var id in map) {
+      var v = trim(live[map[id]]);
+      if (v && !trim(state.why[id].text)) { setText(Q, state, "why." + id, v); n++; }
+    }
+    var typeIds = Q.why.types.map(function (t) { return t.id; });
+    (live.types || []).forEach(function (t) { if (typeIds.indexOf(t) > -1 && state.whyTypes.indexOf(t) < 0) { state.whyTypes.push(t); n++; } });
+    return n;
   }
 
   // ---------- Stack rank ----------
@@ -622,6 +685,7 @@ var FACSheet = (function () {
     calculations: calculations, mathProblem: mathProblem,
     paths: paths, steps: steps, stepOf: stepOf, problems: problems, addVersion: addVersion,
     rankCheck: rankCheck, sortByScore: sortByScore, included: included,
+    addDonorRow: addDonorRow, removeDonorRow: removeDonorRow, importLive: importLive,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear
   };

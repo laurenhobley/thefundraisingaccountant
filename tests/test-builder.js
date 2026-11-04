@@ -18,12 +18,12 @@ T.run("Builder screens (builder.html)", function (check) {
   function saved() { return JSON.parse(localStorage.getItem("fac-prompt-sheet-draft-v1")); }
 
   // ---------- Missing answers on Organization Info ----------
-  check("starts on Step 1 of 10", $("counter").textContent === "Step 1 of 10");
+  check("starts on Step 1 of 14", $("counter").textContent === "Step 1 of 14");
   check("Back is off on step 1", $("back").disabled);
   check("no follow-ups before Next is pressed", shown(".fu") === 0);
 
   $("next").click();
-  check("Next with blanks stays on Step 1", $("counter").textContent === "Step 1 of 10");
+  check("Next with blanks stays on Step 1", $("counter").textContent === "Step 1 of 14");
   check("first Next: a follow-up under each of the 6 required answers", shown(".fu") === 6);
   check("first follow-up wording", fu("f-org-name") === F.missing[0] && fu("f-org-zip") === F.missingZip[0]);
   check("no Skip buttons after one follow-up", shown(".fu-skip") === 0);
@@ -48,11 +48,11 @@ T.run("Builder screens (builder.html)", function (check) {
   skip("f-org-website");
   check("Skip marks it skipped and Unsupported", !$("f-org-website-skipped").hidden && fu("f-org-website") === "" && saved().org.website.skipped === true);
   $("next").click();
-  check("Next still blocked by City and Key Words", $("counter").textContent === "Step 1 of 10" && shown(".fu") === 2);
+  check("Next still blocked by City and Key Words", $("counter").textContent === "Step 1 of 14" && shown(".fu") === 2);
   skip("f-org-city");
   type("f-org-keywords", "shelter, safety");
   $("next").click();
-  check("all answered or skipped: Next goes to Program 1 of 1", $("counter").textContent === "Step 2 of 10" && /Program 1 of 1/.test(title()));
+  check("all answered or skipped: Next goes to Program 1 of 1", $("counter").textContent === "Step 2 of 14" && /Program 1 of 1/.test(title()));
   check("answers saved in the browser", saved().org.mission.text === "We help 400 families");
 
   // ---------- Programs and labels ----------
@@ -65,14 +65,14 @@ T.run("Builder screens (builder.html)", function (check) {
   type("f-programs-0-outputs-note", "2024 annual report");
   check("source filled in: no longer flagged", $("f-programs-0-outputs-lab").getAttribute("data-status") === "ok");
   $("next").click();
-  check("Next blocked by the one missing answer, Description", $("counter").textContent === "Step 2 of 10" && shown(".fu") === 1 && fu("f-programs-0-description") !== "");
+  check("Next blocked by the one missing answer, Description", $("counter").textContent === "Step 2 of 14" && shown(".fu") === 1 && fu("f-programs-0-description") !== "");
   check("blank optional Current Impact Statement gets no follow-up", $("f-programs-0-impact-fu").hidden);
 
   // ---------- Filler words ----------
   type("f-programs-0-description", "Various services");
   check("blank answer that becomes vague: follow-up waits for Next", fu("f-programs-0-description") === "");
   $("next").click();
-  check("first Next: vague follow-up names the word", $("counter").textContent === "Step 2 of 10" && fu("f-programs-0-description") === F.vague[0].replace("{word}", "Various"));
+  check("first Next: vague follow-up names the word", $("counter").textContent === "Step 2 of 14" && fu("f-programs-0-description") === F.vague[0].replace("{word}", "Various"));
   check("no Keep button after one follow-up", shown(".fu-skip") === 0);
   $("next").click();
   check("second Next: second vague follow-up", fu("f-programs-0-description") === F.vague[1].replace("{word}", "Various"));
@@ -83,13 +83,13 @@ T.run("Builder screens (builder.html)", function (check) {
   // ---------- Outputs: a number and a year ----------
   type("f-programs-0-outputs", "37,260 meals provided");
   $("next").click();
-  check("Outputs with no year: Next blocked with the no-year follow-up", $("counter").textContent === "Step 2 of 10" && fu("f-programs-0-outputs") === F.outputNoYear[0] && shown(".fu") === 1);
+  check("Outputs with no year: Next blocked with the no-year follow-up", $("counter").textContent === "Step 2 of 14" && fu("f-programs-0-outputs") === F.outputNoYear[0] && shown(".fu") === 1);
   type("f-programs-0-outputs", "37,260 meals provided in FY24");
   check("adding a fiscal year hides it", fu("f-programs-0-outputs") === "");
   type("f-programs-0-outputs", "Served 414 families in 2024");
 
   act("addProgram");
-  check("Add another program goes to Program 2 of 2", $("counter").textContent === "Step 3 of 11" && /Program 2 of 2/.test(title()));
+  check("Add another program goes to Program 2 of 2", $("counter").textContent === "Step 3 of 15" && /Program 2 of 2/.test(title()));
   type("f-programs-1-outputs", "About 50 people");
   pick("f-programs-1-outputs", "unsupported");
   check("Unsupported stays flagged", $("f-programs-1-outputs-lab").getAttribute("data-status") === "unsupported");
@@ -138,9 +138,9 @@ T.run("Builder screens (builder.html)", function (check) {
   function rankMsg() { return $("rank-msg").textContent; }
   function pickSel(row, m, v) { var e = document.querySelector('#screen .rank-m[data-row="' + row + '"][data-m="' + m + '"]'); e.value = v; e.dispatchEvent(new Event("change", { bubbles: true })); }
   function score(row, v) { var e = document.querySelector('#screen .rank-score[data-row="' + row + '"]'); e.value = v; e.dispatchEvent(new Event("input", { bubbles: true })); }
-  check("after the last program: the stack rank question", $("counter").textContent === "Step 4 of 11" && title().indexOf(RK.title) > -1);
+  check("after the last program: the stack rank question", $("counter").textContent === "Step 4 of 15" && title().indexOf(RK.title) > -1);
   $("next").click();
-  check("Next without choosing: asks to choose", rankMsg() === RK.needChoice && $("counter").textContent === "Step 4 of 11");
+  check("Next without choosing: asks to choose", rankMsg() === RK.needChoice && $("counter").textContent === "Step 4 of 15");
   document.querySelector('#screen .rank-use[value="yes"]').click();
   check("Yes shows the four measures", document.querySelectorAll("#screen .rank-measure").length === 4);
   ["quality", "uniqueness", "impact", "money"].forEach(function (id) { document.querySelector('#screen .rank-measure[value="' + id + '"]').click(); });
@@ -164,7 +164,7 @@ T.run("Builder screens (builder.html)", function (check) {
 
   // ---------- Flowchart check: "Happy with programs and keywords?" ----------
   var FL = FAC_QUESTIONS.flow;
-  check("after the last program: the programs-and-keywords check", $("counter").textContent === "Step 5 of 11" && title().indexOf(FL.checkpoints.programs.title) > -1);
+  check("after the last program: the programs-and-keywords check", $("counter").textContent === "Step 5 of 15" && title().indexOf(FL.checkpoints.programs.title) > -1);
   check("its Next button says \"Yes, continue\"", $("next").textContent === FL.checkpointYes);
   var rows = Array.prototype.map.call(document.querySelectorAll("#screen .checklist li"), function (li) { return li.textContent; });
   check("it lists the key words and both programs, each with Edit", rows.length === 3 && rows[0].indexOf("shelter, safety") > -1 &&
@@ -235,7 +235,7 @@ T.run("Builder screens (builder.html)", function (check) {
   check("its Next button says \"Build our story\"", $("next").textContent === FL.buildStory);
   $("next").click();
 
-  check("end screen is last: Next is hidden", $("next").hidden && $("counter").textContent === "Step 11 of 11");
+  check("1.5 review: Next says Continue to Step 2", !$("next").hidden && $("next").textContent === FAC_QUESTIONS.flow.continueStep2 && $("counter").textContent === "Step 11 of 15");
   var todo = Array.prototype.map.call(document.querySelectorAll("#screen .todo li"), function (li) { return li.textContent; });
   check("end screen lists everything still needing attention, in sheet order", todo.join(" | ") ===
     "Location: City and state was skipped (Unsupported) | Mission Statement needs a label | " +
@@ -266,7 +266,7 @@ T.run("Builder screens (builder.html)", function (check) {
   $("reviewed").click();
 
   document.querySelector('#screen .todo button[data-act="goto"]').click();
-  check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 11" && document.activeElement.id === "f-org-city");
+  check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 15" && document.activeElement.id === "f-org-city");
   check("jumping there doesn't clear the tick", saved().reviewed === true);
   type("f-org-city", "Houston, TX");
   check("changing an answer clears the tick", saved().reviewed === false);
@@ -277,6 +277,37 @@ T.run("Builder screens (builder.html)", function (check) {
   act("removeProgram");
   check("second click removes program 2", saved().programs.length === 1);
   for (var k = 0; k < 8; k++) $("next").click();
-  check("back on the review screen: still unticked and locked", $("counter").textContent === "Step 10 of 10" && !$("reviewed").checked && $("copyPrompt").disabled);
+  check("back on the review screen: still unticked and locked", $("counter").textContent === "Step 10 of 14" && !$("reviewed").checked && $("copyPrompt").disabled);
   check("the preview now shows the new city", $("exportPreview").textContent.indexOf("Location (include zip): Houston, TX 77001") > -1);
+
+  // ---------- Step 2: Get the Right Numbers ----------
+  var W2 = FAC_QUESTIONS.why;
+  $("next").click();
+  check("Continue to Step 2: 2.1 pain statements", $("counter").textContent === "Step 11 of 14" && title().indexOf(W2.number) > -1);
+  check("no pain statement form saved in this browser: no import button", !document.querySelector('#screen [data-act="importLive"]'));
+  type("f-why-lost", "95,000"); type("f-why-unserved", "80");
+  check("the Why Now sentence builds from the member's answers", $("why-black").textContent === "We lost $95,000 in funding. As a result, 80 people go unserved.");
+  check("the second sentence stays grey until Step 3", document.querySelector("#screen .why-grey").textContent.indexOf(W2.investSentence) === 0);
+  check("a funding figure gets a label box", !$("f-why-lost-lab").hidden);
+  document.querySelector('#screen .why-type[value="grant"]').click();
+  check("types of loss save", saved().whyTypes.join() === "grant");
+  localStorage.setItem("impact-prompt-draft-v1", JSON.stringify({ servedCount: "300", servedPeriod: "per year", types: ["donation"] }));
+  $("back").click(); $("next").click();
+  document.querySelector('#screen [data-act="importLive"]').click();
+  check("Use my answers from the pain statement form fills the blank boxes only", $("f-why-served").value === "300" && $("f-why-period").value === "per year" &&
+    $("f-why-lost").value === "95,000" && saved().whyTypes.join() === "grant,donation" && $("why-imported").textContent === W2.imported);
+  $("next").click();
+  check("blank, optional answers don't block Next: 2.2 donor tables", title().indexOf(FAC_QUESTIONS.donors.number) > -1);
+  check("four rows each, with empty amount boxes (FAC's levels only as a hint)", document.querySelectorAll("#screen .donor-row").length === 8 && $("f-donors-regular-0-amount").value === "");
+  type("f-donors-regular-0-amount", "500"); type("f-donors-regular-0-result", "25 crisis calls");
+  check("a figure in Tangible Result gets a label box; the amount doesn't", !$("f-donors-regular-0-result-lab").hidden && !$("f-donors-regular-0-amount-lab"));
+  document.querySelector('#screen [data-act="addDonorRow"][data-table="major"]').click();
+  check("Add a row", saved().donors.major.length === 5);
+  $("next").click();
+  check("2.3 magic wand, offering the member's programs", title().indexOf(FAC_QUESTIONS.wand.number) > -1 && document.querySelectorAll("#wand-programs option").length === 1);
+  type("f-wand-program", "Emergency shelter"); type("f-wand-amount", "25,000"); type("f-wand-possible", "A second shelter");
+  $("next").click();
+  check("the review screen again, now last", $("next").hidden && $("counter").textContent === "Step 14 of 14");
+  var pv = $("exportPreview").textContent;
+  check("the prompt now has the pain statement, donor table and magic wand", pv.indexOf(W2.exportTitle) > -1 && pv.indexOf("Regular Donor Table (draft)") > -1 && pv.indexOf("Magic Wand\n* Program: Emergency shelter") > -1);
 });

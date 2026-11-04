@@ -120,6 +120,14 @@ a { color: var(--accent); font-weight: 600; }
 /* A benchmark's source, program and how it connects. */
 .bench-extra { display: grid; gap: 12px; margin-top: 6px; padding-left: 12px; border-left: 2px solid var(--line); }
 
+/* Step 2: the Why Now preview and the donor tables. */
+.why-preview { border: 1px solid var(--line); border-radius: 8px; background: var(--paper); padding: 12px 14px; display: grid; gap: 6px; }
+.why-preview p { margin: 0; }
+.why-grey { color: var(--muted); }
+.donor-table { display: grid; gap: 10px; }
+.donor-row { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); align-items: start; }
+.donor-row .item-head { grid-column: 1 / -1; }
+
 /* Stack rank: one row per program. */
 .rank-table { display: grid; gap: 10px; }
 .rank-row { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; display: grid; gap: 8px; }

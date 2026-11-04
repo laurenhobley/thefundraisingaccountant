@@ -8,7 +8,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("blank sheet starts with 1 program", s.programs.length === 1);
   check("blank sheet has every Organization Info question", ["name", "city", "zip", "website", "mission", "keywords"].every(function (id) { return !!s.org[id]; }));
   check("blank sheet has no numbers in it", S.problems(s).length === 0);
-  check("screens: Organization, 1 program, stack rank, check, Pain Statements, Benchmarks, check, Constraints, check, review", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,rank,check:programs,pain,benchmarks,check:benchmarks,constraints,check:constraints,end");
+  check("screens: Organization, 1 program, stack rank, check, Pain Statements, Benchmarks, check, Constraints, check, review", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,rank,check:programs,pain,benchmarks,check:benchmarks,constraints,check:constraints,end,why,donors,wand,end");
 
   var out = S.get(s, "programs.0.outputs");
   out.text = "Served 414 families in 2024";
@@ -30,7 +30,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   var n = S.addProgram(Q, s);
   check("Add program gives program 2", n === 1 && s.programs.length === 2);
-  check("11 screens with 2 programs", S.steps(s).length === 11);
+  check("15 screens with 2 programs", S.steps(s).length === 15);
   check("program 2 is on screen 3", S.stepOf(s, "programs.1.name") === 2);
   check("with 2 programs: stack rank on screen 4, check on 5, Pain on 6, Benchmarks on 7, Constraints on 9", S.steps(s)[3].kind === "rank" && S.steps(s)[4].of === "programs" && S.stepOf(s, "pain.0") === 5 && S.stepOf(s, "benchmarks.0") === 6 && S.stepOf(s, "constraints.tone") === 8);
   S.removeProgram(s, 1); S.removeProgram(s, 0);
@@ -325,6 +325,28 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
     rr.rank.use === "yes" && rr.rank.measures.join() === "quality,impact,money" && rr.rank.line === 1 &&
     rr.rankRows.length === 2 && rr.rankRows[0].m.quality === "2" && !rr.rankRows[0].m.impact && rr.rankRows[0].score === "4");
 
+  // Step 2: pain statement questions, donor tables, magic wand.
+  var s2 = S.blank(Q);
+  check("Step 2 screens come after the 1.5 review, then the review again", S.steps(s2).slice(-5).map(function (x) { return x.kind; }).join() === "end,why,donors,wand,end" && S.steps(s2).slice(-1)[0].last === true);
+  check("each donor table starts with four rows", s2.donors.regular.length === 4 && s2.donors.major.length === 4);
+  S.addDonorRow(s2, "major");
+  check("Add a row: five major donor rows", s2.donors.major.length === 5);
+  S.removeDonorRow(s2, "major", 4);
+  check("removing a row", s2.donors.major.length === 4);
+  check("only the Tangible Result needs a label in the tables, not the amount", S.needsLabel("donors.regular.0.result") && !S.needsLabel("donors.regular.0.amount") && !S.needsLabel("donors.major.1.funds"));
+  check("the magic wand's amount needs no label; what it makes possible does", !S.needsLabel("wand.amount") && S.needsLabel("wand.possible"));
+  check("pain statement figures need a label", S.needsLabel("why.lost") && S.needsLabel("why.unserved"));
+  S.setText(Q, s2, "why.lost", "95,000");
+  check("an unlabeled funding figure shows up on the review list", S.problems(s2, Q).some(function (p) { return p.path === "why.lost" && p.status === "needsLabel"; }));
+  check("the pain statement questions never block Next", S.issues(Q, s2, S.stepOf(s2, "why.lost")).length === 0);
+  S.setText(Q, s2, "why.served", "260");
+  var n2 = S.importLive(Q, s2, { lossAmount: "80,000", unserved: "40", servedCount: "999", servedPeriod: "per year", types: ["grant", "bogus"] });
+  check("bringing in the live form's answers fills only the blank boxes", n2 === 3 && s2.why.lost.text === "95,000" && s2.why.unserved.text === "40" &&
+    s2.why.served.text === "260" && s2.why.period.text === "per year" && s2.whyTypes.join() === "grant");
+  check("no live form draft: nothing brought in", S.importLive(Q, s2, null) === 0);
+  var r3 = S.repair(Q, { why: { lost: { text: "5,000" } }, whyTypes: ["donation", "x"], donors: { regular: [{ amount: { text: "50" }, result: { text: "1 day of meals" } }] }, wand: { amount: { text: "10,000" } } });
+  check("old draft: Step 2 answers kept, bad loss types dropped", r3.why.lost.text === "5,000" && r3.whyTypes.join() === "donation" &&
+    r3.donors.regular.length === 1 && r3.donors.regular[0].result.text === "1 day of meals" && r3.donors.major.length === 4 && r3.wand.amount.text === "10,000");
   // Saving and loading, with a stand-in for the browser's storage.
   var store = {}, fake = { setItem: function (k, v) { store[k] = v; }, getItem: function (k) { return store[k] || null; }, removeItem: function (k) { delete store[k]; } };
   S.save(r, fake);

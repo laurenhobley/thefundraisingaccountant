@@ -70,6 +70,50 @@ var FACExport = (function () {
     return { role: E.role != null ? E.role : D.role, task: E.task != null ? E.task : D.task, constraints: E.constraints != null ? E.constraints : D.constraints };
   }
 
+  // The Why Now sentences, filled with the member's own answers as typed.
+  // Nothing is calculated; a missing number shows as a blank line.
+  function whyNow(Q, state) {
+    var W = Q.why, w = state.why, out = [];
+    var amount = S.trim(w.lost.text).replace(/^\$\s*/, ""), pct = S.trim(w.demandPct.text).replace(/\s*%$/, "");
+    var unserved = S.trim(w.unserved.text) || W.blank;
+    function fill(t, values) { return t.replace(/\{(\w+)\}/g, function (m, k) { return values[k]; }); }
+    if (amount) out.push(fill(W.lossSentence, { amount: amount, unserved: unserved }));
+    if (pct) out.push(fill(W.demandSentence, { pct: pct, unserved: unserved }));
+    return out;
+  }
+
+  // Step 2's answers: the pain statement, the donor tables and the magic wand.
+  // Only what the member filled in.
+  function step2(Q, state, L) {
+    var why = S.section(Q, "why"), types = Q.why.types.filter(function (t) { return state.whyTypes.indexOf(t.id) > -1; });
+    var whyLines = [];
+    why.questions.forEach(function (x) {
+      var text = answerText(Q, state, "why." + x.id);
+      if (text) whyLines.push("* " + line(x.label, text));
+      if (x.id === "lost" && types.length) whyLines.push("* " + line(Q.why.typesLabel, types.map(function (t) { return t.label; }).join(", ")));
+    });
+    if (whyLines.length) { L.push("", Q.why.exportTitle); L.push.apply(L, whyLines); }
+
+    var D = Q.donors, C = D.columns;
+    ["regular", "major"].forEach(function (t) {
+      var rows = state.donors[t].map(function (r, i) {
+        var path = "donors." + t + "." + i + ".", parts = [];
+        var amount = S.trim(r.amount.text).replace(/^\$\s*/, "");
+        if (amount) parts.push(line(C.amount.replace(/\s*\(\$\)$/, ""), "$" + amount));
+        ["funds", "result", "words"].forEach(function (k) { var v = answerText(Q, state, path + k); if (v) parts.push(line(C[k], v)); });
+        return parts.length ? "* " + parts.join("; ") : "";
+      }).filter(function (x) { return x; });
+      if (rows.length) { L.push("", D[t].title + " " + D.draftNote); L.push.apply(L, rows); }
+    });
+
+    var W = Q.wand, wl = [];
+    var prog = answerText(Q, state, "wand.program"), amt = S.trim(state.wand.amount.text).replace(/^\$\s*/, ""), possible = answerText(Q, state, "wand.possible");
+    if (prog) wl.push("* " + line(W.program, prog));
+    if (amt) wl.push("* " + line(W.amount.replace(/\s*\(\$\)$/, ""), "$" + amt));
+    if (possible) wl.push("* " + line(W.possible, possible));
+    if (wl.length) { L.push("", W.exportTitle); L.push.apply(L, wl); }
+  }
+
   // The member's answers in FAC's sheet format.
   function context(Q, state) {
     var L = [], org = S.section(Q, "org"), prog = S.section(Q, "programs");
@@ -107,6 +151,8 @@ var FACExport = (function () {
       });
     });
 
+    step2(Q, state, L);
+
     var groups = S.sameGroups(state).filter(function (g) { return +g.path.split(".")[1] < k && g.other < k; });
     if (groups.length) {
       L.push("");
@@ -121,5 +167,5 @@ var FACExport = (function () {
     return L.join("\n");
   }
 
-  return { build: build, answerText: answerText, defaults: defaults, parts: parts, FILE_NAME: FILE_NAME };
+  return { build: build, answerText: answerText, defaults: defaults, parts: parts, whyNow: whyNow, FILE_NAME: FILE_NAME };
 })();
