@@ -93,6 +93,18 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("finds \"tbd\" and \"TBD.\"", S.vagueWord(Q, "tbd") === "tbd" && S.vagueWord(Q, "Cost: TBD.") === "TBD");
   check("ignores \"variously\" and \"T B D\"", S.vagueWord(Q, "variously") === "" && S.vagueWord(Q, "T B D") === "");
   check("nothing in a blank answer", S.vagueWord(Q, "") === "");
+  check("finds \"N/a\" and \"n/a\"", S.vagueWord(Q, "N/a") === "N/a" && S.vagueWord(Q, "Benchmarks: n/a") === "n/a");
+  var na = S.blank(Q);
+  S.setText(Q, na, "benchmarks.0", "N/a");
+  S.setText(Q, na, "org.mission", "N/A");
+  check("optional \"N/a\": vague, and the follow-up says leave it blank", S.issueOf(Q, "benchmarks.0", S.get(na, "benchmarks.0")) === "vague" && S.notNeeded(Q, "benchmarks.0", S.get(na, "benchmarks.0")));
+  check("required \"N/A\": the usual vague follow-up", S.issueOf(Q, "org.mission", S.get(na, "org.mission")) === "vague" && !S.notNeeded(Q, "org.mission", S.get(na, "org.mission")));
+  check("\"TBD\" on an optional answer: the usual vague follow-up", !S.notNeeded(Q, "pain.0", { text: "TBD" }));
+
+  // "24/7" is a schedule, not a figure.
+  check("\"24/7 hotline\" needs no label", S.status({ text: "24/7 hotline" }) === "none" && S.status({ text: "24x7 and 24-7 support" }) === "none");
+  check("\"24/7\" with a real figure still needs a label", S.status({ text: "24/7 hotline, 8,914 calls" }) === "needsLabel");
+  check("\"24/7\" isn't an output count", !S.hasCount("24/7 hotline in 2024") && S.hasCount("24/7 hotline: 8,914 calls in 2024"));
   var v = S.blank(Q);
   S.setText(Q, v, "programs.0.outputs", "TBD");
   S.setText(Q, v, "pain.0", "Various cuts");
@@ -191,6 +203,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("numbers under 10 are left out: 2 locations, 5 staff", keys("2 locations and 5 staff") === "");
   check("dollars are kept apart from counts: $831 vs 831", keys("$831 in goods") === "$831" && keys("$831 in goods") !== keys("831 children"));
   check("fiscal years left out: FY24 meals 120", keys("FY24 meals 120") === "120");
+  check("\"24/7\" isn't a shared number: 24/7 hotline, 8,914 calls", keys("24/7 hotline, 8,914 calls") === "8914");
   var dc = S.blank(Q);
   S.addProgram(Q, dc); S.addProgram(Q, dc);
   S.setText(Q, dc, "programs.0.outputs", "831 youth received housing in 2024");

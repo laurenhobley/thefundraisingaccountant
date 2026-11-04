@@ -193,6 +193,11 @@ T.run("Builder screens (builder.html)", function (check) {
   check("blank optional section doesn't block Next", /Benchmarks/.test(title()));
   check("FAC's research examples are shown as grey hints, never in a box", document.querySelectorAll("#screen .examples table tbody tr").length === 4 && $("f-benchmarks-0-src").value === "");
   check("each benchmark has Source, Program and How it connects", !!$("f-benchmarks-0-src") && !!$("f-benchmarks-0-prog") && !!$("f-benchmarks-0-how"));
+  type("f-benchmarks-0", "N/a");
+  $("next").click();
+  check("benchmark \"N/a\": Next blocked, follow-up says leave it blank", /Benchmarks/.test(title()) && fu("f-benchmarks-0") === F.notNeeded[0].replace("{word}", "N/a"));
+  type("f-benchmarks-0", "");
+  check("clearing it hides the follow-up", fu("f-benchmarks-0") === "");
   check("the program list offers the member's own program names", Array.prototype.some.call($("f-benchmarks-0-prog").options, function (o) { return o.value === "Emergency shelter"; }));
   var bsrc = $("f-benchmarks-0-src"); bsrc.value = "County housing report"; bsrc.dispatchEvent(new Event("input", { bubbles: true }));
   var bprog = $("f-benchmarks-0-prog"); bprog.value = "Emergency shelter"; bprog.dispatchEvent(new Event("change", { bubbles: true }));

@@ -604,7 +604,7 @@
       btn.textContent = F.separateButton;
       btn.hidden = !S.canConfirmSeparate(a);
     } else {
-      var lines = kind === "vague" ? F.vague : kind === "output" ? F[S.outputGap(a.text)] : kind === "math" ? F.mathWrong : path === "org.zip" ? F.missingZip : F.missing;
+      var lines = kind === "vague" ? (S.notNeeded(Q, path, a) ? F.notNeeded : F.vague) : kind === "output" ? F[S.outputGap(a.text)] : kind === "math" ? F.mathWrong : path === "org.zip" ? F.missingZip : F.missing;
       text = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text)).replace(/\{calc\}/g, function () { return S.mathProblem(a.text); });
       btn.textContent = kind === "missing" ? F.skipButton : F.keepButton;
       btn.hidden = !S.canSkip(a);

@@ -418,7 +418,12 @@ var FAC_QUESTIONS = {
 
   // Filler words that get a follow-up wherever they appear in an answer.
   // Whole words only, in any capitals. Steve can add more (open question 9).
-  vagueWords: ["various", "TBD"],
+  vagueWords: ["various", "TBD", "N/A"],
+
+  // Filler words that mean "nothing here". On an optional answer the
+  // follow-up suggests leaving the box blank (followUps.notNeeded) instead.
+  // Each one must also be in vagueWords. Draft for Steve.
+  notNeededWords: ["N/A"],
 
   // Words that mark an assumption ("If a stay costs $50/day..."). An answer
   // with one of these and a figure needs a source or the Unsupported label.
@@ -442,6 +447,11 @@ var FAC_QUESTIONS = {
     vague: [
       "“{word}” is vague. Can you be more specific?",
       "We still need more detail than “{word}”. If you can't be more specific, you can keep your answer, and it will be marked Unsupported."
+    ],
+    // For a notNeededWords word on an optional answer. Draft for Steve.
+    notNeeded: [
+      "“{word}” isn't needed. If you don't have one, leave this box blank.",
+      "If you don't have one, you can leave this box blank. Or keep your answer, and it will be marked Unsupported."
     ],
     keepButton: "Keep my answer",
     keptVague: "Unsupported: vague. Edit your answer any time to clear this.",

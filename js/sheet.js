@@ -199,7 +199,11 @@ var FACSheet = (function () {
     return state[p[0]][+p[1]];
   }
 
-  function hasNumber(text) { return /\d/.test(text || ""); }
+  // "24/7" (or 24x7, 24-7) is a schedule, not a figure.
+  var ROUND_CLOCK = /\b24\s?[\/x×-]\s?7\b/gi;
+  function figures(text) { return String(text || "").replace(ROUND_CLOCK, " "); }
+
+  function hasNumber(text) { return /\d/.test(figures(text)); }
   function zipOk(text) { return /^\d{5}(-\d{4})?$/.test(trim(text)); }
 
   // "none": no number, so no label needed. "needsLabel", "needsNote",
@@ -243,6 +247,13 @@ var FACSheet = (function () {
     return "";
   }
 
+  // True when an optional answer's filler word means "nothing here"
+  // (Q.notNeededWords, e.g. "N/A"), so the follow-up suggests leaving it blank.
+  function notNeeded(Q, path, a) {
+    var w = vagueWord(Q, a.text).toLowerCase();
+    return !!w && !isRequired(Q, path) && (Q.notNeededWords || []).some(function (x) { return x.toLowerCase() === w; });
+  }
+
   // ---------- Outputs: a number and a year ----------
 
   // A year is 1900-2099, alone or as a range (2024, 2023-24, 2023-2024), or a
@@ -257,7 +268,7 @@ var FACSheet = (function () {
   }
   // A number is any digit left once the years are taken out.
   function hasCount(text) {
-    return /\d/.test(String(text || "").replace(FY, " ").replace(YEAR, "$1 "));
+    return /\d/.test(figures(text).replace(FY, " ").replace(YEAR, "$1 "));
   }
 
   function isOutputs(path) { return /^programs\.\d+\.outputs$/.test(path); }
@@ -397,7 +408,7 @@ var FACSheet = (function () {
   // Commas don't matter (1,680 = 1680). Dollars are only compared with
   // dollars ($831 is not the same as 831 children).
   function numbersIn(text) {
-    var t = String(text || "").replace(FY, " ").replace(YEAR, "$1 "), out = [], m;
+    var t = figures(text).replace(FY, " ").replace(YEAR, "$1 "), out = [], m;
     var re = /(\$\s?)?(\d[\d,]*(?:\.\d+)?)/g;
     while ((m = re.exec(t))) {
       var digits = m[2].replace(/,+$/, ""), value = parseFloat(digits.replace(/,/g, ""));
@@ -740,7 +751,7 @@ var FACSheet = (function () {
     section: section, blank: blank, repair: repair, get: get, trim: trim,
     hasNumber: hasNumber, zipOk: zipOk, status: status, needsLabel: needsLabel,
     isMissing: isMissing, requiredOn: requiredOn, missing: missing, ask: ask, canSkip: canSkip, skip: skip, setText: setText,
-    vagueWord: vagueWord, isRequired: isRequired, issueOf: issueOf, answersOn: answersOn, issues: issues,
+    vagueWord: vagueWord, notNeeded: notNeeded, isRequired: isRequired, issueOf: issueOf, answersOn: answersOn, issues: issues,
     hasYear: hasYear, hasCount: hasCount, outputGap: outputGap,
     same: same, duplicateOf: duplicateOf, canConfirmSeparate: canConfirmSeparate, confirmSeparate: confirmSeparate,
     baseIssue: baseIssue, numbersIn: numbersIn, sharedCount: sharedCount, sameGroups: sameGroups, resolveOverlap: resolveOverlap,
