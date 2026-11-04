@@ -122,6 +122,38 @@ T.run("Export (js/export.js)", function (check) {
   var typed2 = S.paths(s).map(function (p) { var a = S.get(s, p); return a.text + " " + a.note + " " + a.src + " " + a.how; }).join(" ");
   var strays2 = (s2out.replace(Q.finalPrompt, "").replace(Q.guardrail, "").replace(/^\d+\. /gm, "").replace(/Program \d+/g, "").match(/\d[\d,.]*\d|\d/g) || []).filter(function (n) { return typed2.indexOf(n) === -1; });
   check("still no number the member didn't type" + (strays2.length ? " (found: " + strays2.join(" ") + ")" : ""), strays2.length === 0);
+
+  // Step 3: each step's prompt, the funder story and the package.
+  var ST = Q.story;
+  set("story.keyFact", "Rents rose sharply");
+  var p31 = E.stepPrompt(Q, s, "challenge");
+  check("3.1's prompt: FAC's line, the 2.1 answers with their labels, the key fact, then the guardrail line",
+    p31.indexOf(ST.challenge.prompt + "\n\nFunding lost ($ and type): $95,000 (source: 2024 audit) (Grants, Donations)\nPeople not served: 80 [Unsupported]\nIncreased demand: 12% [Unsupported]\nKey fact: Rents rose sharply\n\n" + Q.guardrail) === 0);
+  var p32 = E.stepPrompt(Q, s, "response");
+  check("3.2's prompt: FAC's line and each program", p32.indexOf(ST.response.prompt + "\n\nProgram name: Weekend Meals\nDescription: Weekend meal kits for students\n") === 0 && p32.slice(-Q.guardrail.length) === Q.guardrail);
+  set("story.clientStory", "A family found a safe home."); set("story.clientQuote", "\u201cWe can breathe again.\u201d");
+  check("3.3's prompt: FAC's line, the story and quote", E.stepPrompt(Q, s, "outcome") === ST.outcome.prompt + "\n\nClient story: A family found a safe home.\nClient quote: \u201cWe can breathe again.\u201d\n\n" + Q.guardrail);
+  set("story.investment", "$500"); set("story.roi", "$1,500 \u00f7 $500 = 3");
+  check("3.4's prompt: FAC's line and the member's own figures", E.stepPrompt(Q, s, "roi") === ST.roi.prompt + "\n\nInvestment (gift amount): $500\nROI: $1,500 \u00f7 $500 = 3\n\n" + Q.guardrail);
+  S.addRound(s, "challenge", "ROI.bot challenge text"); S.addRound(s, "roi", "ROI.bot ROI text");
+  check("the funder story starts from the latest ROI.bot answers", E.funderText(Q, s) === "Challenge:\nROI.bot challenge text\n\nROI and ask:\nROI.bot ROI text");
+  s.funder.roi = "Give $500 today.";
+  check("the member's own edit replaces that part", E.funderText(Q, s).slice(-"ROI and ask:\nGive $500 today.".length) === "ROI and ask:\nGive $500 today.");
+  check("no second Why Now sentence until all three blanks are filled", E.investSentence(Q, s) === "");
+  set("story.investProgram", "Weekend Meals"); set("story.investOutcomes", "fuller weekends"); set("story.investDollars", "$40 a week per family");
+  S.setLabel(Q, s, "story.investDollars", "estimate"); S.setNote(Q, s, "story.investDollars", "county food costs");
+  check("the second Why Now sentence, with its label", E.investSentence(Q, s) === "An investment in Weekend Meals helps create fuller weekends and saves $40 a week per family [Estimate] (source: county food costs).");
+  s.actions[0] = { assignee: "Lauren", title: "Share the package", date: "2026-11-20", status: "Not started" };
+  s.assess.ratings = ["4", "", "2"]; s.assess.takeaway = "Lead with the pain statement";
+  var pkg = E.packageText(Q, s), PS = Q.packageText.sections;
+  check("the package has every section, in order", [PS.prompt, PS.whyNow, PS.programs, PS.story, PS.funder, PS.actions, PS.assess].every(function (h, i, a) {
+    return pkg.indexOf("== " + h + " ==") > -1 && (i === 0 || pkg.indexOf("== " + a[i - 1] + " ==") < pkg.indexOf("== " + h + " =="));
+  }));
+  check("the package contains the full prompt", pkg.indexOf(E.build(Q, s)) > -1);
+  check("ROI.bot's answers are marked as ROI.bot's", pkg.indexOf("== " + PS.story + " ==\n" + ST.fromRoibot) > -1);
+  check("next steps and self-assessment, only what was filled in", pkg.indexOf("* Assignee: Lauren; Title: Share the package; Date: 2026-11-20; Status: Not started") > -1 &&
+    pkg.indexOf(Q.assess.statements[0] + " 4/5") > -1 && pkg.indexOf(Q.assess.statements[1]) === -1 && pkg.indexOf("Lead with the pain statement") > -1);
+  check("no stack ranking section when the member didn't rank", pkg.indexOf("== " + PS.rank + " ==") === -1);
   check("with no constraint answers, Constraints holds FAC's 10 rules, then the guardrail line", E.build(Q, S.blank(Q)).indexOf("Constraints:\n- " + Q.rtcc.rules[0]) > -1 && E.build(Q, S.blank(Q)).split("\n").slice(-1)[0] === Q.guardrail);
   check("Known with a source: source in brackets, no tag", out.indexOf("in 2024 (source: 2024 annual report)") > -1);
   check("Known with no source: [Unsupported]", E.answerText(Q, { org: {}, programs: [{ outputs: { text: "90 kids in 2024", label: "known", note: "", asks: 0, skipped: false } }] }, "programs.0.outputs") === "90 kids in 2024 [Unsupported]");

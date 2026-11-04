@@ -179,6 +179,7 @@ var FAC_QUESTIONS = {
     numbers: { org: "1.1", program: "1.2", pain: "", benchmarks: "1.3", constraints: "1.4", review: "1.5", check: "◆" },
     nextButton: "Next",
     continueStep2: "Continue to Step 2",
+    continueStep3: "Continue to Step 3",
     checkpointYes: "Yes, continue",
     buildStory: "Build our story",
     editLink: "Edit",
@@ -230,6 +231,95 @@ var FAC_QUESTIONS = {
     amount: "Investment ($)",
     possible: "What would it make possible?",
     exportTitle: "Magic Wand"
+  },
+
+  // Step 3 of FAC's workshop workbook: "Use AI to Get Numbers to Tell Your
+  // Story". FAC's prompts are word for word from the workbook. Draft help for Steve.
+  story: {
+    intro: "A strong funder story connects four things: CHALLENGE → RESPONSE → OUTCOME → ROI. Copy each step's prompt into the same ROI.bot chat as your main prompt, then paste what ROI.bot gives back. Expect two or three rounds.",
+    promptTitle: "This step's prompt",
+    copyButton: "Copy this step's prompt",
+    copied: "Copied. Paste it into ROI.bot.",
+    outputLabel: "Paste ROI.bot's answer here",
+    outputHelp: "Each time you paste a new answer, it's kept as a new round so you can compare.",
+    roundsTitle: "Your rounds",
+    roundLabel: "Round {n}",
+    happy: "I'm happy with this part",
+    fromRoibot: "From ROI.bot: check its figures before using them.",
+    challenge: {
+      number: "3.1", title: "Define the challenge",
+      intro: "Your answers from Step 2.1 are brought in so ROI.bot can write the challenge part of your story.",
+      prompt: "Here is a narrative list of the challenges faced in the world that we seek to change:",
+      inputs: { lost: "Funding lost ($ and type)", unserved: "People not served", demand: "Increased demand", served: "Currently served", keyFact: "Key fact" }
+    },
+    response: {
+      number: "3.2", title: "Define your response",
+      intro: "Your program information is brought in so ROI.bot can show how your programs respond to the challenge.",
+      prompt: "Provide a narrative with our response to those challenges. Explain how our programs help make the world a better place.",
+      inputs: { name: "Program name", description: "Description", outputs: "Outputs", impact: "Impact statement" }
+    },
+    outcome: {
+      number: "3.3", title: "Define the outcome",
+      intro: "Show what changed for one real person. A single story with a quote does more than a page of statistics.",
+      prompt: "Using our challenge and response, describe the outcome for the people we serve. Include one real client story and quote.",
+      approved: "This story and quote are anonymized and approved for public use.",
+      needApproved: "Tick the box above before copying this prompt."
+    },
+    roi: {
+      number: "3.4", title: "Calculate the ROI",
+      intro: "Turn the outcome into a number a funder can compare.",
+      prompt: "Calculate the ROI of a gift to this program.",
+      example: "Illustrative example from FAC's workbook: $500 toward survivor support; $1,500 in documented equivalent service value; $1,500 ÷ $500 = 3:1; $5,000 funds 10 survivor support packages at $500 each."
+    },
+    // The new boxes in Step 3. Only the key fact, value created and dollars saved get a Known / Estimate / Unsupported box.
+    fields: {
+      keyFact: { label: "Key fact", help: "One fact that shows what's at stake for the people you serve." },
+      clientStory: { label: "Client story", help: "An anonymized, approved story describing the journey from crisis toward safety and stability." },
+      clientQuote: { label: "Client quote", help: "An authentic quote approved for public use." },
+      secondQuote: { label: "Second quote", note: "(optional)", help: "A second verified quote about healing, independence, or hope." },
+      investment: { label: "Investment (gift amount)", help: "The gift you're asking for." },
+      value: { label: "Value created or cost avoided", help: "What the gift creates or saves, with where the figure comes from." },
+      roi: { label: "ROI", help: "Type your own calculation: the value divided by the investment. The builder checks the math." },
+      ask: { label: "The ask", help: "What you're asking a funder to give, and what it funds." },
+      investProgram: { label: "An investment in…", help: "Your program." },
+      investOutcomes: { label: "helps create…", help: "The outcomes, in your words or from ROI.bot's answers." },
+      investDollars: { label: "and saves…", help: "The dollars saved, with where the figure comes from." }
+    },
+    funder: {
+      number: "3.5", title: "Put it together: your funder story",
+      intro: "Combine your four outputs into one short story, in order, and end with a clear ask. Each part starts with your latest ROI.bot answer; edit it as you like.",
+      parts: { challenge: "Challenge", response: "Response", outcome: "Outcome", roi: "ROI and ask" },
+      reset: "Use my latest ROI.bot answer",
+      investTitle: "Finish your Why Now statement",
+      investSentence: "An investment in {program} helps create {outcomes} and saves {dollars}.",
+      copyButton: "Copy funder story"
+    }
+  },
+  actions: {
+    title: "My next steps",
+    intro: "Based on today's workshop, commit to one to three actions you will take in the next 30 days.",
+    rowLabel: "Action",
+    columns: { assignee: "Assignee", title: "Title", date: "Date", status: "Status" },
+    statuses: ["Not started", "In progress", "Done"]
+  },
+  assess: {
+    title: "Self assessment",
+    intro: "Rate yourself honestly: 1 = there's lots of work to do here, 5 = we nail this part.",
+    statements: [
+      "We have a diversified DEVELOPMENT PLAN (not too dependent on 1-3 sources).",
+      "We can show donors the TANGIBLE OUTCOMES from their gift.",
+      "Our CASE STATEMENT uses numbers to measure the impact of those outcomes."
+    ],
+    takeaway: "What is your biggest takeaway from today's workshop?"
+  },
+  packageText: {
+    title: "Your package",
+    text: "Everything you made, in one file you can keep. Tick the box to unlock Copy and Download.",
+    checkbox: "I reviewed my package",
+    copyButton: "Copy package",
+    downloadButton: "Download package (.txt)",
+    heading: "ROI.bot package",
+    sections: { prompt: "Your ROI.bot prompt", whyNow: "Why Now statement", programs: "Programs in priority order", rank: "Stack ranking", story: "Your story parts", funder: "Your funder story", actions: "My next steps", assess: "Self assessment" }
   },
 
   // Optional stack rank (FAC's process guide, form 1.2), after the programs.

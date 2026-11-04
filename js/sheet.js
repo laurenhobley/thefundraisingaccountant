@@ -56,9 +56,35 @@ var FACSheet = (function () {
       why: group(section(Q, "why").questions),
       whyTypes: [],
       donors: { regular: [donorRow(), donorRow(), donorRow(), donorRow()], major: [donorRow(), donorRow(), donorRow(), donorRow()] },
-      wand: { program: answer(), amount: answer(), possible: answer() }
+      wand: { program: answer(), amount: answer(), possible: answer() },
+      // Step 3: the member's own inputs (story.*), what they pasted back from
+      // ROI.bot for each part (rounds kept so they can compare), their
+      // funder story (null = their latest ROI.bot answer), next steps and
+      // the self-assessment.
+      story: group(storyIds.map(function (id) { return { id: id }; })),
+      storyApproved: false,
+      storyOut: { challenge: storyOut(), response: storyOut(), outcome: storyOut(), roi: storyOut() },
+      funder: { challenge: null, response: null, outcome: null, roi: null },
+      actions: [action(), action(), action()],
+      assess: { ratings: ["", "", ""], takeaway: "" },
+      pkgReviewed: false
     };
   }
+
+  var storyIds = ["keyFact", "clientStory", "clientQuote", "secondQuote", "investment", "value", "roi", "ask", "investProgram", "investOutcomes", "investDollars"];
+  var STORY_PARTS = ["challenge", "response", "outcome", "roi"];
+  function storyOut() { return { draft: "", rounds: [], happy: false }; }
+  function action() { return { assignee: "", title: "", date: "", status: "" }; }
+
+  // A new paste from ROI.bot becomes a new round, unless it's the same as the last.
+  function addRound(state, part, text) {
+    var o = state.storyOut[part], last = o.rounds[o.rounds.length - 1];
+    o.draft = text;
+    if (!trim(text) || (last && last.text === text)) return false;
+    o.rounds.push({ n: (last ? last.n : 0) + 1, text: text });
+    return true;
+  }
+  function latest(state, part) { var r = state.storyOut[part].rounds; return r.length ? r[r.length - 1].text : ""; }
 
   function donorRow() { return { amount: answer(), funds: answer(), result: answer(), words: answer() }; }
 
@@ -114,6 +140,28 @@ var FACSheet = (function () {
       if (rows && rows.length) s.donors[t] = rows.map(function (r) { return copyGroup(donorRow(), r); });
     });
     copyGroup(s.wand, data.wand);
+    copyGroup(s.story, data.story);
+    if (data.storyApproved === true) s.storyApproved = true;
+    STORY_PARTS.forEach(function (p) {
+      var from = data.storyOut && data.storyOut[p], to = s.storyOut[p];
+      if (from) {
+        if (typeof from.draft === "string") to.draft = from.draft;
+        if (from.happy === true) to.happy = true;
+        (from.rounds || []).forEach(function (r) { if (r && typeof r.n === "number" && typeof r.text === "string") to.rounds.push({ n: r.n, text: r.text }); });
+      }
+      if (data.funder && typeof data.funder[p] === "string") s.funder[p] = data.funder[p];
+    });
+    if (data.actions && data.actions.length) s.actions = data.actions.slice(0, 3).map(function (a) {
+      var x = action();
+      for (var k in x) if (a && typeof a[k] === "string") x[k] = a[k];
+      return x;
+    });
+    while (s.actions.length < 3) s.actions.push(action());
+    if (data.assess) {
+      if (data.assess.ratings) s.assess.ratings = [0, 1, 2].map(function (i) { var v = data.assess.ratings[i]; return /^[1-5]$/.test(v) ? v : ""; });
+      if (typeof data.assess.takeaway === "string") s.assess.takeaway = data.assess.takeaway;
+    }
+    if (data.pkgReviewed === true) s.pkgReviewed = true;
     var R = data.rank || {}, ids = (Q.rank.measures || []).map(function (m) { return m.id; });
     if (R.use === "yes" || R.use === "no") s.rank.use = R.use;
     if (R.measures && R.measures.length) s.rank.measures = R.measures.filter(function (id) { return ids.indexOf(id) > -1; }).slice(0, 3);
@@ -145,7 +193,7 @@ var FACSheet = (function () {
   // "why.lost", "donors.regular.0.result" or "wand.possible".
   function get(state, path) {
     var p = path.split(".");
-    if (p[0] === "org" || p[0] === "constraints" || p[0] === "why" || p[0] === "wand") return state[p[0]][p[1]];
+    if (p[0] === "org" || p[0] === "constraints" || p[0] === "why" || p[0] === "wand" || p[0] === "story") return state[p[0]][p[1]];
     if (p[0] === "donors") return state.donors[p[1]][+p[2]][p[3]];
     if (p[0] === "programs") return state.programs[+p[1]][p[2]];
     return state[p[0]][+p[1]];
@@ -172,6 +220,9 @@ var FACSheet = (function () {
   function needsLabel(path) {
     if (path === "org.zip" || path.indexOf("constraints.") === 0 || path === "wand.program" || path === "wand.amount") return false;
     if (path.indexOf("donors.") === 0) return /\.result$/.test(path);
+    // Step 3: only the figures that are claims (the key fact, the value
+    // created and the dollars saved) need a source.
+    if (path.indexOf("story.") === 0) return ["story.keyFact", "story.value", "story.investDollars"].indexOf(path) > -1;
     return true;
   }
 
@@ -423,8 +474,12 @@ var FACSheet = (function () {
     else if (st.kind === "pain" || st.kind === "benchmarks") for (i = 0; i < state[st.kind].length; i++) out.push(st.kind + "." + i);
     else if (st.kind === "constraints" || st.kind === "why" || st.kind === "wand") for (id in state[st.kind]) { if (state[st.kind].hasOwnProperty(id)) out.push(st.kind + "." + id); }
     else if (st.kind === "donors") out = donorPaths(state);
+    else if (st.kind === "story" || st.kind === "funder") out = (STORY_FIELDS[st.of || "funder"] || []).map(function (id) { return "story." + id; });
     return out;
   }
+
+  // Which of Step 3's own boxes sit on which screen.
+  var STORY_FIELDS = { challenge: ["keyFact"], response: [], outcome: ["clientStory", "clientQuote", "secondQuote"], roi: ["investment", "value", "roi", "ask"], funder: ["investProgram", "investOutcomes", "investDollars"] };
 
   function donorPaths(state) {
     var out = [];
@@ -529,6 +584,7 @@ var FACSheet = (function () {
     for (id in state.why) if (state.why.hasOwnProperty(id)) out.push("why." + id);
     out = out.concat(donorPaths(state));
     for (id in state.wand) if (state.wand.hasOwnProperty(id)) out.push("wand." + id);
+    for (id in state.story) if (state.story.hasOwnProperty(id)) out.push("story." + id);
     return out;
   }
 
@@ -541,15 +597,22 @@ var FACSheet = (function () {
     var out = [{ kind: "org" }];
     for (var i = 0; i < state.programs.length; i++) out.push({ kind: "program", index: i });
     out.push({ kind: "rank" }, { kind: "check", of: "programs" }, { kind: "pain" }, { kind: "benchmarks" }, { kind: "check", of: "benchmarks" },
-      { kind: "constraints" }, { kind: "check", of: "constraints" }, { kind: "end" },
+      { kind: "constraints" }, { kind: "check", of: "constraints" }, { kind: "end", stage: 1 },
       // Step 2, then the review screen again with Step 2 in the prompt.
-      { kind: "why" }, { kind: "donors" }, { kind: "wand" }, { kind: "end", last: true });
+      { kind: "why" }, { kind: "donors" }, { kind: "wand" }, { kind: "end", stage: 2 },
+      // Step 3, the member's next steps and self-assessment, then the package.
+      { kind: "story", of: "challenge" }, { kind: "story", of: "response" }, { kind: "story", of: "outcome" }, { kind: "story", of: "roi" },
+      { kind: "funder" }, { kind: "actions" }, { kind: "assess" }, { kind: "package" });
     return out;
   }
   function stepOf(state, path) {
     var p = path.split("."), n = state.programs.length;
     if (p[0] === "org") return 0;
     if (p[0] === "programs") return 1 + (+p[1]);
+    if (p[0] === "story") {
+      var at = { challenge: 13, response: 14, outcome: 15, roi: 16, funder: 17 };
+      for (var k in STORY_FIELDS) if (STORY_FIELDS[k].indexOf(p[1]) > -1) return n + at[k];
+    }
     return n + ({ rank: 1, pain: 3, benchmarks: 4, constraints: 6, why: 9, donors: 10, wand: 11 })[p[0]];
   }
 
@@ -686,6 +749,7 @@ var FACSheet = (function () {
     paths: paths, steps: steps, stepOf: stepOf, problems: problems, addVersion: addVersion,
     rankCheck: rankCheck, sortByScore: sortByScore, included: included,
     addDonorRow: addDonorRow, removeDonorRow: removeDonorRow, importLive: importLive,
+    addRound: addRound, latest: latest, STORY_PARTS: STORY_PARTS,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear
   };

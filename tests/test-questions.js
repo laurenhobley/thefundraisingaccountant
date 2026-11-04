@@ -89,6 +89,11 @@ T.run("Questions (js/questions.js)", function (check) {
   check("the how-to page has no numbers in it", !/\d/.test([Q.howTo.linkText, Q.howTo.title, Q.howTo.intro, Q.howTo.privacy, Q.howTo.back].concat(Q.howTo.steps).join(" ")));
   check("FAC's 10 rules for AI, with no numbers in them", Q.rtcc.rules.length === 10 && Q.rtcc.rules.every(function (r) { return /^Do not /.test(r) && !/\d/.test(r); }));
   check("the how-to page's AI note and 'Why now' figures, with their source", Q.howTo.aiNote.length === 2 && Q.howTo.whyNow.length === 3 && /Forvis Mazars/.test(Q.howTo.whyNowSource));
-  check("FAC's four research examples, each with a source", Q.benchmarkFields.examples.length === 4 && Q.benchmarkFields.examples.every(function (x) { return !!x.finding && !!x.source && !!x.connects; }));  check("every question and optional section has help text",
+  check("FAC's four research examples, each with a source", Q.benchmarkFields.examples.length === 4 && Q.benchmarkFields.examples.every(function (x) { return !!x.finding && !!x.source && !!x.connects; }));  check("Step 3 prompts, word for word from FAC's workbook",
+    Q.story.challenge.prompt === "Here is a narrative list of the challenges faced in the world that we seek to change:" &&
+    Q.story.response.prompt === "Provide a narrative with our response to those challenges. Explain how our programs help make the world a better place." &&
+    Q.story.outcome.prompt === "Using our challenge and response, describe the outcome for the people we serve. Include one real client story and quote." &&
+    Q.story.roi.prompt === "Calculate the ROI of a gift to this program.");
+  check("next steps (four columns) and the self-assessment (three statements)", Object.keys(Q.actions.columns).join() === "assignee,title,date,status" && Q.assess.statements.length === 3);  check("every question and optional section has help text",
     Q.sections.every(function (s) { return s.questions ? s.questions.every(function (q) { return !!q.help; }) : !!s.help; }));
 });

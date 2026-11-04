@@ -167,5 +167,95 @@ var FACExport = (function () {
     return L.join("\n");
   }
 
-  return { build: build, answerText: answerText, defaults: defaults, parts: parts, whyNow: whyNow, FILE_NAME: FILE_NAME };
+  // ---------- Step 3 ----------
+
+  var PACKAGE_FILE = "roi-bot-package.txt";
+
+  // One step's prompt: FAC's line from the workbook, that step's inputs (only
+  // the ones filled in, with their labels), then the guardrail line.
+  function stepPrompt(Q, state, part) {
+    var T = Q.story[part], L = [T.prompt, ""];
+    function add(label, path) { var t = answerText(Q, state, path); if (t) L.push(line(label, t)); }
+    if (part === "challenge") {
+      var I = T.inputs;
+      var types = Q.why.types.filter(function (t) { return state.whyTypes.indexOf(t.id) > -1; }).map(function (t) { return t.label; });
+      var lost = answerText(Q, state, "why.lost");
+      if (lost && lost.charAt(0) !== "$") lost = "$" + lost;
+      if (lost || types.length) L.push(line(I.lost, [lost, types.length ? "(" + types.join(", ") + ")" : ""].join(" ").replace(/^\s+|\s+$/g, "")));
+      add(I.unserved, "why.unserved");
+      var demand = [answerText(Q, state, "why.demandPct"), answerText(Q, state, "why.demandServices")].filter(function (x) { return x; }).join("; ");
+      if (demand) L.push(line(I.demand, demand));
+      var served = [answerText(Q, state, "why.served"), answerText(Q, state, "why.period")].filter(function (x) { return x; }).join(" ");
+      if (served) L.push(line(I.served, served));
+      add(I.keyFact, "story.keyFact");
+    } else if (part === "response") {
+      var R = T.inputs;
+      state.programs.slice(0, S.included(state)).forEach(function (p, i) {
+        if (i) L.push("");
+        add(R.name, "programs." + i + ".name"); add(R.description, "programs." + i + ".description");
+        add(R.outputs, "programs." + i + ".outputs"); add(R.impact, "programs." + i + ".impact");
+      });
+    } else {
+      var F = Q.story.fields;
+      (part === "outcome" ? ["clientStory", "clientQuote", "secondQuote"] : ["investment", "value", "roi", "ask"]).forEach(function (id) {
+        add(F[id].label, "story." + id);
+      });
+    }
+    L.push("", Q.guardrail);
+    return L.join("\n").replace(/\n{3,}/g, "\n\n");
+  }
+
+  // The funder story: each part is the member's own edit, or their latest
+  // ROI.bot answer for that part.
+  function funderPart(state, part) { return state.funder[part] != null ? state.funder[part] : S.latest(state, part); }
+  function funderText(Q, state) {
+    var P = Q.story.funder.parts;
+    return S.STORY_PARTS.map(function (k) { return S.trim(funderPart(state, k)) ? P[k] + ":\n" + S.trim(funderPart(state, k)) : ""; })
+      .filter(function (x) { return x; }).join("\n\n");
+  }
+
+  // The second Why Now sentence, once the member has filled in all three blanks.
+  function investSentence(Q, state) {
+    var s = state.story, v = { program: S.trim(s.investProgram.text), outcomes: S.trim(s.investOutcomes.text), dollars: answerText(Q, state, "story.investDollars") };
+    if (!v.program || !v.outcomes || !v.dollars) return "";
+    return Q.story.funder.investSentence.replace(/\{(\w+)\}/g, function (m, k) { return v[k]; });
+  }
+
+  // Everything the member made, in one file (FAC's process guide: "What the
+  // member walks away with"). ROI.bot's answers are marked as ROI.bot's.
+  function packageText(Q, state) {
+    var P = Q.packageText, H = P.sections, out = [], org = S.trim(state.org.name.text);
+    function section(title, body) { if (S.trim(body)) out.push("== " + title + " ==", S.trim(body), ""); }
+    out.push(P.heading + (org ? ": " + org : ""), "");
+    section(H.prompt, build(Q, state));
+    section(H.whyNow, whyNow(Q, state).concat(investSentence(Q, state) ? [investSentence(Q, state)] : []).join("\n"));
+    var k = S.included(state);
+    section(H.programs, state.programs.map(function (p, i) {
+      return (i + 1) + ". " + (S.trim(p.name.text) || Q.flow.empty) + (i >= k ? " (" + Q.rank.belowLine + ")" : "");
+    }).join("\n"));
+    if (state.rank.use === "yes") {
+      var ms = Q.rank.measures.filter(function (m) { return state.rank.measures.indexOf(m.id) > -1; });
+      section(H.rank, state.programs.map(function (p, i) {
+        var row = state.rankRows[i];
+        return (S.trim(p.name.text) || Q.flow.empty) + ": " + ms.map(function (m) { return m.label + " " + (row.m[m.id] || Q.flow.empty); }).join(", ") +
+          "; " + Q.rank.scoreLabel + " " + (S.trim(row.score) || Q.flow.empty);
+      }).join("\n"));
+    }
+    var parts = S.STORY_PARTS.map(function (p) { return S.trim(S.latest(state, p)) ? Q.story.funder.parts[p] + ":\n" + S.trim(S.latest(state, p)) : ""; }).filter(function (x) { return x; });
+    if (parts.length) section(H.story, Q.story.fromRoibot + "\n\n" + parts.join("\n\n"));
+    section(H.funder, funderText(Q, state));
+    var C = Q.actions.columns;
+    section(H.actions, state.actions.map(function (a) {
+      var bits = ["assignee", "title", "date", "status"].filter(function (x) { return S.trim(a[x]); }).map(function (x) { return line(C[x], S.trim(a[x])); });
+      return bits.length ? "* " + bits.join("; ") : "";
+    }).filter(function (x) { return x; }).join("\n"));
+    section(H.assess, Q.assess.statements.map(function (st, i) { return state.assess.ratings[i] ? "* " + st + " " + state.assess.ratings[i] + "/5" : ""; })
+      .filter(function (x) { return x; }).concat(S.trim(state.assess.takeaway) ? [line(Q.assess.takeaway, S.trim(state.assess.takeaway))] : []).join("\n"));
+    return out.join("\n").replace(/\n+$/, "") + "\n";
+  }
+
+  return {
+    build: build, answerText: answerText, defaults: defaults, parts: parts, whyNow: whyNow, FILE_NAME: FILE_NAME,
+    stepPrompt: stepPrompt, funderPart: funderPart, funderText: funderText, investSentence: investSentence, packageText: packageText, PACKAGE_FILE: PACKAGE_FILE
+  };
 })();

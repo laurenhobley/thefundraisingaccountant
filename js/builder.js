@@ -164,6 +164,137 @@
       field({ label: W.amount, kind: "text" }, "wand.amount") + field({ label: W.possible, kind: "long" }, "wand.possible");
   }
 
+  // ---------- Step 3 ----------
+
+  function storyField(id) {
+    var f = Q.story.fields[id];
+    return field({ label: f.label, note: f.note, help: f.help, kind: id === "clientStory" || id === "value" || id === "ask" || id === "keyFact" ? "long" : "text" }, "story." + id);
+  }
+
+  // 3.1 to 3.4: FAC's prompt with this step's inputs, a copy button, a box
+  // for ROI.bot's answer (each new paste kept as a round) and "happy" tick.
+  function storyScreen(part) {
+    var T = Q.story[part], ST = Q.story, o = state.storyOut[part];
+    var own = { challenge: ["keyFact"], response: [], outcome: ["clientStory", "clientQuote", "secondQuote"], roi: ["investment", "value", "roi", "ask"] }[part];
+    var html = heading(T.number, T.title) + '<p class="hint">' + esc(T.intro) + '</p>' +
+      (T.example ? '<div class="examples"><span class="ex-tag">Example</span><p>' + esc(T.example) + '</p></div>' : "") +
+      own.map(storyField).join("") +
+      (part === "outcome" ? '<label class="review-check"><input type="checkbox" class="story-approved"' + (state.storyApproved ? " checked" : "") + '> ' + esc(T.approved) + '</label>' : "") +
+      '<div class="f"><span class="lbl">' + esc(ST.promptTitle) + '</span><pre class="step-prompt" id="step-prompt"></pre></div>' +
+      '<div class="actions"><button type="button" class="btn primary" id="copyStep" data-act="copyStep" data-part="' + part + '">' + esc(ST.copyButton) + '</button></div>' +
+      '<p id="step-msg" aria-live="polite" class="hint"></p>' +
+      '<div class="f"><label for="story-out">' + esc(ST.outputLabel) + '</label><p class="hint">' + esc(ST.outputHelp) + '</p>' +
+      '<textarea class="story-out" id="story-out" data-part="' + part + '">' + esc(o.draft || S.latest(state, part)) + '</textarea></div>' +
+      '<div class="f"><span class="lbl">' + esc(ST.roundsTitle) + '</span><div id="story-rounds"></div></div>' +
+      '<label class="review-check"><input type="checkbox" class="story-happy" data-part="' + part + '"' + (o.happy ? " checked" : "") + '> ' + esc(ST.happy) + '</label>';
+    return html;
+  }
+  function refreshStory() {
+    var pre = $("step-prompt"), st = S.steps(state)[state.step];
+    if (!pre || st.kind !== "story") return;
+    pre.textContent = FACExport.stepPrompt(Q, state, st.of);
+    var blocked = st.of === "outcome" && !state.storyApproved;
+    $("copyStep").disabled = blocked;
+    if (blocked) $("step-msg").textContent = Q.story.outcome.needApproved;
+    else if ($("step-msg").textContent === Q.story.outcome.needApproved) $("step-msg").textContent = "";
+    var rounds = state.storyOut[st.of].rounds;
+    $("story-rounds").innerHTML = rounds.slice().reverse().map(function (r) {
+      return '<details class="version"><summary>' + esc(Q.story.roundLabel.replace(/\{n\}/g, r.n)) + '</summary><pre class="version-text">' + esc(r.text) + '</pre></details>';
+    }).join("");
+  }
+
+  // 3.5: the funder story, editable, and the end of the Why Now statement.
+  function funderScreen() {
+    var F = Q.story.funder;
+    return heading(F.number, F.title) + '<p class="hint">' + esc(F.intro) + '</p>' +
+      S.STORY_PARTS.map(function (k) {
+        return '<div class="f"><label for="funder-' + k + '">' + esc(F.parts[k]) + '</label>' +
+          '<textarea class="funder-edit" id="funder-' + k + '" data-part="' + k + '">' + esc(FACExport.funderPart(state, k)) + '</textarea>' +
+          '<div><button type="button" class="btn quiet" data-act="funderReset" data-part="' + k + '">' + esc(F.reset) + '</button></div></div>';
+      }).join("") +
+      '<div class="actions"><button type="button" class="btn ghost" data-act="copyFunder">' + esc(F.copyButton) + '</button></div><p id="step-msg" aria-live="polite" class="hint"></p>' +
+      '<div class="why-preview"><span class="lbl">' + esc(F.investTitle) + '</span><div id="why-black"></div>' +
+      ["investProgram", "investOutcomes", "investDollars"].map(storyField).join("") + '<p id="invest-sentence"></p></div>';
+  }
+
+  function actionsScreen() {
+    var A = Q.actions, C = A.columns;
+    return heading("", A.title) + '<p class="hint">' + esc(A.intro) + '</p>' +
+      state.actions.map(function (a, i) {
+        function input(k, type) {
+          return '<label>' + esc(C[k]) + ' <input type="' + type + '" class="act" data-row="' + i + '" data-k="' + k + '" value="' + esc(a[k]) + '"></label>';
+        }
+        return '<div class="donor-row"><div class="item-head"><span class="lbl">' + esc(A.rowLabel) + ' ' + (i + 1) + '</span></div>' +
+          input("assignee", "text") + input("title", "text") + input("date", "date") +
+          '<label>' + esc(C.status) + ' <select class="act" data-row="' + i + '" data-k="status"><option value=""></option>' +
+          A.statuses.map(function (s) { return '<option' + (a.status === s ? " selected" : "") + '>' + esc(s) + '</option>'; }).join("") + '</select></label></div>';
+      }).join("");
+  }
+
+  function assessScreen() {
+    var A = Q.assess;
+    return heading("", A.title) + '<p class="hint">' + esc(A.intro) + '</p>' +
+      A.statements.map(function (s, i) {
+        return '<div class="f"><span class="lbl">' + esc(s) + '</span><div class="choice" role="radiogroup" aria-label="' + esc(s) + '">' +
+          ["1", "2", "3", "4", "5"].map(function (v) {
+            return '<label><input type="radio" class="rate" name="rate-' + i + '" data-row="' + i + '" value="' + v + '"' + (state.assess.ratings[i] === v ? " checked" : "") + '> ' + v + '</label>';
+          }).join("") + '</div></div>';
+      }).join("") +
+      '<div class="f"><label for="takeaway">' + esc(A.takeaway) + '</label><textarea id="takeaway" class="takeaway">' + esc(state.assess.takeaway) + '</textarea></div>';
+  }
+
+  function packageScreen() {
+    var P = Q.packageText;
+    return heading("✓", P.title) + '<p>' + esc(P.text) + '</p>' +
+      '<pre id="pkgPreview"></pre>' +
+      '<label class="review-check"><input type="checkbox" id="pkg-reviewed"' + (state.pkgReviewed ? " checked" : "") + '> ' + esc(P.checkbox) + '</label>' +
+      '<div class="actions"><button type="button" class="btn primary" id="copyPkg" data-act="copyPkg">' + esc(P.copyButton) + '</button>' +
+      '<button type="button" class="btn ghost" id="downloadPkg" data-act="downloadPkg">' + esc(P.downloadButton) + '</button></div>' +
+      '<p id="exportMsg" aria-live="polite"></p>';
+  }
+  function refreshPackage() {
+    var pre = $("pkgPreview");
+    if (pre) {
+      pre.textContent = FACExport.packageText(Q, state);
+      $("pkg-reviewed").checked = state.pkgReviewed;
+      $("copyPkg").disabled = $("downloadPkg").disabled = !state.pkgReviewed;
+      if (!state.pkgReviewed) say(Q.review.locked.replace(Q.review.checkbox, Q.packageText.checkbox));
+    }
+    var inv = $("invest-sentence");
+    if (inv) inv.textContent = FACExport.investSentence(Q, state);
+  }
+
+  // Copies any text, falling back to selecting it.
+  function copyText(text, msgId, done, fallbackEl) {
+    function fallback() {
+      if (fallbackEl) { var range = document.createRange(); range.selectNodeContents(fallbackEl); var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); }
+      if ($(msgId)) $(msgId).textContent = Q.review.selected;
+    }
+    try { navigator.clipboard.writeText(text).then(function () { if ($(msgId)) $(msgId).textContent = done; }, fallback); }
+    catch (e) { fallback(); }
+  }
+
+  // Step 3 controls. Returns true when it handled the event.
+  function onStoryEdit(e) {
+    var el = e.target, c = el.classList;
+    if (c.contains("story-out")) {
+      var part = el.getAttribute("data-part");
+      if (e.type === "change") S.addRound(state, part, el.value); else state.storyOut[part].draft = el.value;
+    }
+    else if (c.contains("story-happy")) { if (e.type !== "change") return true; state.storyOut[el.getAttribute("data-part")].happy = el.checked; }
+    else if (c.contains("story-approved")) { if (e.type !== "change") return true; state.storyApproved = el.checked; }
+    else if (c.contains("funder-edit")) state.funder[el.getAttribute("data-part")] = el.value;
+    else if (c.contains("act")) state.actions[+el.getAttribute("data-row")][el.getAttribute("data-k")] = el.value;
+    else if (c.contains("rate")) { if (e.type !== "change") return true; state.assess.ratings[+el.getAttribute("data-row")] = el.value; }
+    else if (c.contains("takeaway")) state.assess.takeaway = el.value;
+    else if (el.id === "pkg-reviewed") { state.pkgReviewed = el.checked; refreshPackage(); save(); return true; }
+    else return false;
+    unreview();
+    refreshStory(); refreshPackage();
+    save();
+    return true;
+  }
+
   // Shows what still stops Next on the stack rank screen, and marks the rows.
   function showRankCheck(c) {
     $("rank-msg").textContent = c.msg ? Q.rank[c.msg] : "";
@@ -259,6 +390,7 @@
     if (p[0] === "rank") return Q.rank.title;
     if (p[0] === "why") return S.section(Q, "why").questions.filter(function (q) { return q.id === p[1]; })[0].label;
     if (p[0] === "wand") return Q.wand.title + ": " + Q.wand[p[1]];
+    if (p[0] === "story") return Q.story.fields[p[1]].label;
     if (p[0] === "donors") return Q.donors[p[1]].title + ", " + Q.donors.rowLabel.toLowerCase() + " " + (+p[2] + 1) + ": " + Q.donors.columns[p[3]];
     if (p[0] === "programs") {
       var sec = S.section(Q, "programs");
@@ -344,7 +476,7 @@
   function say(text) { var m = $("exportMsg"); if (m) m.textContent = text; }
 
   // Any change to the answers means the prompt changed: review it again.
-  function unreview() { state.reviewed = false; }
+  function unreview() { state.reviewed = false; state.pkgReviewed = false; }
 
   function copyPrompt() {
     if (!state.reviewed) return;
@@ -398,7 +530,12 @@
       st.kind === "constraints" ? constraintsScreen() :
       st.kind === "why" ? whyScreen() :
       st.kind === "donors" ? donorsScreen() :
-      st.kind === "wand" ? wandScreen() : reviewScreen();
+      st.kind === "wand" ? wandScreen() :
+      st.kind === "story" ? storyScreen(st.of) :
+      st.kind === "funder" ? funderScreen() :
+      st.kind === "actions" ? actionsScreen() :
+      st.kind === "assess" ? assessScreen() :
+      st.kind === "package" ? packageScreen() : reviewScreen();
 
     Array.prototype.forEach.call(screen.querySelectorAll(".ans"), function (el) {
       el.value = S.get(state, el.getAttribute("data-path")).text;
@@ -408,8 +545,11 @@
     $("counter").textContent = "Step " + (state.step + 1) + " of " + steps.length;
     $("back").disabled = state.step === 0;
     $("next").hidden = state.step === steps.length - 1;
-    $("next").textContent = st.kind === "end" ? Q.flow.continueStep2 : st.kind !== "check" ? Q.flow.nextButton : st.of === "constraints" ? Q.flow.buildStory : Q.flow.checkpointYes;
+    $("next").textContent = st.kind === "end" ? (st.stage === 2 ? Q.flow.continueStep3 : Q.flow.continueStep2) :
+      st.kind !== "check" ? Q.flow.nextButton : st.of === "constraints" ? Q.flow.buildStory : Q.flow.checkpointYes;
     refreshWhy();
+    refreshStory();
+    refreshPackage();
     refreshReview();
     refreshVersions();
     save();
@@ -501,6 +641,7 @@
     var el = e.target, path = el.getAttribute("data-path");
     if (el.id === "reviewed") { state.reviewed = el.checked; refreshReview(); save(); return; }
     if (onRankEdit(e)) return;
+    if (onStoryEdit(e)) return;
     if (el.classList.contains("why-type")) {
       if (e.type !== "change") return;
       var at = state.whyTypes.indexOf(el.value);
@@ -517,6 +658,8 @@
     unreview();
     refresh(path);
     refreshWhy();
+    refreshStory();
+    refreshPackage();
     save();
   }
 
@@ -550,6 +693,16 @@
     if (act === "copy") { copyPrompt(); return; }
     if (act === "download") { downloadPrompt(); return; }
     if (act === "downloadVersion") { downloadVersion(i); return; }
+    if (act === "copyStep") {
+      var sp = S.steps(state)[state.step].of;
+      if (sp === "outcome" && !state.storyApproved) return;
+      copyText(FACExport.stepPrompt(Q, state, sp), "step-msg", Q.story.copied, $("step-prompt"));
+      return;
+    }
+    if (act === "copyFunder") { copyText(FACExport.funderText(Q, state), "step-msg", Q.story.copied, null); return; }
+    if (act === "funderReset") { state.funder[b.getAttribute("data-part")] = null; unreview(); render(); return; }
+    if (act === "copyPkg") { if (state.pkgReviewed) copyText(FACExport.packageText(Q, state), "exportMsg", Q.review.copied, $("pkgPreview")); return; }
+    if (act === "downloadPkg") { if (state.pkgReviewed) { saveFile(FACExport.packageText(Q, state), FACExport.PACKAGE_FILE); say(Q.review.downloaded); } return; }
     if (act === "importLive") {
       S.importLive(Q, state, liveDraft()); unreview(); render();
       if ($("why-imported")) $("why-imported").textContent = Q.why.imported;
