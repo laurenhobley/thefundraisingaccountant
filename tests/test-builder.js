@@ -142,20 +142,28 @@ T.run("Builder screens (builder.html)", function (check) {
   $("next").click();
   check("Next without choosing: asks to choose", rankMsg() === RK.needChoice && $("counter").textContent === "Step 4 of 23");
   document.querySelector('#screen .rank-use[value="yes"]').click();
-  check("Yes shows the four measures", document.querySelectorAll("#screen .rank-measure").length === 4);
-  ["quality", "uniqueness", "impact", "money"].forEach(function (id) { document.querySelector('#screen .rank-measure[value="' + id + '"]').click(); });
-  check("only three measures can be picked", saved().rank.measures.join() === "quality,uniqueness,impact" && document.querySelectorAll("#screen .rank-m").length === 6);
+  var intro = document.querySelector("#screen .rank-intro").textContent;
+  check("Yes shows FAC's template instructions and key", intro.indexOf(RK.intro) > -1 && intro.indexOf(RK.instructions[2]) > -1 && intro.indexOf("1 = Most · 2 = OK · 3 = Least") > -1);
+  check("three driver boxes, blank, and four columns per program", document.querySelectorAll("#screen .rank-name").length === 3 && $("rank-name-d1").value === "" &&
+    document.querySelectorAll('#screen .rank-m[data-row="0"]').length === 4 && !!document.querySelector('#screen .rank-m[data-m="money"]'));
+  check("the template's example row is grey text, not boxes", document.querySelector("#screen .rank-example").textContent === "Example: Vocational: Driver 1 1, Driver 2 1, Driver 3 1, Money 1; Stack Rank 1");
+  $("next").click();
+  check("Next with no driver names: asks for them", rankMsg() === RK.needNames);
+  type("rank-name-d1", "Quality"); type("rank-name-d3", "Impact");
+  var d2 = $("rank-name-d2"); d2.focus(); type("rank-name-d2", "Quantity");
+  check("naming a driver renames its column, and the cursor stays in the box", document.querySelector('#screen .rank-col[data-id="d2"]').textContent === "Quantity" &&
+    $("rank-name-d2") === d2 && document.activeElement === d2 && saved().rank.names.d3 === "Impact");
   $("next").click();
   check("Next with no scores: asks for them", rankMsg() === RK.needScores);
-  ["quality", "uniqueness", "impact"].forEach(function (id) { pickSel(0, id, "1"); pickSel(1, id, "2"); });
-  score(0, "1"); score(1, "6");
-  check("no score box is filled in by the tool", saved().rankRows[1].score === "6");
+  ["d1", "d2", "d3", "money"].forEach(function (id) { pickSel(0, id, "1"); pickSel(1, id, "2"); });
+  score(0, "1"); score(1, "8");
+  check("no Stack Rank box is filled in by the tool", saved().rankRows[1].score === "8");
   $("next").click();
-  check("a wrong score (2 × 2 × 2 typed as 6): asks to check it, without the right answer", rankMsg() === RK.wrongScore &&
-    $("rank-row-1").classList.contains("invalid-row") && !$("rank-row-0").classList.contains("invalid-row") && rankMsg().indexOf("8") === -1);
-  score(1, "8");
+  check("a wrong Stack Rank (2 × 2 × 2 × 2 typed as 8): asks to check it, without the right answer", rankMsg() === RK.wrongScore &&
+    $("rank-row-1").classList.contains("invalid-row") && !$("rank-row-0").classList.contains("invalid-row") && rankMsg().indexOf("16") === -1);
+  score(1, "16");
   act("rankSort");
-  check("Sort by score keeps Program 1 first (score 1 before 8)", rankMsg() === RK.sorted && saved().programs[0].name.text === "Emergency shelter");
+  check("Sort by Stack Rank keeps Program 1 first (1 before 16)", rankMsg() === RK.sorted && saved().programs[0].name.text === "Emergency shelter");
   var line = $("rank-line"); line.value = "1"; line.dispatchEvent(new Event("change", { bubbles: true }));
   check("red line after Program 1: Program 2 is below it", saved().rank.line === 1 && $("rank-row-1").textContent.indexOf(RK.belowLine) > -1);
   document.querySelector('#screen .rank-use[value="no"]').click();

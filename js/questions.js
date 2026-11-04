@@ -330,25 +330,47 @@ var FAC_QUESTIONS = {
   // sorts by the scores they typed. Draft for Steve. The guide says 3
   // measures but its example uses 4 (a gap for Steve to close).
   rank: {
-    title: "Prioritize your programs",
+    // From FAC's Stack Ranking Template (4 Drivers), word for word, except
+    // "four numbers" (the template says "three" but has four columns) and
+    // the doubled full stop after "drivers". Draft for Steve where marked.
+    title: "Compare your programs",
     ask: "Do you want to stack rank your programs?",
     yes: "Yes, rank them",
     no: "No, keep the order I typed",
     needChoice: "Please choose whether to rank your programs.",
-    measuresLabel: "Pick three measures",
-    measures: [
-      { id: "quality", label: "Quality/Quantity" },
-      { id: "uniqueness", label: "Uniqueness" },
-      { id: "impact", label: "Impact" },
-      { id: "money", label: "$$$" }
+    intro: "A stack ranking grid helps you compare your programs based on any three drivers. For example:",
+    introExamples: [
+      "Do they increase the QUALITY of services provided to existing clients?",
+      "Do they help increase the QUANTITY of clients you can serve?",
+      "Do they bring in MONEY, through earned income or donations?"
     ],
-    needMeasures: "Please pick exactly three measures.",
-    scoreHelp: "Score each program on each measure, where 1 is best and 3 is weakest. Then multiply the three scores and type the result as the program's score.",
-    scoreLabel: "Score",
-    needScores: "Please score every program on each measure and type its score.",
-    wrongScore: "This score doesn't match the three measures multiplied together. Please check it.",
-    sortButton: "Sort by score, lowest first",
-    sorted: "Sorted. The lowest score is your highest priority.",
+    instructions: [
+      "Rank each program with a 1, 2 or 3 to which does it most, just ok, or least.",
+      "Multiply these four numbers to produce a Stack ranking.",
+      "Sort by Stack Rank and you can quickly see which programs are most impactful to the mission. Those are likely the stories you want to tell."
+    ],
+    keyTitle: "Key",
+    key: ["1 = Most", "2 = OK", "3 = Least"],
+    // The columns, in order. The member names each "named" one (Driver 1-3);
+    // Money is always there.
+    columns: [
+      { id: "d1", label: "Driver 1", named: true },
+      { id: "d2", label: "Driver 2", named: true },
+      { id: "d3", label: "Driver 3", named: true },
+      { id: "money", label: "Money" }
+    ],
+    // Draft for Steve.
+    namesLabel: "Name your three drivers",
+    namesHelp: "Example: Quality, Quantity, Uniqueness, Impact",
+    needNames: "Please name all three drivers.",
+    // The template's example row, shown as grey text only.
+    exampleRow: { name: "Example: Vocational", scores: ["1", "1", "1", "1"], rank: "1" },
+    scoreLabel: "Stack Rank",
+    // Draft for Steve.
+    needScores: "Please score every program on each driver and Money, and type its Stack Rank.",
+    wrongScore: "This Stack Rank doesn't match the four numbers multiplied together. Please check it.",
+    sortButton: "Sort by Stack Rank, lowest first",
+    sorted: "Sorted. The programs at the top are most impactful to the mission.",
     lineLabel: "Draw the red line after",
     lineHelp: "Programs below the red line are left out of the prompt. They stay saved, so you can move the line later.",
     belowLine: "below the red line"

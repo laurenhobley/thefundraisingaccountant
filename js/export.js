@@ -234,10 +234,11 @@ var FACExport = (function () {
       return (i + 1) + ". " + (S.trim(p.name.text) || Q.flow.empty) + (i >= k ? " (" + Q.rank.belowLine + ")" : "");
     }).join("\n"));
     if (state.rank.use === "yes") {
-      var ms = Q.rank.measures.filter(function (m) { return state.rank.measures.indexOf(m.id) > -1; });
+      // Each driver under the member's own name for it, then Money.
+      var cols = Q.rank.columns.map(function (c) { return { id: c.id, name: c.named ? S.trim(state.rank.names[c.id]) || c.label : c.label }; });
       section(H.rank, state.programs.map(function (p, i) {
         var row = state.rankRows[i];
-        return (S.trim(p.name.text) || Q.flow.empty) + ": " + ms.map(function (m) { return m.label + " " + (row.m[m.id] || Q.flow.empty); }).join(", ") +
+        return (S.trim(p.name.text) || Q.flow.empty) + ": " + cols.map(function (m) { return m.name + " " + (row.m[m.id] || Q.flow.empty); }).join(", ") +
           "; " + Q.rank.scoreLabel + " " + (S.trim(row.score) || Q.flow.empty);
       }).join("\n"));
     }

@@ -312,15 +312,21 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("no choice yet: Next is blocked", S.rankCheck(sr).msg === "needChoice");
   sr.rank.use = "no";
   check("No: nothing else to do, every program goes in the prompt", S.rankCheck(sr).msg === "" && S.included(sr) === 3);
-  sr.rank.use = "yes"; sr.rank.measures = ["quality", "impact"];
-  check("Yes needs exactly three measures", S.rankCheck(sr).msg === "needMeasures");
-  sr.rank.measures = ["quality", "impact", "money"];
+  check("FAC's template: three drivers plus Money", S.RANK_COLUMNS.join() === "d1,d2,d3,money");
+  sr.rank.use = "yes"; sr.rank.names = { d1: "Quality", d2: "Quantity", d3: "" };
+  check("Yes needs all three drivers named", S.rankCheck(sr).msg === "needNames");
+  sr.rank.names.d3 = "Impact";
   check("Yes with no scores: every row needs scoring", S.rankCheck(sr).msg === "needScores" && S.rankCheck(sr).rows.join() === "0,1,2");
-  function scoreRow(i, a, b, c, typed) { sr.rankRows[i].m = { quality: a, impact: b, money: c }; sr.rankRows[i].score = typed; }
-  scoreRow(0, "3", "3", "2", "18"); scoreRow(1, "1", "2", "1", "2"); scoreRow(2, "2", "2", "2", "6");
-  check("a wrong score is caught (2 × 2 × 2 typed as 6)", S.rankCheck(sr).msg === "wrongScore" && S.rankCheck(sr).rows.join() === "2");
+  function scoreRow(i, a, b, c, d, typed) { sr.rankRows[i].m = { d1: a, d2: b, d3: c, money: d }; sr.rankRows[i].score = typed; }
+  scoreRow(0, "3", "3", "2", "1", "18"); scoreRow(1, "1", "2", "1", "1", "2"); scoreRow(2, "2", "2", "2", "1", "6");
+  check("a wrong Stack Rank is caught (2 × 2 × 2 × 1 typed as 6)", S.rankCheck(sr).msg === "wrongScore" && S.rankCheck(sr).rows.join() === "2");
   check("sorting waits until every score checks out", S.sortByScore(sr) === false && sr.programs[0].name.text === "Food Pantry");
+  sr.rankRows[1].m.money = "";
   sr.rankRows[2].score = "8";
+  check("Money must be scored too", S.rankCheck(sr).msg === "needScores" && S.rankCheck(sr).rows.join() === "1");
+  sr.rankRows[1].m.money = "3";
+  check("Money is multiplied in: 1 × 2 × 1 × 3 typed as 2 is wrong", S.rankCheck(sr).msg === "wrongScore" && S.rankCheck(sr).rows.join() === "1");
+  sr.rankRows[1].m.money = "1";
   check("every score right: Next can go ahead", S.rankCheck(sr).msg === "");
   check("sort puts the lowest score first: Tutoring (2), Shelter (8), Food Pantry (18)",
     S.sortByScore(sr) && sr.programs.map(function (p) { return p.name.text; }).join() === "Tutoring,Shelter,Food Pantry" &&
@@ -332,11 +338,15 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("removing a program removes its scores too", sr.rankRows.length === 2 && sr.rankRows[0].score === "8");
   S.addProgram(Q, sr);
   check("adding a program adds an empty row of scores", sr.rankRows.length === 3 && sr.rankRows[2].score === "");
-  var rr = S.repair(Q, { programs: [{ name: { text: "A" } }, { name: { text: "B" } }], rank: { use: "yes", measures: ["quality", "bogus", "impact", "money", "uniqueness"], line: 1 },
-    rankRows: [{ m: { quality: "2", impact: "9" }, score: "4" }] });
-  check("old draft: rank kept, bad measures and scores dropped, rows match the programs",
-    rr.rank.use === "yes" && rr.rank.measures.join() === "quality,impact,money" && rr.rank.line === 1 &&
-    rr.rankRows.length === 2 && rr.rankRows[0].m.quality === "2" && !rr.rankRows[0].m.impact && rr.rankRows[0].score === "4");
+  var rr = S.repair(Q, { programs: [{ name: { text: "A" } }, { name: { text: "B" } }], rank: { use: "yes", names: { d1: "Quality", d2: 7, d3: "Impact" }, line: 1 },
+    rankRows: [{ m: { d1: "2", d2: "9", money: "3", bogus: "1" }, score: "4" }] });
+  check("saved draft: rank kept, bad names and scores dropped, rows match the programs",
+    rr.rank.use === "yes" && rr.rank.names.d1 === "Quality" && rr.rank.names.d2 === "" && rr.rank.line === 1 &&
+    rr.rankRows.length === 2 && rr.rankRows[0].m.d1 === "2" && !rr.rankRows[0].m.d2 && rr.rankRows[0].m.money === "3" && !rr.rankRows[0].m.bogus && rr.rankRows[0].score === "4");
+  var old = S.repair(Q, { programs: [{ name: { text: "A" } }], rank: { use: "yes", measures: ["quality", "impact", "money"], line: 1 },
+    rankRows: [{ m: { quality: "2", impact: "1", money: "3" }, score: "6" }] });
+  check("draft from before the four columns: yes and the red line kept, old scores cleared",
+    old.rank.use === "yes" && old.rank.line === 1 && old.rank.names.d1 === "" && !old.rankRows[0].m.money && old.rankRows[0].score === "" && S.rankCheck(old).msg === "needNames");
 
   // Step 2: pain statement questions, donor tables, magic wand.
   var s2 = S.blank(Q);

@@ -154,6 +154,11 @@ T.run("Export (js/export.js)", function (check) {
   check("next steps and self-assessment, only what was filled in", pkg.indexOf("* Assignee: Lauren; Title: Share the package; Date: 2026-11-20; Status: Not started") > -1 &&
     pkg.indexOf(Q.assess.statements[0] + " 4/5") > -1 && pkg.indexOf(Q.assess.statements[1]) === -1 && pkg.indexOf("Lead with the pain statement") > -1);
   check("no stack ranking section when the member didn't rank", pkg.indexOf("== " + PS.rank + " ==") === -1);
+  s.rank = { use: "yes", names: { d1: "Quality", d2: "", d3: "Impact" }, line: null };
+  s.rankRows[0] = { m: { d1: "1", d2: "2", d3: "1", money: "3" }, score: "6" };
+  check("the package's stack ranking uses the member's driver names, then Money",
+    E.packageText(Q, s).indexOf("== " + PS.rank + " ==\n" + (S.trim(s.programs[0].name.text) || Q.flow.empty) + ": Quality 1, Driver 2 2, Impact 1, Money 3; Stack Rank 6") > -1);
+  s.rank = { use: "no", names: { d1: "", d2: "", d3: "" }, line: null };
   check("with no constraint answers, Constraints holds FAC's 10 rules, then the guardrail line", E.build(Q, S.blank(Q)).indexOf("Constraints:\n- " + Q.rtcc.rules[0]) > -1 && E.build(Q, S.blank(Q)).split("\n").slice(-1)[0] === Q.guardrail);
   check("Known with a source: source in brackets, no tag", out.indexOf("in 2024 (source: 2024 annual report)") > -1);
   check("Known with no source: [Unsupported]", E.answerText(Q, { org: {}, programs: [{ outputs: { text: "90 kids in 2024", label: "known", note: "", asks: 0, skipped: false } }] }, "programs.0.outputs") === "90 kids in 2024 [Unsupported]");

@@ -29,8 +29,13 @@ T.run("Questions (js/questions.js)", function (check) {
   check("flowchart step numbers: 1.1 to 1.5", [Q.flow.numbers.org, Q.flow.numbers.program, Q.flow.numbers.benchmarks, Q.flow.numbers.constraints, Q.flow.numbers.review].join() === "1.1,1.2,1.3,1.4,1.5");
   check("the three \"Happy with…?\" checks have their wording", ["programs", "benchmarks", "constraints"].every(function (k) { return !!Q.flow.checkpoints[k].title && !!Q.flow.checkpoints[k].text; }));
   check("\"Yes, continue\" and \"Build our story\" buttons have wording", !!Q.flow.checkpointYes && Q.flow.buildStory === "Build our story");
-  check("stack rank: four measures to pick three from, and its messages", Q.rank.measures.length === 4 &&
-    ["ask", "yes", "no", "needChoice", "needMeasures", "needScores", "wrongScore", "sortButton", "lineLabel", "belowLine"].every(function (k) { return !!Q.rank[k]; }));
+  check("stack rank: FAC's template columns (Driver 1-3, Money), matching the sheet's, and its messages",
+    Q.rank.columns.map(function (c) { return c.label; }).join() === "Driver 1,Driver 2,Driver 3,Money" && Q.rank.columns.map(function (c) { return c.id; }).join() === S.RANK_COLUMNS.join() &&
+    ["ask", "yes", "no", "needChoice", "needNames", "needScores", "wrongScore", "sortButton", "lineLabel", "belowLine"].every(function (k) { return !!Q.rank[k]; }));
+  check("stack rank wording follows FAC's template", Q.rank.key.join() === "1 = Most,2 = OK,3 = Least" && Q.rank.scoreLabel === "Stack Rank" &&
+    Q.rank.intro === "A stack ranking grid helps you compare your programs based on any three drivers. For example:" &&
+    Q.rank.instructions.join("|") === "Rank each program with a 1, 2 or 3 to which does it most, just ok, or least.|Multiply these four numbers to produce a Stack ranking.|" +
+      "Sort by Stack Rank and you can quickly see which programs are most impactful to the mission. Those are likely the stories you want to tell.");
   check("the editable Role / Task / Constraints and benchmark fields have their wording", ["title", "text", "roleHelp", "reset", "resetConstraints"].every(function (k) { return !!Q.rtccEdit[k]; }) &&
     ["source", "program", "connects"].every(function (k) { return !!Q.benchmarkFields[k].label && !!Q.benchmarkFields[k].exportLabel; }));
   check("RTCC headings are there; Role is empty until FAC writes it", ["roleHeading", "contextHeading", "taskHeading", "constraintsHeading"].every(function (k) { return !!Q.rtcc[k]; }) && Q.rtcc.role === "");

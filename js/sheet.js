@@ -41,11 +41,11 @@ var FACSheet = (function () {
       constraints: group(section(Q, "constraints").questions),
       // Each prompt the member copied or downloaded: { n, at, text }.
       versions: [],
-      // Optional stack rank. use: "", "yes" or "no". measures: the three
-      // measure ids picked. line: how many programs are above the red line
+      // Optional stack rank. use: "", "yes" or "no". names: what the member
+      // calls Driver 1-3. line: how many programs are above the red line
       // (null means all of them). rankRows[i] goes with programs[i]:
-      // { m: { measureId: "1".."3" }, score: "the score the member typed" }.
-      rank: { use: "", measures: [], line: null },
+      // { m: { d1, d2, d3, money: "1".."3" }, score: "the Stack Rank the member typed" }.
+      rank: { use: "", names: driverNames(), line: null },
       rankRows: [rankRow()],
       // The member's own wording for the prompt's Role, Task and
       // Constraints, edited on the review screen. null means FAC's wording
@@ -89,6 +89,10 @@ var FACSheet = (function () {
   function donorRow() { return { amount: answer(), funds: answer(), result: answer(), words: answer() }; }
 
   function rankRow() { return { m: {}, score: "" }; }
+  // FAC's stack ranking template: three drivers the member names, plus
+  // Money. The same ids as Q.rank.columns, which holds their wording.
+  var DRIVERS = ["d1", "d2", "d3"], RANK_COLUMNS = DRIVERS.concat("money");
+  function driverNames() { return { d1: "", d2: "", d3: "" }; }
 
   // Copies an answer from saved data, keeping only the three known fields.
   function copy(from) {
@@ -162,13 +166,15 @@ var FACSheet = (function () {
       if (typeof data.assess.takeaway === "string") s.assess.takeaway = data.assess.takeaway;
     }
     if (data.pkgReviewed === true) s.pkgReviewed = true;
-    var R = data.rank || {}, ids = (Q.rank.measures || []).map(function (m) { return m.id; });
+    // A draft from before the four columns (it has no driver names) keeps
+    // its yes/no and red line, but not its scores: the columns changed.
+    var R = data.rank || {}, current = !!R.names;
     if (R.use === "yes" || R.use === "no") s.rank.use = R.use;
-    if (R.measures && R.measures.length) s.rank.measures = R.measures.filter(function (id) { return ids.indexOf(id) > -1; }).slice(0, 3);
+    if (current) DRIVERS.forEach(function (id) { if (typeof R.names[id] === "string") s.rank.names[id] = R.names[id]; });
     if (typeof R.line === "number" && R.line >= 1) s.rank.line = Math.floor(R.line);
     s.rankRows = s.programs.map(function (p, n) {
-      var from = (data.rankRows || [])[n], row = rankRow();
-      if (from && from.m) for (var id in from.m) if (ids.indexOf(id) > -1 && /^[123]$/.test(from.m[id])) row.m[id] = from.m[id];
+      var from = current && (data.rankRows || [])[n], row = rankRow();
+      if (from && from.m) RANK_COLUMNS.forEach(function (id) { if (/^[123]$/.test(from.m[id])) row.m[id] = from.m[id]; });
       if (from && typeof from.score === "string") row.score = from.score;
       return row;
     });
@@ -654,20 +660,20 @@ var FACSheet = (function () {
   // ---------- Stack rank ----------
 
   // What still stops Next on the stack rank screen: "" (nothing),
-  // "needChoice", "needMeasures", "needScores" or "wrongScore", and the
-  // program rows it's about. A score must equal the three measures
+  // "needChoice", "needNames", "needScores" or "wrongScore", and the
+  // program rows it's about. A Stack Rank must equal the four scores
   // multiplied together; the tool checks it but never fills it in.
   function rankCheck(state) {
     var R = state.rank, rows = [];
     if (!R.use) return { msg: "needChoice", rows: rows };
     if (R.use === "no") return { msg: "", rows: rows };
-    if (R.measures.length !== 3) return { msg: "needMeasures", rows: rows };
+    if (DRIVERS.some(function (id) { return !trim(R.names[id]); })) return { msg: "needNames", rows: rows };
     state.rankRows.forEach(function (row, i) {
-      if (R.measures.some(function (id) { return !row.m[id]; }) || !/^\d+$/.test(trim(row.score))) rows.push(i);
+      if (RANK_COLUMNS.some(function (id) { return !row.m[id]; }) || !/^\d+$/.test(trim(row.score))) rows.push(i);
     });
     if (rows.length) return { msg: "needScores", rows: rows };
     state.rankRows.forEach(function (row, i) {
-      var product = R.measures.reduce(function (x, id) { return x * +row.m[id]; }, 1);
+      var product = RANK_COLUMNS.reduce(function (x, id) { return x * +row.m[id]; }, 1);
       if (+trim(row.score) !== product) rows.push(i);
     });
     return { msg: rows.length ? "wrongScore" : "", rows: rows };
@@ -758,7 +764,7 @@ var FACSheet = (function () {
     isAssumption: isAssumption, assumptionOpen: assumptionOpen, setLabel: setLabel, setNote: setNote,
     calculations: calculations, mathProblem: mathProblem,
     paths: paths, steps: steps, stepOf: stepOf, problems: problems, addVersion: addVersion,
-    rankCheck: rankCheck, sortByScore: sortByScore, included: included,
+    RANK_COLUMNS: RANK_COLUMNS, rankCheck: rankCheck, sortByScore: sortByScore, included: included,
     addDonorRow: addDonorRow, removeDonorRow: removeDonorRow, importLive: importLive,
     addRound: addRound, latest: latest, STORY_PARTS: STORY_PARTS,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,

@@ -141,6 +141,9 @@ a { color: var(--accent); font-weight: 600; }
 .rank-cells label { display: flex; gap: 6px; align-items: center; font-weight: 500; }
 .rank-cells select, .rank-line, .f select { font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
 .rank-score { width: 5em !important; }
+.rank-name { width: 10em !important; }
+.rank-intro p, .rank-intro ul { margin: 0 0 6px; }
+.rank-intro ul { padding-left: 1.3em; }
 
 /* "Happy with...?" checks and the saved versions. */
 .checklist { margin: 0; padding-left: 20px; display: grid; gap: 8px; }

@@ -69,29 +69,39 @@
     return heading(N.constraints, sec.title, sec.note) + sec.questions.map(function (q) { return field(q, "constraints." + q.id); }).join("");
   }
 
-  // The optional stack rank. Members pick three measures, score each program
-  // 1-3 on each, and type the score (the three multiplied). The tool checks
-  // the score, sorts by it when asked, and never fills a number in.
+  // What a stack rank column is called: the member's name for a driver
+  // (or "Driver 1" until they name it), or "Money".
+  function columnName(c) { return c.named ? S.trim(state.rank.names[c.id]) || c.label : c.label; }
+
+  // The optional stack rank, from FAC's template. Members name three
+  // drivers, score each program 1-3 on each driver and Money, and type the
+  // Stack Rank (the four multiplied). The tool checks it, sorts by it when
+  // asked, and never fills a number in.
   function rankScreen() {
-    var R = Q.rank, st = state.rank, n = state.programs.length;
+    var R = Q.rank, st = state.rank;
     function radio(v, label) {
       return '<label><input type="radio" class="rank-use" name="rank-use" value="' + v + '"' + (st.use === v ? " checked" : "") + '> ' + esc(label) + '</label>';
     }
+    function list(lines) { return '<ul>' + lines.map(function (l) { return '<li>' + esc(l) + '</li>'; }).join("") + '</ul>'; }
+    function col(c) { return '<span class="rank-col" data-id="' + c.id + '">' + esc(columnName(c)) + '</span>'; }
     var html = heading(N.program, R.title) +
       '<div class="f"><span class="lbl">' + esc(R.ask) + '</span><div class="choice" role="radiogroup" aria-label="' + esc(R.ask) + '">' +
       radio("yes", R.yes) + radio("no", R.no) + '</div></div>';
     if (st.use === "yes") {
-      html += '<div class="f"><span class="lbl">' + esc(R.measuresLabel) + '</span><div class="choice">' +
-        R.measures.map(function (m) {
-          return '<label><input type="checkbox" class="rank-measure" value="' + m.id + '"' + (st.measures.indexOf(m.id) > -1 ? " checked" : "") + '> ' + esc(m.label) + '</label>';
-        }).join("") + '</div></div>';
-      var chosen = R.measures.filter(function (m) { return st.measures.indexOf(m.id) > -1; });
-      html += '<p class="hint">' + esc(R.scoreHelp) + '</p><div class="rank-table">' +
+      html += '<div class="hint rank-intro"><p>' + esc(R.intro) + '</p>' + list(R.introExamples) + list(R.instructions) +
+        '<p><strong>' + esc(R.keyTitle) + ':</strong> ' + R.key.map(esc).join(" · ") + '</p></div>' +
+        '<div class="f"><span class="lbl">' + esc(R.namesLabel) + '</span><div class="rank-cells">' +
+        R.columns.filter(function (c) { return c.named; }).map(function (c) {
+          return '<label>' + esc(c.label) + ' <input type="text" class="rank-name" id="rank-name-' + c.id + '" data-id="' + c.id + '" value="' + esc(st.names[c.id]) + '"></label>';
+        }).join("") + '</div><p class="hint">' + esc(R.namesHelp) + '</p></div>';
+      var ex = R.exampleRow;
+      html += '<div class="rank-table"><p class="hint rank-example">' + esc(ex.name) + ': ' +
+        R.columns.map(function (c, k) { return esc(c.label) + ' ' + esc(ex.scores[k]); }).join(", ") + '; ' + esc(R.scoreLabel) + ' ' + esc(ex.rank) + '</p>' +
         state.programs.map(function (p, i) {
           var row = state.rankRows[i];
           return '<div class="rank-row" id="rank-row-' + i + '"><span class="lbl">' + esc(programName(i)) + ': ' + esc(S.trim(p.name.text) || Q.flow.empty) + '</span><div class="rank-cells">' +
-            chosen.map(function (m) {
-              return '<label>' + esc(m.label) + ' <select class="rank-m" data-row="' + i + '" data-m="' + m.id + '"><option value=""></option>' +
+            R.columns.map(function (m) {
+              return '<label>' + col(m) + ' <select class="rank-m" data-row="' + i + '" data-m="' + m.id + '"><option value=""></option>' +
                 ["1", "2", "3"].map(function (v) { return '<option' + (row.m[m.id] === v ? " selected" : "") + '>' + v + '</option>'; }).join("") + '</select></label>';
             }).join("") +
             '<label>' + esc(R.scoreLabel) + ' <input type="text" class="rank-score" inputmode="numeric" data-row="' + i + '" value="' + esc(row.score) + '"></label>' +
@@ -676,21 +686,23 @@
   // Stack rank controls. Returns true when it handled the event.
   function onRankEdit(e) {
     var el = e.target, c = el.classList, R = state.rank;
-    if (!(c.contains("rank-use") || c.contains("rank-measure") || c.contains("rank-m") || c.contains("rank-score") || c.contains("rank-line"))) return false;
+    if (!(c.contains("rank-use") || c.contains("rank-name") || c.contains("rank-m") || c.contains("rank-score") || c.contains("rank-line"))) return false;
     if (c.contains("rank-use")) { if (e.type !== "change") return true; R.use = el.value; }
-    else if (c.contains("rank-measure")) {
-      if (e.type !== "change") return true;
-      var at = R.measures.indexOf(el.value);
-      if (el.checked && at < 0) { if (R.measures.length < 3) R.measures.push(el.value); else el.checked = false; }
-      if (!el.checked && at > -1) R.measures.splice(at, 1);
+    else if (c.contains("rank-name")) {
+      // Renames that driver's column in every row, without redrawing the
+      // screen (so the cursor stays in the box).
+      var id = el.getAttribute("data-id");
+      R.names[id] = el.value;
+      var name = columnName(Q.rank.columns.filter(function (k) { return k.id === id; })[0]);
+      Array.prototype.forEach.call(screen.querySelectorAll('.rank-col[data-id="' + id + '"]'), function (s) { s.textContent = name; });
     }
     else if (c.contains("rank-m")) state.rankRows[+el.getAttribute("data-row")].m[el.getAttribute("data-m")] = el.value;
     else if (c.contains("rank-score")) state.rankRows[+el.getAttribute("data-row")].score = el.value;
     else if (c.contains("rank-line")) R.line = +el.value;
     unreview();
     save();
-    // Choosing yes or no, a measure or the red line changes what the screen shows.
-    if (c.contains("rank-use") || c.contains("rank-measure") || c.contains("rank-line")) render();
+    // Choosing yes or no or the red line changes what the screen shows.
+    if (c.contains("rank-use") || c.contains("rank-line")) render();
     return true;
   }
 
