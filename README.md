@@ -33,13 +33,27 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 - **Reasonable estimate:** a note says where it came from.
 - **Unsupported:** stays visibly flagged.
 
-**The screens** follow Step 1 of FAC's flowchart:
+**The screens** follow FAC's flowchart and workshop workbook, three steps in order:
+
+**Step 1, Measure your ROI**
 1. **1.1** Organization Info
-2. **1.2** one screen per program, then a "Happy with your programs and keywords?" check
+2. **1.2** one screen per program, then an optional stack rank (the member types every score, the tool checks the math and sorts by it, and programs below the red line are left out of the prompt), then a "Happy with your programs and keywords?" check
 3. Pain Statements, from FAC's sheet
-4. **1.3** Benchmarks, then its check
+4. **1.3** Benchmarks (with source, program and how it connects), then its check
 5. **1.4** Constraints (tone, length, format, audience), then its check
-6. **"Build our story"**, which leads to **1.5**, the review screen
+6. **"Build our story"**, which leads to **1.5**, the review screen, where Role, Task and Constraints can be edited
+
+**Step 2, Get the Right Numbers**
+1. **2.1** Pain statements, with a Why Now preview. It can bring in answers from the pain statement form.
+2. **2.2** Regular and Major donor tables. The member types every amount.
+3. **2.3** Magic wand
+4. Then the review screen again.
+
+**Step 3, Tell your story**
+1. **3.1–3.4** Challenge, Response, Outcome and ROI. Each step has FAC's prompt, a Copy button and a box for ROI.bot's answer, with rounds kept.
+2. **3.5** Funder story
+3. My Next Steps and a Self Assessment
+4. **The package:** one .txt file with everything the member made.
 
 Each check lists the answers with Edit links. Each prompt the member copies or downloads is kept in their browser as a version, so they can compare runs.
 
