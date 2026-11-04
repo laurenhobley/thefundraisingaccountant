@@ -84,6 +84,8 @@ T.run("Questions (js/questions.js)", function (check) {
   check("the how-to page has its wording: title, intro, steps, privacy note, back link",
     ["linkText", "title", "intro", "privacy", "back"].every(function (k) { return !!Q.howTo[k]; }) && Q.howTo.steps.length > 0);
   check("the how-to page has no numbers in it", !/\d/.test([Q.howTo.linkText, Q.howTo.title, Q.howTo.intro, Q.howTo.privacy, Q.howTo.back].concat(Q.howTo.steps).join(" ")));
-  check("every question and optional section has help text",
+  check("FAC's 10 rules for AI, with no numbers in them", Q.rtcc.rules.length === 10 && Q.rtcc.rules.every(function (r) { return /^Do not /.test(r) && !/\d/.test(r); }));
+  check("the how-to page's AI note and 'Why now' figures, with their source", Q.howTo.aiNote.length === 2 && Q.howTo.whyNow.length === 3 && /Forvis Mazars/.test(Q.howTo.whyNowSource));
+  check("FAC's four research examples, each with a source", Q.benchmarkFields.examples.length === 4 && Q.benchmarkFields.examples.every(function (x) { return !!x.finding && !!x.source && !!x.connects; }));  check("every question and optional section has help text",
     Q.sections.every(function (s) { return s.questions ? s.questions.every(function (q) { return !!q.help; }) : !!s.help; }));
 });

@@ -36,7 +36,21 @@ var FAC_QUESTIONS = {
       "Open ROI.bot and paste the prompt in."
     ],
     privacy: "Nothing you type is sent anywhere. Your answers stay in this browser until you copy or download them.",
-    back: "Back to the prompt builder"
+    back: "Back to the prompt builder",
+    // From FAC's workshop workbook (United Way, Oct 2026), with Steve's second-round wording.
+    aiNoteTitle: "A Note About AI",
+    aiNote: [
+      "AI has real environmental and resource impacts, and there are risks that come with the rapid growth of this technology.",
+      "This guide is designed to take safe steps that leverage AI for good. Use it to help you make a difference in the world."
+    ],
+    whyNowTitle: "Why does this matter now?",
+    whyNowIntro: "According to Forvis Mazars, here is the state of the nonprofit sector in 2025:",
+    whyNow: [
+      "3 out of 4 nonprofits have eliminated staff or reduced programs and services.",
+      "77% of nonprofits have seen an increase in demand for their services.",
+      "Almost half of nonprofits lack the funds to deliver programs and services."
+    ],
+    whyNowSource: "Source: Forvis Mazars, 2025 Annual Report – State of the Nonprofit Sector"
   },
 
   // Help under each question is draft wording for Steve (added 2026-10-28).
@@ -192,7 +206,16 @@ var FAC_QUESTIONS = {
     // exportLabel is how each one is named in the finished prompt.
     source: { label: "Source", exportLabel: "Source", help: "Where the finding comes from: a report, study or website." },
     program: { label: "Which program it connects to", exportLabel: "Program", none: "Choose a program" },
-    connects: { label: "How it connects to the program", exportLabel: "How it connects", help: "A sentence on why this finding matters for that program." }
+    connects: { label: "How it connects to the program", exportLabel: "How it connects", help: "A sentence on why this finding matters for that program." },
+    // FAC's research examples from the workshop workbook (FBWC). Shown as grey hints only.
+    examplesTitle: "Research examples from FAC's workbook",
+    findingLabel: "Research benchmark",
+    examples: [
+      { finding: "Economic Cost of Domestic Violence", source: "CDC – Lifetime Economic Burden of Intimate Partner Violence Among U.S. Adults (2018)", connects: "Quantifies healthcare costs, lost productivity, and criminal justice expenses associated with domestic violence." },
+      { finding: "Unmet Demand for Shelter", source: "National Network to End Domestic Violence – Domestic Violence Counts Report", connects: "Documents survivors requesting shelter and services who cannot be accommodated because of limited resources." },
+      { finding: "Law Enforcement Costs", source: "Local police and criminal justice cost data", connects: "Helps estimate potential public savings from reducing repeat domestic violence incidents." },
+      { finding: "Cost of Homelessness", source: "HUD and local homelessness research", connects: "Provides benchmarks for estimating the economic benefits of helping survivors avoid homelessness." }
+    ]
   },
 
   // The review screen's editable RTCC parts (FAC's process guide, step 2.5).
@@ -210,6 +233,20 @@ var FAC_QUESTIONS = {
   // "Using the information above". Role is left out until FAC writes it
   // (FAC's guide: wording for Peter to set). Draft for Steve.
   rtcc: {
+    // FAC's 10 rules for AI, from the workshop workbook. Added to the
+    // Constraints after the member's own; members can edit them there.
+    rules: [
+      "Do not make things up. Use accurate, verifiable information.",
+      "Do not assume. Ask questions if important information is missing.",
+      "Do not invent sources, statistics, or quotes.",
+      "Do not give generic answers. Be specific and relevant.",
+      "Do not overcomplicate. Use clear, simple language.",
+      "Do not ignore my instructions. Follow the requested format, tone, and length.",
+      "Do not present guesses as facts. Clearly identify uncertainty.",
+      "Do not agree with me just to agree. Challenge incorrect assumptions respectfully.",
+      "Do not repeat mistakes. If your approach is fundamentally wrong, reconsider the original instructions.",
+      "Do not sacrifice accuracy for speed. Prioritize quality and verify important claims."
+    ],
     role: "",
     roleHeading: "Role",
     contextHeading: "Context",

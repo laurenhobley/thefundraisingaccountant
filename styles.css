@@ -97,6 +97,12 @@ button.btn:disabled { opacity: .45; cursor: default; }
 .nav { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; }
 .nav .actions { margin-left: auto; }
 
+/* The how-to page's "Why now" and AI note boxes, and the research examples. */
+.note-box { border: 1px solid var(--line); border-radius: 10px; background: var(--slip); padding: 16px 20px; display: grid; gap: 8px; }
+.note-box p, .note-box ul { margin: 0; }
+.examples table { border-collapse: collapse; width: 100%; margin-top: 6px; font-size: 13px; }
+.examples th, .examples td { text-align: left; vertical-align: top; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); }
+
 /* The "how to use" page and the link to it. */
 .howto { margin: 0; padding-left: 22px; display: grid; gap: 10px; }
 a { color: var(--accent); font-weight: 600; }

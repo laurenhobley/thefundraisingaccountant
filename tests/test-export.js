@@ -71,6 +71,8 @@ T.run("Export (js/export.js)", function (check) {
     "Audience: Major donors",
     Q.guardrail
   ];
+  // FAC's 10 rules follow the member's own constraints.
+  Array.prototype.splice.apply(expected, [expected.length - 1, 0].concat(Q.rtcc.rules.map(function (r) { return "- " + r; })));
   var out = E.build(Q, s), lines = out.split("\n");
   var firstDiff = -1;
   for (var i = 0; i < Math.max(lines.length, expected.length); i++) if (lines[i] !== expected[i]) { firstDiff = i; break; }
@@ -99,7 +101,7 @@ T.run("Export (js/export.js)", function (check) {
   check("emptying Constraints still leaves the guardrail line", E.build(Q, s).slice(-("Constraints:\n" + Q.guardrail).length) === "Constraints:\n" + Q.guardrail);
   s.rtcc = { role: null, task: null, constraints: null };
   check("back to FAC's wording: the prompt is as before", E.build(Q, s) === out);
-  check("blank constraints are left out; the guardrail line is always there", E.build(Q, S.blank(Q)).split("\n").slice(-2).join("|") === "Constraints:|" + Q.guardrail);
+  check("with no constraint answers, Constraints holds FAC's 10 rules, then the guardrail line", E.build(Q, S.blank(Q)).indexOf("Constraints:\n- " + Q.rtcc.rules[0]) > -1 && E.build(Q, S.blank(Q)).split("\n").slice(-1)[0] === Q.guardrail);
   check("Known with a source: source in brackets, no tag", out.indexOf("in 2024 (source: 2024 annual report)") > -1);
   check("Known with no source: [Unsupported]", E.answerText(Q, { org: {}, programs: [{ outputs: { text: "90 kids in 2024", label: "known", note: "", asks: 0, skipped: false } }] }, "programs.0.outputs") === "90 kids in 2024 [Unsupported]");
   check("blank optional answers are left out of the lists", lines.filter(function (l) { return l === "* "; }).length === 0 && out.split("\n* ").length - 1 === 3);

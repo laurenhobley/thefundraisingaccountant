@@ -163,8 +163,18 @@
     return heading(num, sec.title, sec.note) +
       (sec.help ? '<p class="hint">' + esc(sec.help) + '</p>' : "") +
       '<div class="examples"><span class="ex-tag">Example</span><ul>' + examples + '</ul></div>' +
+      (id === "benchmarks" ? researchExamples() : "") +
       rows +
       '<div><button type="button" class="btn ghost" data-act="addItem" data-list="' + id + '">' + esc(sec.addLabel) + '</button></div>';
+  }
+
+  // FAC's research examples, as grey hints (never inside a box).
+  function researchExamples() {
+    var B = Q.benchmarkFields;
+    return '<div class="examples"><span class="ex-tag">' + esc(B.examplesTitle) + '</span><table><thead><tr><th>' +
+      esc(B.findingLabel) + '</th><th>' + esc(B.source.label) + '</th><th>' + esc(B.connects.exportLabel) + '</th></tr></thead><tbody>' +
+      B.examples.map(function (x) { return '<tr><td>' + esc(x.finding) + '</td><td>' + esc(x.source) + '</td><td>' + esc(x.connects) + '</td></tr>'; }).join("") +
+      '</tbody></table></div>';
   }
 
   // A benchmark's source, the program it connects to and how it connects.

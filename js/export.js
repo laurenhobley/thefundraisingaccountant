@@ -58,10 +58,11 @@ var FACExport = (function () {
     return {
       role: Q.rtcc.role,
       task: Q.finalPrompt,
+      // The member's constraint answers, then FAC's 10 rules for AI.
       constraints: S.section(Q, "constraints").questions.map(function (x) {
         var text = answerText(Q, state, "constraints." + x.id);
         return text ? line(x.label, text) : "";
-      }).filter(function (t) { return t; }).join("\n")
+      }).filter(function (t) { return t; }).concat((Q.rtcc.rules || []).map(function (r) { return "- " + r; })).join("\n")
     };
   }
   function parts(Q, state) {

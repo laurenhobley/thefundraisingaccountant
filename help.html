@@ -22,6 +22,15 @@
     <ol class="howto" id="steps"></ol>
     <p class="hint" id="privacy"></p>
   </div>
+  <div id="whyNow" class="note-box">
+    <h2 id="whyNowTitle"></h2>
+    <p id="whyNowIntro"></p>
+    <ul id="whyNowList"></ul>
+    <p class="hint" id="whyNowSource"></p>
+  </div>
+  <div id="aiNote" class="note-box">
+    <h2 id="aiNoteTitle"></h2>
+  </div>
   <p><a id="back" href="builder.html"></a></p>
 </div>
 
@@ -35,6 +44,9 @@
   document.getElementById("back").textContent = H.back;
   var list = document.getElementById("steps");
   H.steps.forEach(function (s) { var li = document.createElement("li"); li.textContent = s; list.appendChild(li); });
+  ["whyNowTitle", "whyNowIntro", "whyNowSource", "aiNoteTitle"].forEach(function (k) { document.getElementById(k).textContent = H[k]; });
+  H.whyNow.forEach(function (s) { var li = document.createElement("li"); li.textContent = s; document.getElementById("whyNowList").appendChild(li); });
+  H.aiNote.forEach(function (s) { var p = document.createElement("p"); p.textContent = s; document.getElementById("aiNote").appendChild(p); });
 })();
 </script>
 </body>
