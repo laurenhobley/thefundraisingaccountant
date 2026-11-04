@@ -24,7 +24,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 |---|---|
 | `js/questions.js` | **All the wording members read:** questions, help, follow-ups, buttons, the how-to page, FAC's Final Prompt and the guardrail line. FAC owns this file. |
 | `js/sheet.js` | Stores the answers and their labels, runs the follow-up checks, and saves the draft in the browser. |
-| `js/export.js` | Builds the finished prompt in FAC's sheet format. |
+| `js/export.js` | Builds the finished prompt in RTCC parts, with the member's answers in FAC's sheet format. |
 | `js/builder.js` | Shows the screens, the follow-ups, the review lock, and the Copy and Download buttons. |
 | `styles.css` | How the builder and the how-to page look. |
 
@@ -33,7 +33,21 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 - **Reasonable estimate:** a note says where it came from.
 - **Unsupported:** stays visibly flagged.
 
-The finished prompt tags figures `[Estimate]` or `[Unsupported]`. It ends with FAC's Final Prompt and this guardrail line: "Figures marked [Estimate] or [Unsupported] are assumptions…".
+**The screens** follow Step 1 of FAC's flowchart:
+1. **1.1** Organization Info
+2. **1.2** one screen per program, then a "Happy with your programs and keywords?" check
+3. Pain Statements, from FAC's sheet
+4. **1.3** Benchmarks, then its check
+5. **1.4** Constraints (tone, length, format, audience), then its check
+6. **"Build our story"**, which leads to **1.5**, the review screen
+
+Each check lists the answers with Edit links. Each prompt the member copies or downloads is kept in their browser as a version, so they can compare runs.
+
+**The finished prompt** comes in RTCC parts:
+- **Context:** the member's answers in FAC's sheet format, with figures tagged `[Estimate]` or `[Unsupported]`.
+- **Task:** FAC's Final Prompt, word for word. It says "Using the information above", so it comes after the Context.
+- **Constraints:** the member's own, then the guardrail line: "Figures marked [Estimate] or [Unsupported] are assumptions…".
+- **Role:** added at the top once FAC writes it, in `rtcc.role` in `js/questions.js`.
 
 **Follow-up checks.** When the member presses Next, the builder asks a follow-up about:
 - missing answers, or a ZIP code that isn't 5 digits
