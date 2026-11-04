@@ -6,12 +6,12 @@
 */
 T.run("Questions (js/questions.js)", function (check) {
   var Q = FAC_QUESTIONS, S = FACSheet;
-  var FINAL = "Using the information above, convert outputs into outcomes and calculate community impact. Include quality-of-life changes, and where possible, add economic and socioeconomic proxies in dollars using local and state benchmarks. Generate as many concise donor impact statements as would be meaningful to an investor in this organization.";
+  var FINAL = "Using the information above, convert outputs into outcomes and calculate community impact. Include quality-of-life and social impact changes, and where possible, add economic and socioeconomic proxies in dollars using local and state benchmarks. Generate as many concise donor impact statements as would be meaningful to an investor in this organization.";
   var GUARD = "Figures marked [Estimate] or [Unsupported] are assumptions. Do not present them as cited benchmarks or introduce new dollar figures unless labeled as your own estimate.";
   var EXAMPLES = {
     pain: [
-      "We lost 800,000 in government funding, 1,680 people were denied shelter due to lack of space.",
-      "In [STATE], 1 in 5 families experience housing instability each year."
+      "In [STATE], 1 in 5 families experience housing instability each year.",
+      "The average cost of homelessness services per family is $18,500 annually."
     ],
     benchmarks: [
       "The average annual cost to shelter a homeless is $18,000–$25,000.",
@@ -37,16 +37,19 @@ T.run("Questions (js/questions.js)", function (check) {
   check("saved versions have their wording", ["versionsTitle", "versionsNone", "versionDownload"].every(function (k) { return !!Q.review[k]; }) &&
     Q.review.versionLabel.indexOf("{n}") > -1 && Q.review.versionLabel.indexOf("{date}") > -1);
   check("Organization Info asks: Name, City and state, ZIP code, Website, Mission Statement, Key Words",
-    labels("org") === "Name, Location: City and state, Location: ZIP code, Website, Mission Statement, Key Words");
+    labels("org") === "Name, Location: City and state, Location: ZIP code, Web Site, Mission Statement, Key Words");
   check("every Organization Info question is required", S.section(Q, "org").questions.every(function (q) { return q.required; }));
   check("Programs ask: Program Name, Description, Outputs, Current Impact Statement",
     labels("programs") === "Program Name, Description, Outputs, Current Impact Statement");
   check("Programs repeat, in order of priority", S.section(Q, "programs").repeat === true && S.section(Q, "programs").note === "(in order of priority)");
   check("only Current Impact Statement (if any) is optional in a program",
     S.section(Q, "programs").questions.filter(function (q) { return !q.required; }).map(function (q) { return q.id + q.note; }).join() === "impact(if any)");
-  check("Pain Statements and Benchmarks are optional", S.section(Q, "pain").optional && S.section(Q, "benchmarks").optional);
+  check("Local Context/Data and Benchmarks are optional", S.section(Q, "pain").optional && S.section(Q, "benchmarks").optional);
   check("Final Prompt matches FAC's sheet word for word", Q.finalPrompt === FINAL);
   check("guardrail line matches the plan word for word", Q.guardrail === GUARD);
+  check("intro matches FAC's updated sheet", /Once you are complete, copy \+ paste this information into ROI\.bot to generate outputs, outcomes, and donor-ready impact statements\.$/.test(Q.intro));
+  check("the save-a-copy line matches FAC's sheet; its link is blank until Steve adds it",
+    Q.saveCopy.before + Q.saveCopy.linkText + Q.saveCopy.after === "Save a copy in your FA community google folder and watch your story evolve." && Q.saveCopy.url === "");
   ["pain", "benchmarks"].forEach(function (id) {
     EXAMPLES[id].forEach(function (ex, i) {
       check(S.section(Q, id).title + " example " + (i + 1) + " matches FAC's sheet", S.section(Q, id).examples[i] === ex);

@@ -250,6 +250,7 @@
       '<label class="review-check"><input type="checkbox" id="pkg-reviewed"' + (state.pkgReviewed ? " checked" : "") + '> ' + esc(P.checkbox) + '</label>' +
       '<div class="actions"><button type="button" class="btn primary" id="copyPkg" data-act="copyPkg">' + esc(P.copyButton) + '</button>' +
       '<button type="button" class="btn ghost" id="downloadPkg" data-act="downloadPkg">' + esc(P.downloadButton) + '</button></div>' +
+      saveCopyLine() +
       '<p id="exportMsg" aria-live="polite"></p>';
   }
   function refreshPackage() {
@@ -424,8 +425,17 @@
       '<button type="button" class="btn primary" id="copyPrompt" data-act="copy">' + esc(R.copyButton) + '</button>' +
       '<button type="button" class="btn ghost" id="downloadPrompt" data-act="download">' + esc(R.downloadButton) + '</button>' +
       '</div>' +
+      saveCopyLine() +
       '<p id="exportMsg" aria-live="polite"></p>' +
       '<div class="f"><span class="lbl">' + esc(R.versionsTitle) + '</span><div id="versions"></div></div>';
+  }
+
+  // FAC's sheet: "Save a copy in your FA community google folder...". The
+  // folder becomes a link once Steve adds its address to questions.js.
+  function saveCopyLine() {
+    var C = Q.saveCopy;
+    var folder = C.url ? '<a href="' + esc(C.url) + '" target="_blank" rel="noopener">' + esc(C.linkText) + '</a>' : esc(C.linkText);
+    return '<p class="hint save-copy">' + esc(C.before) + folder + esc(C.after) + '</p>';
   }
 
   // The flowchart's "Prompt history": every prompt copied or downloaded,

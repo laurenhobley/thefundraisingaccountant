@@ -4,7 +4,7 @@ Planted flaws: no ZIP code; two programs with the same name.
 Organization Info
 Name: Maple Street Youth Center
 Location (include zip): Maple Falls, OH
-Website: https://example.org/maple
+Web Site: https://example.org/maple
 Mission Statement: We give young people a safe place to learn and grow after school.
 Key Words: youth, after-school, mentoring
 
@@ -18,7 +18,7 @@ Programs (in order of priority)
    * Outputs: 140 teens took part in 2024
    * Current Impact Statement (if any):
 
-Pain Statements/Local Context (optional)
+Local Context/Data (optional)
 * We lost $95,000 in city funding in 2024, so 80 students are on our waiting list.
 
 Benchmarks (optional)

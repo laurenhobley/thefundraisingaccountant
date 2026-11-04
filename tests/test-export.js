@@ -33,7 +33,7 @@ T.run("Export (js/export.js)", function (check) {
     "Organization Info",
     "Name: Riverbend Food Bank",
     "Location (include zip): Riverbend, TX 77999",
-    "Website: https://example.org",
+    "Web Site: https://example.org",
     "Mission Statement: We feed families in need.",
     "Key Words: [Unsupported]",
     "",
@@ -51,7 +51,7 @@ T.run("Export (js/export.js)", function (check) {
     "   * Outputs: Served 300 students in 2024 [Estimate] (source: teacher counts)",
     "   * Current Impact Statement (if any):",
     "",
-    "Pain Statements/Local Context (optional)",
+    "Local Context/Data (optional)",
     "* If a stay costs $40/day, then 300 × 60 × $40 = $720,000 [Estimate] (source: county shelter rates)",
     "",
     "Benchmarks (optional)",
@@ -168,7 +168,7 @@ T.run("Export (js/export.js)", function (check) {
   var examples = [];
   Q.sections.forEach(function (sec) { (sec.examples || []).forEach(function (e) { examples.push(e); }); });
   check("none of FAC's example lines or figures appear", examples.every(function (e) { return out.indexOf(e) === -1; }) &&
-    ["800,000", "1,680", "18,000", "25,000"].every(function (n) { return out.indexOf(n) === -1; }));
+    ["18,500", "18,000", "25,000"].every(function (n) { return out.indexOf(n) === -1; }));
   check("FAC's Final Prompt and the guardrail line have no numbers of their own", !/\d/.test(Q.finalPrompt) && !/\d/.test(Q.guardrail));
 
   var blank = E.build(Q, S.blank(Q));

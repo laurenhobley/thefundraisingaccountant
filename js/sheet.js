@@ -590,7 +590,7 @@ var FACSheet = (function () {
 
   // The screens follow Step 1 of FAC's flowchart: 1.1 Organization Info,
   // 1.2 one screen per program, a "Happy with programs and keywords?"
-  // check, Pain Statements (from FAC's sheet), 1.3 Benchmarks and its check,
+  // check, Local Context/Data (from FAC's sheet), 1.3 Benchmarks and its check,
   // 1.4 Constraints and its check, then 1.5 the review screen.
   // After the programs comes the optional stack rank.
   function steps(state) {

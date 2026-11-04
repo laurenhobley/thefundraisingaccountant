@@ -38,7 +38,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 **Step 1, Measure your ROI**
 1. **1.1** Organization Info
 2. **1.2** one screen per program, then an optional stack rank (the member types every score, the tool checks the math and sorts by it, and programs below the red line are left out of the prompt), then a "Happy with your programs and keywords?" check
-3. Pain Statements, from FAC's sheet
+3. Local Context/Data, from FAC's sheet
 4. **1.3** Benchmarks (with source, program and how it connects), then its check
 5. **1.4** Constraints (tone, length, format, audience), then its check
 6. **"Build our story"**, which leads to **1.5**, the review screen, where Role, Task and Constraints can be edited

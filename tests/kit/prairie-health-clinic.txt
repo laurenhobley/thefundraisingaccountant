@@ -4,7 +4,7 @@ Planted flaws: a "TBD" mission statement; an output with no year; an "if" figure
 Organization Info
 Name: Prairie Health Clinic
 Location (include zip): Dune City, KS 67999
-Website: https://example.org/prairie
+Web Site: https://example.org/prairie
 Mission Statement: TBD
 Key Words: health care, rural, free clinic
 
@@ -14,7 +14,7 @@ Programs (in order of priority)
    * Outputs: 1,150 checkups
    * Current Impact Statement (if any): Fewer emergency room visits
 
-Pain Statements/Local Context (optional)
+Local Context/Data (optional)
 
 Benchmarks (optional)
 * If an emergency room visit costs $1,200, our checkups save $1,380,000 a year

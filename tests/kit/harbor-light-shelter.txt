@@ -4,7 +4,7 @@ Planted flaws: the same 620 guests counted in two programs; a calculation that d
 Organization Info
 Name: Harbor Light Shelter
 Location (include zip): Port Jensen, ME 04999
-Website: https://example.org/harbor
+Web Site: https://example.org/harbor
 Mission Statement: Safe shelter and a warm meal for anyone without a home.
 Key Words: shelter, homelessness, meals
 
@@ -18,7 +18,7 @@ Programs (in order of priority)
    * Outputs: 620 guests received meals in 2024
    * Current Impact Statement (if any):
 
-Pain Statements/Local Context (optional)
+Local Context/Data (optional)
 * 620 guests × 30 nights × $45 = $830,000 in shelter costs
 
 Benchmarks (optional)

@@ -177,15 +177,15 @@ T.run("Builder screens (builder.html)", function (check) {
   $("next").click();
 
   // ---------- Optional sections and the end screen ----------
-  check("then Pain Statements", /Pain Statements/.test(title()));
+  check("then Local Context/Data", /Local Context\/Data/.test(title()));
   check("FAC's examples shown as hint text", document.querySelectorAll("#screen .examples li").length === 2);
   check("input box starts empty (no example numbers)", $("f-pain-0").value === "");
   act("addItem");
-  check("Add another pain statement", document.querySelectorAll("#screen textarea.ans").length === 2);
+  check("Add more local context", document.querySelectorAll("#screen textarea.ans").length === 2);
   type("f-pain-1", "We lost $800,000 in 2023");
   type("f-pain-0", "TBD");
   $("next").click();
-  check("optional answer \"TBD\" blocks Next with a follow-up", /Pain Statements/.test(title()) && fu("f-pain-0") === F.vague[0].replace("{word}", "TBD"));
+  check("optional answer \"TBD\" blocks Next with a follow-up", /Local Context\/Data/.test(title()) && fu("f-pain-0") === F.vague[0].replace("{word}", "TBD"));
   $("next").click();
   skip("f-pain-0");
   check("Keep my answer: text stays, flagged Unsupported: vague", $("f-pain-0").value === "TBD" && $("f-pain-0-skipped").textContent === F.keptVague && !$("f-pain-0-skipped").hidden);
@@ -241,13 +241,15 @@ T.run("Builder screens (builder.html)", function (check) {
     "Location: City and state was skipped (Unsupported) | Mission Statement needs a label | " +
     "Program 2: Program Name was skipped (Unsupported) | Program 2: Description was skipped (Unsupported) | " +
     "Program 2: Outputs is marked Unsupported | " +
-    "Pain statement 1 is vague (Unsupported) | Pain statement 2 needs a label");
+    "Local context 1 is vague (Unsupported) | Local context 2 needs a label");
 
   // ---------- Review and export ----------
   var R = FAC_QUESTIONS.review;
   check("review screen shows the finished prompt", $("exportPreview").textContent === FACExport.build(FAC_QUESTIONS, FACSheet.load(FAC_QUESTIONS)) &&
     $("exportPreview").textContent.indexOf("Context:\nOrganization Info") === 0 && $("exportPreview").textContent.indexOf("Tone: Warm") > -1);
   check("Copy and Download are locked until \"I reviewed this\" is ticked", $("copyPrompt").disabled && $("downloadPrompt").disabled && $("exportMsg").textContent === R.locked);
+  check("the save-a-copy line sits beside Download (no link until FAC adds one)",
+    document.querySelector("#screen .save-copy").textContent === "Save a copy in your FA community google folder and watch your story evolve." && !document.querySelector("#screen .save-copy a"));
   $("reviewed").click();
   check("ticking it unlocks Copy and Download", !$("copyPrompt").disabled && !$("downloadPrompt").disabled && saved().reviewed === true);
   check("no saved versions yet", saved().versions.length === 0 && $("versions").textContent === R.versionsNone);

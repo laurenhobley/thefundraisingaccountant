@@ -17,7 +17,10 @@
   that is marked "draft for Steve".
 */
 var FAC_QUESTIONS = {
-  intro: "Use this form to enter your organization’s information. Once complete, copy + paste your information into ROI.bot to generate outputs, outcomes, and donor-ready impact statements.",
+  intro: "Use this form to enter your organization’s information. Once you are complete, copy + paste this information into ROI.bot to generate outputs, outcomes, and donor-ready impact statements.",
+
+  // From FAC's prompt sheet. Shown beside Download. Steve to add the folder's link (url).
+  saveCopy: { before: "Save a copy in your ", linkText: "FA community google folder", after: " and watch your story evolve.", url: "" },
 
   // Link from FAC's sheet. Waiting on Steve to confirm (open question 13).
   roiBotUrl: "https://chatgpt.com/g/g-68c9c810e72481919f05f0c6964dc678-fundraising-accountant-roi-impact-statements-gpt",
@@ -62,7 +65,7 @@ var FAC_QUESTIONS = {
         { id: "name", label: "Name", kind: "text", required: true, help: "Your organization's name, as donors know it." },
         { id: "city", label: "Location: City and state", kind: "text", required: true, help: "Where you do most of your work. ROI.bot uses your location to find local and state figures." },
         { id: "zip", label: "Location: ZIP code", kind: "zip", required: true, help: "The ZIP code of your main office." },
-        { id: "website", label: "Website", kind: "url", required: true, help: "Your main web address." },
+        { id: "website", label: "Web Site", kind: "url", required: true, help: "Your main web address." },
         { id: "mission", label: "Mission Statement", kind: "long", required: true, help: "Your mission statement, as you share it with donors." },
         { id: "keywords", label: "Key Words", kind: "text", required: true, help: "A few words about your work, separated by commas." }
       ]
@@ -83,16 +86,16 @@ var FAC_QUESTIONS = {
     },
     {
       id: "pain",
-      title: "Pain Statements/Local Context",
+      title: "Local Context/Data",
       note: "(optional)",
       optional: true,
       kind: "list",
-      itemLabel: "Pain statement",
-      addLabel: "Add another pain statement",
-      help: "Local facts that show the need, such as funding you lost or people you couldn't serve. Add where each figure comes from.",
+      itemLabel: "Local context",
+      addLabel: "Add more local context",
+      help: "Local facts or data that show the need in your community. Add where each figure comes from.",
       examples: [
-        "We lost 800,000 in government funding, 1,680 people were denied shelter due to lack of space.",
-        "In [STATE], 1 in 5 families experience housing instability each year."
+        "In [STATE], 1 in 5 families experience housing instability each year.",
+        "The average cost of homelessness services per family is $18,500 annually."
       ]
     },
     {
@@ -174,7 +177,7 @@ var FAC_QUESTIONS = {
   // The screens follow Step 1 of FAC's flowchart (Draft v3, Oct 25, 2026),
   // which Steve approved. Draft wording for Steve.
   flow: {
-    // Flowchart step numbers shown on each screen. Pain Statements isn't in
+    // Flowchart step numbers shown on each screen. Local Context/Data isn't in
     // the flowchart's Step 1 (it's in Step 2), so it has no number yet.
     numbers: { org: "1.1", program: "1.2", pain: "", benchmarks: "1.3", constraints: "1.4", review: "1.5", check: "◆" },
     nextButton: "Next",
@@ -480,7 +483,7 @@ var FAC_QUESTIONS = {
   },
 
   // FAC's Final Prompt, word for word. Goes under the member's answers.
-  finalPrompt: "Using the information above, convert outputs into outcomes and calculate community impact. Include quality-of-life changes, and where possible, add economic and socioeconomic proxies in dollars using local and state benchmarks. Generate as many concise donor impact statements as would be meaningful to an investor in this organization.",
+  finalPrompt: "Using the information above, convert outputs into outcomes and calculate community impact. Include quality-of-life and social impact changes, and where possible, add economic and socioeconomic proxies in dollars using local and state benchmarks. Generate as many concise donor impact statements as would be meaningful to an investor in this organization.",
 
   // Guardrail line from the plan. Always added to the export.
   guardrail: "Figures marked [Estimate] or [Unsupported] are assumptions. Do not present them as cited benchmarks or introduce new dollar figures unless labeled as your own estimate."
