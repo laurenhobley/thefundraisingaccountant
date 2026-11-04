@@ -69,6 +69,50 @@
     return heading(N.constraints, sec.title, sec.note) + sec.questions.map(function (q) { return field(q, "constraints." + q.id); }).join("");
   }
 
+  // The optional stack rank. Members pick three measures, score each program
+  // 1-3 on each, and type the score (the three multiplied). The tool checks
+  // the score, sorts by it when asked, and never fills a number in.
+  function rankScreen() {
+    var R = Q.rank, st = state.rank, n = state.programs.length;
+    function radio(v, label) {
+      return '<label><input type="radio" class="rank-use" name="rank-use" value="' + v + '"' + (st.use === v ? " checked" : "") + '> ' + esc(label) + '</label>';
+    }
+    var html = heading(N.program, R.title) +
+      '<div class="f"><span class="lbl">' + esc(R.ask) + '</span><div class="choice" role="radiogroup" aria-label="' + esc(R.ask) + '">' +
+      radio("yes", R.yes) + radio("no", R.no) + '</div></div>';
+    if (st.use === "yes") {
+      html += '<div class="f"><span class="lbl">' + esc(R.measuresLabel) + '</span><div class="choice">' +
+        R.measures.map(function (m) {
+          return '<label><input type="checkbox" class="rank-measure" value="' + m.id + '"' + (st.measures.indexOf(m.id) > -1 ? " checked" : "") + '> ' + esc(m.label) + '</label>';
+        }).join("") + '</div></div>';
+      var chosen = R.measures.filter(function (m) { return st.measures.indexOf(m.id) > -1; });
+      html += '<p class="hint">' + esc(R.scoreHelp) + '</p><div class="rank-table">' +
+        state.programs.map(function (p, i) {
+          var row = state.rankRows[i];
+          return '<div class="rank-row" id="rank-row-' + i + '"><span class="lbl">' + esc(programName(i)) + ': ' + esc(S.trim(p.name.text) || Q.flow.empty) + '</span><div class="rank-cells">' +
+            chosen.map(function (m) {
+              return '<label>' + esc(m.label) + ' <select class="rank-m" data-row="' + i + '" data-m="' + m.id + '"><option value=""></option>' +
+                ["1", "2", "3"].map(function (v) { return '<option' + (row.m[m.id] === v ? " selected" : "") + '>' + v + '</option>'; }).join("") + '</select></label>';
+            }).join("") +
+            '<label>' + esc(R.scoreLabel) + ' <input type="text" class="rank-score" inputmode="numeric" data-row="' + i + '" value="' + esc(row.score) + '"></label>' +
+            (i >= S.included(state) ? ' <span class="opt">(' + esc(R.belowLine) + ')</span>' : "") +
+            '</div></div>';
+        }).join("") + '</div>' +
+        '<div class="actions"><button type="button" class="btn ghost" data-act="rankSort">' + esc(R.sortButton) + '</button></div>' +
+        '<div class="f"><label for="rank-line">' + esc(R.lineLabel) + '</label><select id="rank-line" class="rank-line">' +
+        state.programs.map(function (p, i) {
+          return '<option value="' + (i + 1) + '"' + (S.included(state) === i + 1 ? " selected" : "") + '>' + esc(programName(i) + (S.trim(p.name.text) ? ": " + p.name.text : "")) + '</option>';
+        }).join("") + '</select><p class="hint">' + esc(R.lineHelp) + '</p></div>';
+    }
+    return html + '<p class="fu-q" id="rank-msg" aria-live="polite"></p>';
+  }
+
+  // Shows what still stops Next on the stack rank screen, and marks the rows.
+  function showRankCheck(c) {
+    $("rank-msg").textContent = c.msg ? Q.rank[c.msg] : "";
+    Array.prototype.forEach.call(screen.querySelectorAll(".rank-row"), function (r, i) { r.classList.toggle("invalid-row", c.rows.indexOf(i) > -1); });
+  }
+
   // The flowchart's "Happy with...?" checks: a summary with an Edit link for
   // each answer. Next (Yes, continue / Build our story) moves on.
   function checkpointScreen(of) {
@@ -80,7 +124,8 @@
     if (of === "programs") {
       row(S.section(Q, "org").questions.filter(function (q) { return q.id === "keywords"; })[0].label, state.org.keywords.text, "org.keywords");
       state.programs.forEach(function (p, i) {
-        row(programName(i), [p.name.text, p.outputs.text].filter(function (t) { return S.trim(t); }).join(" — "), "programs." + i + ".name");
+        row(programName(i), [p.name.text, p.outputs.text].filter(function (t) { return S.trim(t); }).join(" — ") +
+          (i >= S.included(state) ? " (" + Q.rank.belowLine + ")" : ""), "programs." + i + ".name");
       });
     } else if (of === "benchmarks") {
       state.benchmarks.forEach(function (b, i) { if (S.trim(b.text)) row(nameOf("benchmarks." + i), b.text, "benchmarks." + i); });
@@ -127,6 +172,7 @@
   function nameOf(path) {
     var p = path.split(".");
     if (p[0] === "org" || p[0] === "constraints") return S.section(Q, p[0]).questions.filter(function (q) { return q.id === p[1]; })[0].label;
+    if (p[0] === "rank") return Q.rank.title;
     if (p[0] === "programs") {
       var sec = S.section(Q, "programs");
       return sec.itemLabel + " " + (+p[1] + 1) + ": " + sec.questions.filter(function (q) { return q.id === p[2]; })[0].label;
@@ -245,6 +291,7 @@
       st.kind === "org" ? orgScreen() :
       st.kind === "program" ? programScreen(st.index) :
       st.kind === "check" ? checkpointScreen(st.of) :
+      st.kind === "rank" ? rankScreen() :
       st.kind === "pain" ? listScreen("pain", N.pain) :
       st.kind === "benchmarks" ? listScreen("benchmarks", N.benchmarks) :
       st.kind === "constraints" ? constraintsScreen() : reviewScreen();
@@ -348,6 +395,7 @@
   function onEdit(e) {
     var el = e.target, path = el.getAttribute("data-path");
     if (el.id === "reviewed") { state.reviewed = el.checked; refreshReview(); save(); return; }
+    if (onRankEdit(e)) return;
     if (!path) return;
     if (el.classList.contains("ans")) S.setText(Q, state, path, el.value);
     else if (el.classList.contains("lab-radio")) S.setLabel(Q, state, path, el.value);
@@ -355,6 +403,27 @@
     unreview();
     refresh(path);
     save();
+  }
+
+  // Stack rank controls. Returns true when it handled the event.
+  function onRankEdit(e) {
+    var el = e.target, c = el.classList, R = state.rank;
+    if (!(c.contains("rank-use") || c.contains("rank-measure") || c.contains("rank-m") || c.contains("rank-score") || c.contains("rank-line"))) return false;
+    if (c.contains("rank-use")) { if (e.type !== "change") return true; R.use = el.value; }
+    else if (c.contains("rank-measure")) {
+      if (e.type !== "change") return true;
+      var at = R.measures.indexOf(el.value);
+      if (el.checked && at < 0) { if (R.measures.length < 3) R.measures.push(el.value); else el.checked = false; }
+      if (!el.checked && at > -1) R.measures.splice(at, 1);
+    }
+    else if (c.contains("rank-m")) state.rankRows[+el.getAttribute("data-row")].m[el.getAttribute("data-m")] = el.value;
+    else if (c.contains("rank-score")) state.rankRows[+el.getAttribute("data-row")].score = el.value;
+    else if (c.contains("rank-line")) R.line = +el.value;
+    unreview();
+    save();
+    // Choosing yes or no, a measure or the red line changes what the screen shows.
+    if (c.contains("rank-use") || c.contains("rank-measure") || c.contains("rank-line")) render();
+    return true;
   }
 
   // Removing a program asks for a second click, like "Clear form" on the live page.
@@ -366,6 +435,13 @@
     if (act === "copy") { copyPrompt(); return; }
     if (act === "download") { downloadPrompt(); return; }
     if (act === "downloadVersion") { downloadVersion(i); return; }
+    if (act === "rankSort") {
+      var ok = S.sortByScore(state);
+      if (ok) { unreview(); render(); $("rank-msg").textContent = Q.rank.sorted; }
+      else showRankCheck(S.rankCheck(state));
+      save();
+      return;
+    }
     // Everything else below changes the answers, except going to a listed item.
     if (act !== "goto" && !(act === "removeProgram" && armed !== b)) unreview();
     if (act === "addProgram") { go(1 + S.addProgram(Q, state)); }
@@ -396,6 +472,11 @@
   $("back").addEventListener("click", function () { go(state.step - 1); });
   // Next asks a follow-up for each missing or vague answer instead of moving on.
   $("next").addEventListener("click", function () {
+    if (S.steps(state)[state.step].kind === "rank") {
+      var c = S.rankCheck(state);
+      if (!c.msg) go(state.step + 1); else showRankCheck(c);
+      return;
+    }
     var m = S.ask(Q, state, state.step);
     if (!m.length) { go(state.step + 1); return; }
     m.forEach(refresh);

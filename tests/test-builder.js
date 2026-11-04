@@ -18,12 +18,12 @@ T.run("Builder screens (builder.html)", function (check) {
   function saved() { return JSON.parse(localStorage.getItem("fac-prompt-sheet-draft-v1")); }
 
   // ---------- Missing answers on Organization Info ----------
-  check("starts on Step 1 of 9", $("counter").textContent === "Step 1 of 9");
+  check("starts on Step 1 of 10", $("counter").textContent === "Step 1 of 10");
   check("Back is off on step 1", $("back").disabled);
   check("no follow-ups before Next is pressed", shown(".fu") === 0);
 
   $("next").click();
-  check("Next with blanks stays on Step 1", $("counter").textContent === "Step 1 of 9");
+  check("Next with blanks stays on Step 1", $("counter").textContent === "Step 1 of 10");
   check("first Next: a follow-up under each of the 6 required answers", shown(".fu") === 6);
   check("first follow-up wording", fu("f-org-name") === F.missing[0] && fu("f-org-zip") === F.missingZip[0]);
   check("no Skip buttons after one follow-up", shown(".fu-skip") === 0);
@@ -48,11 +48,11 @@ T.run("Builder screens (builder.html)", function (check) {
   skip("f-org-website");
   check("Skip marks it skipped and Unsupported", !$("f-org-website-skipped").hidden && fu("f-org-website") === "" && saved().org.website.skipped === true);
   $("next").click();
-  check("Next still blocked by City and Key Words", $("counter").textContent === "Step 1 of 9" && shown(".fu") === 2);
+  check("Next still blocked by City and Key Words", $("counter").textContent === "Step 1 of 10" && shown(".fu") === 2);
   skip("f-org-city");
   type("f-org-keywords", "shelter, safety");
   $("next").click();
-  check("all answered or skipped: Next goes to Program 1 of 1", $("counter").textContent === "Step 2 of 9" && /Program 1 of 1/.test(title()));
+  check("all answered or skipped: Next goes to Program 1 of 1", $("counter").textContent === "Step 2 of 10" && /Program 1 of 1/.test(title()));
   check("answers saved in the browser", saved().org.mission.text === "We help 400 families");
 
   // ---------- Programs and labels ----------
@@ -65,14 +65,14 @@ T.run("Builder screens (builder.html)", function (check) {
   type("f-programs-0-outputs-note", "2024 annual report");
   check("source filled in: no longer flagged", $("f-programs-0-outputs-lab").getAttribute("data-status") === "ok");
   $("next").click();
-  check("Next blocked by the one missing answer, Description", $("counter").textContent === "Step 2 of 9" && shown(".fu") === 1 && fu("f-programs-0-description") !== "");
+  check("Next blocked by the one missing answer, Description", $("counter").textContent === "Step 2 of 10" && shown(".fu") === 1 && fu("f-programs-0-description") !== "");
   check("blank optional Current Impact Statement gets no follow-up", $("f-programs-0-impact-fu").hidden);
 
   // ---------- Filler words ----------
   type("f-programs-0-description", "Various services");
   check("blank answer that becomes vague: follow-up waits for Next", fu("f-programs-0-description") === "");
   $("next").click();
-  check("first Next: vague follow-up names the word", $("counter").textContent === "Step 2 of 9" && fu("f-programs-0-description") === F.vague[0].replace("{word}", "Various"));
+  check("first Next: vague follow-up names the word", $("counter").textContent === "Step 2 of 10" && fu("f-programs-0-description") === F.vague[0].replace("{word}", "Various"));
   check("no Keep button after one follow-up", shown(".fu-skip") === 0);
   $("next").click();
   check("second Next: second vague follow-up", fu("f-programs-0-description") === F.vague[1].replace("{word}", "Various"));
@@ -83,13 +83,13 @@ T.run("Builder screens (builder.html)", function (check) {
   // ---------- Outputs: a number and a year ----------
   type("f-programs-0-outputs", "37,260 meals provided");
   $("next").click();
-  check("Outputs with no year: Next blocked with the no-year follow-up", $("counter").textContent === "Step 2 of 9" && fu("f-programs-0-outputs") === F.outputNoYear[0] && shown(".fu") === 1);
+  check("Outputs with no year: Next blocked with the no-year follow-up", $("counter").textContent === "Step 2 of 10" && fu("f-programs-0-outputs") === F.outputNoYear[0] && shown(".fu") === 1);
   type("f-programs-0-outputs", "37,260 meals provided in FY24");
   check("adding a fiscal year hides it", fu("f-programs-0-outputs") === "");
   type("f-programs-0-outputs", "Served 414 families in 2024");
 
   act("addProgram");
-  check("Add another program goes to Program 2 of 2", $("counter").textContent === "Step 3 of 10" && /Program 2 of 2/.test(title()));
+  check("Add another program goes to Program 2 of 2", $("counter").textContent === "Step 3 of 11" && /Program 2 of 2/.test(title()));
   type("f-programs-1-outputs", "About 50 people");
   pick("f-programs-1-outputs", "unsupported");
   check("Unsupported stays flagged", $("f-programs-1-outputs-lab").getAttribute("data-status") === "unsupported");
@@ -133,9 +133,38 @@ T.run("Builder screens (builder.html)", function (check) {
   check("saved for the export", FACSheet.sameGroups(FACSheet.load(FAC_QUESTIONS)).length === 1);
   $("next").click();
 
+  // ---------- Optional stack rank ----------
+  var RK = FAC_QUESTIONS.rank;
+  function rankMsg() { return $("rank-msg").textContent; }
+  function pickSel(row, m, v) { var e = document.querySelector('#screen .rank-m[data-row="' + row + '"][data-m="' + m + '"]'); e.value = v; e.dispatchEvent(new Event("change", { bubbles: true })); }
+  function score(row, v) { var e = document.querySelector('#screen .rank-score[data-row="' + row + '"]'); e.value = v; e.dispatchEvent(new Event("input", { bubbles: true })); }
+  check("after the last program: the stack rank question", $("counter").textContent === "Step 4 of 11" && title().indexOf(RK.title) > -1);
+  $("next").click();
+  check("Next without choosing: asks to choose", rankMsg() === RK.needChoice && $("counter").textContent === "Step 4 of 11");
+  document.querySelector('#screen .rank-use[value="yes"]').click();
+  check("Yes shows the four measures", document.querySelectorAll("#screen .rank-measure").length === 4);
+  ["quality", "uniqueness", "impact", "money"].forEach(function (id) { document.querySelector('#screen .rank-measure[value="' + id + '"]').click(); });
+  check("only three measures can be picked", saved().rank.measures.join() === "quality,uniqueness,impact" && document.querySelectorAll("#screen .rank-m").length === 6);
+  $("next").click();
+  check("Next with no scores: asks for them", rankMsg() === RK.needScores);
+  ["quality", "uniqueness", "impact"].forEach(function (id) { pickSel(0, id, "1"); pickSel(1, id, "2"); });
+  score(0, "1"); score(1, "6");
+  check("no score box is filled in by the tool", saved().rankRows[1].score === "6");
+  $("next").click();
+  check("a wrong score (2 × 2 × 2 typed as 6): asks to check it, without the right answer", rankMsg() === RK.wrongScore &&
+    $("rank-row-1").classList.contains("invalid-row") && !$("rank-row-0").classList.contains("invalid-row") && rankMsg().indexOf("8") === -1);
+  score(1, "8");
+  act("rankSort");
+  check("Sort by score keeps Program 1 first (score 1 before 8)", rankMsg() === RK.sorted && saved().programs[0].name.text === "Emergency shelter");
+  var line = $("rank-line"); line.value = "1"; line.dispatchEvent(new Event("change", { bubbles: true }));
+  check("red line after Program 1: Program 2 is below it", saved().rank.line === 1 && $("rank-row-1").textContent.indexOf(RK.belowLine) > -1);
+  document.querySelector('#screen .rank-use[value="no"]').click();
+  check("choosing No hides the ranking again", document.querySelectorAll("#screen .rank-m").length === 0);
+  $("next").click();
+
   // ---------- Flowchart check: "Happy with programs and keywords?" ----------
   var FL = FAC_QUESTIONS.flow;
-  check("after the last program: the programs-and-keywords check", $("counter").textContent === "Step 4 of 10" && title().indexOf(FL.checkpoints.programs.title) > -1);
+  check("after the last program: the programs-and-keywords check", $("counter").textContent === "Step 5 of 11" && title().indexOf(FL.checkpoints.programs.title) > -1);
   check("its Next button says \"Yes, continue\"", $("next").textContent === FL.checkpointYes);
   var rows = Array.prototype.map.call(document.querySelectorAll("#screen .checklist li"), function (li) { return li.textContent; });
   check("it lists the key words and both programs, each with Edit", rows.length === 3 && rows[0].indexOf("shelter, safety") > -1 &&
@@ -143,7 +172,8 @@ T.run("Builder screens (builder.html)", function (check) {
   document.querySelectorAll('#screen .checklist button[data-act="goto"]')[2].click();
   check("Edit jumps to that program", /Program 2 of 2/.test(title()) && document.activeElement.id === "f-programs-1-name");
   $("next").click();
-  check("Next from there comes back to the check", title().indexOf(FL.checkpoints.programs.title) > -1);
+  $("next").click();
+  check("Next from there passes the stack rank and comes back to the check", title().indexOf(FL.checkpoints.programs.title) > -1);
   $("next").click();
 
   // ---------- Optional sections and the end screen ----------
@@ -199,7 +229,7 @@ T.run("Builder screens (builder.html)", function (check) {
   check("its Next button says \"Build our story\"", $("next").textContent === FL.buildStory);
   $("next").click();
 
-  check("end screen is last: Next is hidden", $("next").hidden && $("counter").textContent === "Step 10 of 10");
+  check("end screen is last: Next is hidden", $("next").hidden && $("counter").textContent === "Step 11 of 11");
   var todo = Array.prototype.map.call(document.querySelectorAll("#screen .todo li"), function (li) { return li.textContent; });
   check("end screen lists everything still needing attention, in sheet order", todo.join(" | ") ===
     "Location: City and state was skipped (Unsupported) | Mission Statement needs a label | " +
@@ -222,7 +252,7 @@ T.run("Builder screens (builder.html)", function (check) {
   check("copying the same prompt again doesn't add a version", saved().versions.length === 1);
 
   document.querySelector('#screen .todo button[data-act="goto"]').click();
-  check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 10" && document.activeElement.id === "f-org-city");
+  check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 11" && document.activeElement.id === "f-org-city");
   check("jumping there doesn't clear the tick", saved().reviewed === true);
   type("f-org-city", "Houston, TX");
   check("changing an answer clears the tick", saved().reviewed === false);
@@ -232,7 +262,7 @@ T.run("Builder screens (builder.html)", function (check) {
   check("Remove this program asks for a second click", saved().programs.length === 2);
   act("removeProgram");
   check("second click removes program 2", saved().programs.length === 1);
-  for (var k = 0; k < 7; k++) $("next").click();
-  check("back on the review screen: still unticked and locked", $("counter").textContent === "Step 9 of 9" && !$("reviewed").checked && $("copyPrompt").disabled);
+  for (var k = 0; k < 8; k++) $("next").click();
+  check("back on the review screen: still unticked and locked", $("counter").textContent === "Step 10 of 10" && !$("reviewed").checked && $("copyPrompt").disabled);
   check("the preview now shows the new city", $("exportPreview").textContent.indexOf("Location (include zip): Houston, TX 77001") > -1);
 });

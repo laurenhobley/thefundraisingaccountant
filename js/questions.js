@@ -158,6 +158,52 @@ var FAC_QUESTIONS = {
     }
   },
 
+  // Optional stack rank (FAC's process guide, form 1.2), after the programs.
+  // Members type every score themselves; the tool only checks the math and
+  // sorts by the scores they typed. Draft for Steve. The guide says 3
+  // measures but its example uses 4 (a gap for Steve to close).
+  rank: {
+    title: "Prioritize your programs",
+    ask: "Do you want to stack rank your programs?",
+    yes: "Yes, rank them",
+    no: "No, keep the order I typed",
+    needChoice: "Please choose whether to rank your programs.",
+    measuresLabel: "Pick three measures",
+    measures: [
+      { id: "quality", label: "Quality/Quantity" },
+      { id: "uniqueness", label: "Uniqueness" },
+      { id: "impact", label: "Impact" },
+      { id: "money", label: "$$$" }
+    ],
+    needMeasures: "Please pick exactly three measures.",
+    scoreHelp: "Score each program on each measure, where 1 is best and 3 is weakest. Then multiply the three scores and type the result as the program's score.",
+    scoreLabel: "Score",
+    needScores: "Please score every program on each measure and type its score.",
+    wrongScore: "This score doesn't match the three measures multiplied together. Please check it.",
+    sortButton: "Sort by score, lowest first",
+    sorted: "Sorted. The lowest score is your highest priority.",
+    lineLabel: "Draw the red line after",
+    lineHelp: "Programs below the red line are left out of the prompt. They stay saved, so you can move the line later.",
+    belowLine: "below the red line"
+  },
+
+  // Extra fields for each benchmark (FAC's process guide, form 2.3). Draft for Steve.
+  benchmarkFields: {
+    source: { label: "Source", help: "Where the finding comes from: a report, study or website." },
+    program: { label: "Which program it connects to", none: "Choose a program" },
+    connects: { label: "How it connects to the program", help: "A sentence on why this finding matters for that program." }
+  },
+
+  // The review screen's editable RTCC parts (FAC's process guide, step 2.5).
+  // Draft for Steve.
+  rtccEdit: {
+    title: "Edit your prompt",
+    text: "You can change the Role, Task and Constraints below. To change the Context, use the Edit links above to go back to that answer. The guardrail line is always added at the end.",
+    roleHelp: "Who ROI.bot should act as. FAC's wording is coming; you can write your own.",
+    reset: "Use FAC's wording",
+    resetConstraints: "Use my constraint answers"
+  },
+
   // The finished prompt in RTCC parts: Role, Context, Task, Constraints.
   // Context comes before Task because FAC's Final Prompt (the Task) says
   // "Using the information above". Role is left out until FAC writes it

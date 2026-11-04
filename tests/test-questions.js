@@ -26,6 +26,8 @@ T.run("Questions (js/questions.js)", function (check) {
   check("flowchart step numbers: 1.1 to 1.5", [Q.flow.numbers.org, Q.flow.numbers.program, Q.flow.numbers.benchmarks, Q.flow.numbers.constraints, Q.flow.numbers.review].join() === "1.1,1.2,1.3,1.4,1.5");
   check("the three \"Happy with…?\" checks have their wording", ["programs", "benchmarks", "constraints"].every(function (k) { return !!Q.flow.checkpoints[k].title && !!Q.flow.checkpoints[k].text; }));
   check("\"Yes, continue\" and \"Build our story\" buttons have wording", !!Q.flow.checkpointYes && Q.flow.buildStory === "Build our story");
+  check("stack rank: four measures to pick three from, and its messages", Q.rank.measures.length === 4 &&
+    ["ask", "yes", "no", "needChoice", "needMeasures", "needScores", "wrongScore", "sortButton", "lineLabel", "belowLine"].every(function (k) { return !!Q.rank[k]; }));
   check("RTCC headings are there; Role is empty until FAC writes it", ["roleHeading", "contextHeading", "taskHeading", "constraintsHeading"].every(function (k) { return !!Q.rtcc[k]; }) && Q.rtcc.role === "");
   check("saved versions have their wording", ["versionsTitle", "versionsNone", "versionDownload"].every(function (k) { return !!Q.review[k]; }) &&
     Q.review.versionLabel.indexOf("{n}") > -1 && Q.review.versionLabel.indexOf("{date}") > -1);

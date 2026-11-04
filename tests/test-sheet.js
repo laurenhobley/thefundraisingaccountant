@@ -8,7 +8,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("blank sheet starts with 1 program", s.programs.length === 1);
   check("blank sheet has every Organization Info question", ["name", "city", "zip", "website", "mission", "keywords"].every(function (id) { return !!s.org[id]; }));
   check("blank sheet has no numbers in it", S.problems(s).length === 0);
-  check("screens: Organization, 1 program, check, Pain Statements, Benchmarks, check, Constraints, check, review", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,check:programs,pain,benchmarks,check:benchmarks,constraints,check:constraints,end");
+  check("screens: Organization, 1 program, stack rank, check, Pain Statements, Benchmarks, check, Constraints, check, review", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,rank,check:programs,pain,benchmarks,check:benchmarks,constraints,check:constraints,end");
 
   var out = S.get(s, "programs.0.outputs");
   out.text = "Served 414 families in 2024";
@@ -30,9 +30,9 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   var n = S.addProgram(Q, s);
   check("Add program gives program 2", n === 1 && s.programs.length === 2);
-  check("10 screens with 2 programs", S.steps(s).length === 10);
+  check("11 screens with 2 programs", S.steps(s).length === 11);
   check("program 2 is on screen 3", S.stepOf(s, "programs.1.name") === 2);
-  check("with 2 programs: check on screen 4, Pain on 5, Benchmarks on 6, Constraints on 8", S.steps(s)[3].of === "programs" && S.stepOf(s, "pain.0") === 4 && S.stepOf(s, "benchmarks.0") === 5 && S.stepOf(s, "constraints.tone") === 7);
+  check("with 2 programs: stack rank on screen 4, check on 5, Pain on 6, Benchmarks on 7, Constraints on 9", S.steps(s)[3].kind === "rank" && S.steps(s)[4].of === "programs" && S.stepOf(s, "pain.0") === 5 && S.stepOf(s, "benchmarks.0") === 6 && S.stepOf(s, "constraints.tone") === 8);
   S.removeProgram(s, 1); S.removeProgram(s, 0);
   check("the last program can't be removed", s.programs.length === 1);
 
@@ -290,6 +290,40 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("a changed prompt is kept as version 2", vs.versions.length === 2 && vs.versions[1].n === 2 && vs.versions[1].text === "second prompt");
   var rv = S.repair(Q, { constraints: { tone: { text: "warm" } }, versions: [{ n: 1, at: "Nov 4", text: "x" }, { n: "two" }, null] });
   check("old draft: constraints and good versions kept, bad ones dropped", rv.constraints.tone.text === "warm" && rv.versions.length === 1);
+
+  // Optional stack rank: the member types every score; the tool checks and sorts.
+  var sr = S.blank(Q);
+  S.addProgram(Q, sr); S.addProgram(Q, sr);
+  ["Food Pantry", "Tutoring", "Shelter"].forEach(function (t, i) { S.setText(Q, sr, "programs." + i + ".name", t); });
+  check("a row of scores for every program", sr.rankRows.length === 3);
+  check("no choice yet: Next is blocked", S.rankCheck(sr).msg === "needChoice");
+  sr.rank.use = "no";
+  check("No: nothing else to do, every program goes in the prompt", S.rankCheck(sr).msg === "" && S.included(sr) === 3);
+  sr.rank.use = "yes"; sr.rank.measures = ["quality", "impact"];
+  check("Yes needs exactly three measures", S.rankCheck(sr).msg === "needMeasures");
+  sr.rank.measures = ["quality", "impact", "money"];
+  check("Yes with no scores: every row needs scoring", S.rankCheck(sr).msg === "needScores" && S.rankCheck(sr).rows.join() === "0,1,2");
+  function scoreRow(i, a, b, c, typed) { sr.rankRows[i].m = { quality: a, impact: b, money: c }; sr.rankRows[i].score = typed; }
+  scoreRow(0, "3", "3", "2", "18"); scoreRow(1, "1", "2", "1", "2"); scoreRow(2, "2", "2", "2", "6");
+  check("a wrong score is caught (2 × 2 × 2 typed as 6)", S.rankCheck(sr).msg === "wrongScore" && S.rankCheck(sr).rows.join() === "2");
+  check("sorting waits until every score checks out", S.sortByScore(sr) === false && sr.programs[0].name.text === "Food Pantry");
+  sr.rankRows[2].score = "8";
+  check("every score right: Next can go ahead", S.rankCheck(sr).msg === "");
+  check("sort puts the lowest score first: Tutoring (2), Shelter (8), Food Pantry (18)",
+    S.sortByScore(sr) && sr.programs.map(function (p) { return p.name.text; }).join() === "Tutoring,Shelter,Food Pantry" &&
+    sr.rankRows.map(function (r) { return r.score; }).join() === "2,8,18");
+  check("the red line starts below every program", S.included(sr) === 3);
+  sr.rank.line = 2;
+  check("red line after Program 2: two programs go in the prompt", S.included(sr) === 2);
+  S.removeProgram(sr, 0);
+  check("removing a program removes its scores too", sr.rankRows.length === 2 && sr.rankRows[0].score === "8");
+  S.addProgram(Q, sr);
+  check("adding a program adds an empty row of scores", sr.rankRows.length === 3 && sr.rankRows[2].score === "");
+  var rr = S.repair(Q, { programs: [{ name: { text: "A" } }, { name: { text: "B" } }], rank: { use: "yes", measures: ["quality", "bogus", "impact", "money", "uniqueness"], line: 1 },
+    rankRows: [{ m: { quality: "2", impact: "9" }, score: "4" }] });
+  check("old draft: rank kept, bad measures and scores dropped, rows match the programs",
+    rr.rank.use === "yes" && rr.rank.measures.join() === "quality,impact,money" && rr.rank.line === 1 &&
+    rr.rankRows.length === 2 && rr.rankRows[0].m.quality === "2" && !rr.rankRows[0].m.impact && rr.rankRows[0].score === "4");
 
   // Saving and loading, with a stand-in for the browser's storage.
   var store = {}, fake = { setItem: function (k, v) { store[k] = v; }, getItem: function (k) { return store[k] || null; }, removeItem: function (k) { delete store[k]; } };

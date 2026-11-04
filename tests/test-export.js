@@ -77,6 +77,12 @@ T.run("Export (js/export.js)", function (check) {
   check("no Role while FAC's role wording is blank", out.indexOf("Role:") === -1);
   var withRole = JSON.parse(JSON.stringify(Q)); withRole.rtcc.role = "You are a test role.";
   check("once FAC writes the Role, it comes first", E.build(withRole, s).indexOf("Role:\nYou are a test role.\n\nContext:") === 0);
+  s.rank.use = "yes"; s.rank.line = 2;
+  var ranked = E.build(Q, s);
+  check("programs below the red line are left out of the prompt", ranked.indexOf("2. Program Name: Senior Pantry") > -1 && ranked.indexOf("School Pantry") === -1);
+  check("and so is a same-group note about a program below the line", ranked.indexOf("Note: Program 3") === -1);
+  s.rank.use = "no";
+  check("No stack rank: every program again", E.build(Q, s).indexOf("3. Program Name: School Pantry") > -1);
   check("blank constraints are left out; the guardrail line is always there", E.build(Q, S.blank(Q)).split("\n").slice(-2).join("|") === "Constraints:|" + Q.guardrail);
   check("Known with a source: source in brackets, no tag", out.indexOf("in 2024 (source: 2024 annual report)") > -1);
   check("Known with no source: [Unsupported]", E.answerText(Q, { org: {}, programs: [{ outputs: { text: "90 kids in 2024", label: "known", note: "", asks: 0, skipped: false } }] }, "programs.0.outputs") === "90 kids in 2024 [Unsupported]");

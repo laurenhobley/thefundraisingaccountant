@@ -38,9 +38,17 @@ var FACSheet = (function () {
       benchmarks: [answer()],
       constraints: group(section(Q, "constraints").questions),
       // Each prompt the member copied or downloaded: { n, at, text }.
-      versions: []
+      versions: [],
+      // Optional stack rank. use: "", "yes" or "no". measures: the three
+      // measure ids picked. line: how many programs are above the red line
+      // (null means all of them). rankRows[i] goes with programs[i]:
+      // { m: { measureId: "1".."3" }, score: "the score the member typed" }.
+      rank: { use: "", measures: [], line: null },
+      rankRows: [rankRow()]
     };
   }
+
+  function rankRow() { return { m: {}, score: "" }; }
 
   // Copies an answer from saved data, keeping only the three known fields.
   function copy(from) {
@@ -82,6 +90,16 @@ var FACSheet = (function () {
     if (typeof data.step === "number" && data.step >= 0) s.step = data.step;
     if (data.reviewed === true) s.reviewed = true;
     copyGroup(s.constraints, data.constraints);
+    var R = data.rank || {}, ids = (Q.rank.measures || []).map(function (m) { return m.id; });
+    if (R.use === "yes" || R.use === "no") s.rank.use = R.use;
+    if (R.measures && R.measures.length) s.rank.measures = R.measures.filter(function (id) { return ids.indexOf(id) > -1; }).slice(0, 3);
+    if (typeof R.line === "number" && R.line >= 1) s.rank.line = Math.floor(R.line);
+    s.rankRows = s.programs.map(function (p, n) {
+      var from = (data.rankRows || [])[n], row = rankRow();
+      if (from && from.m) for (var id in from.m) if (ids.indexOf(id) > -1 && /^[123]$/.test(from.m[id])) row.m[id] = from.m[id];
+      if (from && typeof from.score === "string") row.score = from.score;
+      return row;
+    });
     if (data.versions && data.versions.length) for (i = 0; i < data.versions.length; i++) {
       var v = data.versions[i];
       if (v && typeof v.n === "number" && typeof v.at === "string" && typeof v.text === "string") s.versions.push({ n: v.n, at: v.at, text: v.text });
@@ -473,10 +491,11 @@ var FACSheet = (function () {
   // 1.2 one screen per program, a "Happy with programs and keywords?"
   // check, Pain Statements (from FAC's sheet), 1.3 Benchmarks and its check,
   // 1.4 Constraints and its check, then 1.5 the review screen.
+  // After the programs comes the optional stack rank.
   function steps(state) {
     var out = [{ kind: "org" }];
     for (var i = 0; i < state.programs.length; i++) out.push({ kind: "program", index: i });
-    out.push({ kind: "check", of: "programs" }, { kind: "pain" }, { kind: "benchmarks" }, { kind: "check", of: "benchmarks" },
+    out.push({ kind: "rank" }, { kind: "check", of: "programs" }, { kind: "pain" }, { kind: "benchmarks" }, { kind: "check", of: "benchmarks" },
       { kind: "constraints" }, { kind: "check", of: "constraints" }, { kind: "end" });
     return out;
   }
@@ -484,7 +503,46 @@ var FACSheet = (function () {
     var p = path.split("."), n = state.programs.length;
     if (p[0] === "org") return 0;
     if (p[0] === "programs") return 1 + (+p[1]);
-    return n + ({ pain: 2, benchmarks: 3, constraints: 5 })[p[0]];
+    return n + ({ rank: 1, pain: 3, benchmarks: 4, constraints: 6 })[p[0]];
+  }
+
+  // ---------- Stack rank ----------
+
+  // What still stops Next on the stack rank screen: "" (nothing),
+  // "needChoice", "needMeasures", "needScores" or "wrongScore", and the
+  // program rows it's about. A score must equal the three measures
+  // multiplied together; the tool checks it but never fills it in.
+  function rankCheck(state) {
+    var R = state.rank, rows = [];
+    if (!R.use) return { msg: "needChoice", rows: rows };
+    if (R.use === "no") return { msg: "", rows: rows };
+    if (R.measures.length !== 3) return { msg: "needMeasures", rows: rows };
+    state.rankRows.forEach(function (row, i) {
+      if (R.measures.some(function (id) { return !row.m[id]; }) || !/^\d+$/.test(trim(row.score))) rows.push(i);
+    });
+    if (rows.length) return { msg: "needScores", rows: rows };
+    state.rankRows.forEach(function (row, i) {
+      var product = R.measures.reduce(function (x, id) { return x * +row.m[id]; }, 1);
+      if (+trim(row.score) !== product) rows.push(i);
+    });
+    return { msg: rows.length ? "wrongScore" : "", rows: rows };
+  }
+
+  // Puts the programs in order of the scores the member typed, lowest first
+  // (1 is best). Only once every score checks out. Ties keep their order.
+  function sortByScore(state) {
+    if (state.rank.use !== "yes" || rankCheck(state).msg) return false;
+    var order = state.programs.map(function (p, i) { return i; });
+    order.sort(function (a, b) { return (+trim(state.rankRows[a].score) - +trim(state.rankRows[b].score)) || a - b; });
+    state.programs = order.map(function (i) { return state.programs[i]; });
+    state.rankRows = order.map(function (i) { return state.rankRows[i]; });
+    return true;
+  }
+
+  // How many programs go into the prompt: those above the red line.
+  function included(state) {
+    var n = state.programs.length;
+    return state.rank.use === "yes" && state.rank.line ? Math.min(state.rank.line, n) : n;
   }
 
   // Every answer that still needs attention, in sheet order. With Q, this
@@ -519,10 +577,11 @@ var FACSheet = (function () {
 
   function addProgram(Q, state) {
     state.programs.push(group(section(Q, "programs").questions));
+    state.rankRows.push(rankRow());
     return state.programs.length - 1;
   }
   function removeProgram(state, i) {
-    if (state.programs.length > 1) state.programs.splice(i, 1);
+    if (state.programs.length > 1) { state.programs.splice(i, 1); state.rankRows.splice(i, 1); }
   }
   function addItem(state, list) { state[list].push(answer()); }
   // A list always keeps one row; removing the last one just clears it.
@@ -554,6 +613,7 @@ var FACSheet = (function () {
     isAssumption: isAssumption, assumptionOpen: assumptionOpen, setLabel: setLabel, setNote: setNote,
     calculations: calculations, mathProblem: mathProblem,
     paths: paths, steps: steps, stepOf: stepOf, problems: problems, addVersion: addVersion,
+    rankCheck: rankCheck, sortByScore: sortByScore, included: included,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear
   };

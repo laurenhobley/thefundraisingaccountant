@@ -66,8 +66,10 @@ var FACExport = (function () {
     ["website", "mission", "keywords"].forEach(function (id) { L.push(line(q(org, id).label, answerText(Q, state, "org." + id))); });
     L.push("");
 
+    // Only programs above the red line, if the member stack ranked them.
+    var k = S.included(state);
     L.push(prog.title + " " + prog.note);
-    state.programs.forEach(function (p, i) {
+    state.programs.slice(0, k).forEach(function (p, i) {
       prog.questions.forEach(function (x, k) {
         var text = line(labelOf(x), answerText(Q, state, "programs." + i + "." + x.id));
         L.push(k === 0 ? (i + 1) + ". " + text : "   * " + text);
@@ -83,7 +85,7 @@ var FACExport = (function () {
       });
     });
 
-    var groups = S.sameGroups(state);
+    var groups = S.sameGroups(state).filter(function (g) { return +g.path.split(".")[1] < k && g.other < k; });
     if (groups.length) {
       L.push("");
       groups.forEach(function (g) {
