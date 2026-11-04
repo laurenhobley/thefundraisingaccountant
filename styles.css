@@ -107,6 +107,10 @@ a { color: var(--accent); font-weight: 600; }
 .review-check input { accent-color: var(--accent); width: 18px; height: 18px; margin: 0; }
 #exportMsg { margin: 0; font-size: 14px; color: var(--muted); min-height: 1.5em; }
 
+/* Editable Role, Task and Constraints on the review screen. */
+.rtcc { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.rtcc textarea { background: var(--field); }
+
 /* A benchmark's source, program and how it connects. */
 .bench-extra { display: grid; gap: 12px; margin-top: 6px; padding-left: 12px; border-left: 2px solid var(--line); }
 

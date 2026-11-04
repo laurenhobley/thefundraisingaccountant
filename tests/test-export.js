@@ -87,6 +87,18 @@ T.run("Export (js/export.js)", function (check) {
   check("and so is a same-group note about a program below the line", ranked.indexOf("Note: Program 3") === -1);
   s.rank.use = "no";
   check("No stack rank: every program again", E.build(Q, s).indexOf("3. Program Name: School Pantry") > -1);
+  // Editable Role, Task and Constraints (the review screen).
+  s.rtcc.task = "Write one donor email for each program.";
+  s.rtcc.constraints = "Tone: Formal";
+  s.rtcc.role = "You are a grant writer.";
+  var edited = E.build(Q, s);
+  check("the member's own Role comes first", edited.indexOf("Role:\nYou are a grant writer.\n\nContext:") === 0);
+  check("the member's own Task replaces FAC's Final Prompt", edited.indexOf("Task:\nWrite one donor email for each program.\n") > -1 && edited.indexOf(Q.finalPrompt) === -1);
+  check("the member's own Constraints, then the guardrail line, which can't be edited", edited.slice(-("Constraints:\nTone: Formal\n" + Q.guardrail).length) === "Constraints:\nTone: Formal\n" + Q.guardrail);
+  s.rtcc.constraints = "";
+  check("emptying Constraints still leaves the guardrail line", E.build(Q, s).slice(-("Constraints:\n" + Q.guardrail).length) === "Constraints:\n" + Q.guardrail);
+  s.rtcc = { role: null, task: null, constraints: null };
+  check("back to FAC's wording: the prompt is as before", E.build(Q, s) === out);
   check("blank constraints are left out; the guardrail line is always there", E.build(Q, S.blank(Q)).split("\n").slice(-2).join("|") === "Constraints:|" + Q.guardrail);
   check("Known with a source: source in brackets, no tag", out.indexOf("in 2024 (source: 2024 annual report)") > -1);
   check("Known with no source: [Unsupported]", E.answerText(Q, { org: {}, programs: [{ outputs: { text: "90 kids in 2024", label: "known", note: "", asks: 0, skipped: false } }] }, "programs.0.outputs") === "90 kids in 2024 [Unsupported]");

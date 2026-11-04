@@ -215,7 +215,7 @@
         }).join("") + '</ul>'
       : '<p>' + esc(Q.review.allClear) + '</p>';
     var R = Q.review;
-    return heading(N.review, R.title) + '<p>' + esc(R.text) + '</p>' + list +
+    return heading(N.review, R.title) + '<p>' + esc(R.text) + '</p>' + list + rtccEditor() +
       '<div class="f"><span class="lbl">' + esc(R.previewTitle) + '</span><pre id="exportPreview"></pre></div>' +
       '<label class="review-check"><input type="checkbox" id="reviewed"' + (state.reviewed ? " checked" : "") + '> ' + esc(R.checkbox) + '</label>' +
       '<div class="actions">' +
@@ -247,6 +247,20 @@
     catch (e) { return new Date().toLocaleString(); }
   }
   function keepVersion(text) { S.addVersion(state, text, stamp()); save(); refreshVersions(); }
+
+  // Role, Task and Constraints, editable on the review screen. Each has a
+  // button to go back to FAC's wording (or the member's constraint answers).
+  function rtccEditor() {
+    var E = Q.rtccEdit, H = Q.rtcc, P = FACExport.parts(Q, state);
+    function box(part, heading, help, reset) {
+      return '<div class="f"><label for="rtcc-' + part + '">' + esc(heading) + '</label>' + (help ? '<p class="hint">' + esc(help) + '</p>' : "") +
+        '<textarea class="rtcc-edit" id="rtcc-' + part + '" data-part="' + part + '">' + esc(P[part]) + '</textarea>' +
+        '<div><button type="button" class="btn quiet" data-act="rtccReset" data-part="' + part + '">' + esc(reset) + '</button></div></div>';
+    }
+    return '<div class="rtcc"><span class="lbl">' + esc(E.title) + '</span><p class="hint">' + esc(E.text) + '</p>' +
+      box("role", H.roleHeading, E.roleHelp, E.reset) + box("task", H.taskHeading, "", E.reset) +
+      box("constraints", H.constraintsHeading, "", E.resetConstraints) + '</div>';
+  }
 
   // Copy and Download stay locked until "I reviewed this" is ticked.
   function refreshReview() {
@@ -413,6 +427,7 @@
     var el = e.target, path = el.getAttribute("data-path");
     if (el.id === "reviewed") { state.reviewed = el.checked; refreshReview(); save(); return; }
     if (onRankEdit(e)) return;
+    if (el.classList.contains("rtcc-edit")) { state.rtcc[el.getAttribute("data-part")] = el.value; unreview(); refreshReview(); save(); return; }
     if (!path) return;
     if (el.classList.contains("ext")) { S.get(state, path)[el.getAttribute("data-ext")] = el.value; unreview(); save(); return; }
     if (el.classList.contains("ans")) S.setText(Q, state, path, el.value);
@@ -453,6 +468,7 @@
     if (act === "copy") { copyPrompt(); return; }
     if (act === "download") { downloadPrompt(); return; }
     if (act === "downloadVersion") { downloadVersion(i); return; }
+    if (act === "rtccReset") { state.rtcc[b.getAttribute("data-part")] = null; unreview(); render(); return; }
     if (act === "rankSort") {
       var ok = S.sortByScore(state);
       if (ok) { unreview(); render(); $("rank-msg").textContent = Q.rank.sorted; }

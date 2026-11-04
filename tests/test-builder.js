@@ -255,6 +255,14 @@ T.run("Builder screens (builder.html)", function (check) {
     document.querySelectorAll("#versions .version").length === 1);
   $("copyPrompt").click();
   check("copying the same prompt again doesn't add a version", saved().versions.length === 1);
+  check("Role, Task and Constraints are editable, starting from FAC's wording and the member's answers",
+    $("rtcc-role").value === "" && $("rtcc-task").value === FAC_QUESTIONS.finalPrompt && $("rtcc-constraints").value.indexOf("Tone: Warm and hopeful") === 0);
+  var tk = $("rtcc-task"); tk.value = "Write one donor email."; tk.dispatchEvent(new Event("input", { bubbles: true }));
+  check("editing the Task changes the preview and clears the tick", $("exportPreview").textContent.indexOf("Task:\nWrite one donor email.") > -1 &&
+    saved().reviewed === false && $("copyPrompt").disabled);
+  document.querySelector('#screen button[data-act="rtccReset"][data-part="task"]').click();
+  check("Use FAC's wording puts the Final Prompt back", $("rtcc-task").value === FAC_QUESTIONS.finalPrompt && saved().rtcc.task === null);
+  $("reviewed").click();
 
   document.querySelector('#screen .todo button[data-act="goto"]').click();
   check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 11" && document.activeElement.id === "f-org-city");

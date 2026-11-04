@@ -40,18 +40,33 @@ var FACExport = (function () {
   // member's sheet), Task (FAC's Final Prompt, which says "Using the
   // information above", so it follows the Context), then Constraints (the
   // member's tone, length, format and audience, ending with the guardrail line).
+  // The member can change the Role, Task and Constraints on the review
+  // screen. The guardrail line always ends the prompt and can't be changed.
   function build(Q, state) {
-    var R = Q.rtcc, out = [];
-    if (S.trim(R.role)) out.push(R.roleHeading + ":", R.role, "");
+    var R = Q.rtcc, P = parts(Q, state), out = [];
+    if (S.trim(P.role)) out.push(R.roleHeading + ":", S.trim(P.role), "");
     out.push(R.contextHeading + ":", context(Q, state), "");
-    out.push(R.taskHeading + ":", Q.finalPrompt, "");
+    out.push(R.taskHeading + ":", S.trim(P.task), "");
     out.push(R.constraintsHeading + ":");
-    S.section(Q, "constraints").questions.forEach(function (x) {
-      var text = answerText(Q, state, "constraints." + x.id);
-      if (text) out.push(line(x.label, text));
-    });
+    if (S.trim(P.constraints)) out.push(S.trim(P.constraints));
     out.push(Q.guardrail);
     return out.join("\n");
+  }
+
+  // FAC's wording for each part, or the member's own once they edit it.
+  function defaults(Q, state) {
+    return {
+      role: Q.rtcc.role,
+      task: Q.finalPrompt,
+      constraints: S.section(Q, "constraints").questions.map(function (x) {
+        var text = answerText(Q, state, "constraints." + x.id);
+        return text ? line(x.label, text) : "";
+      }).filter(function (t) { return t; }).join("\n")
+    };
+  }
+  function parts(Q, state) {
+    var D = defaults(Q, state), E = state.rtcc || {};
+    return { role: E.role != null ? E.role : D.role, task: E.task != null ? E.task : D.task, constraints: E.constraints != null ? E.constraints : D.constraints };
   }
 
   // The member's answers in FAC's sheet format.
@@ -105,5 +120,5 @@ var FACExport = (function () {
     return L.join("\n");
   }
 
-  return { build: build, answerText: answerText, FILE_NAME: FILE_NAME };
+  return { build: build, answerText: answerText, defaults: defaults, parts: parts, FILE_NAME: FILE_NAME };
 })();

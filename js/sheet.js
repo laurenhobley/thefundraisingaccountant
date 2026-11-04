@@ -46,7 +46,11 @@ var FACSheet = (function () {
       // (null means all of them). rankRows[i] goes with programs[i]:
       // { m: { measureId: "1".."3" }, score: "the score the member typed" }.
       rank: { use: "", measures: [], line: null },
-      rankRows: [rankRow()]
+      rankRows: [rankRow()],
+      // The member's own wording for the prompt's Role, Task and
+      // Constraints, edited on the review screen. null means FAC's wording
+      // (or, for Constraints, the member's constraint answers).
+      rtcc: { role: null, task: null, constraints: null }
     };
   }
 
@@ -93,6 +97,7 @@ var FACSheet = (function () {
     if (typeof data.step === "number" && data.step >= 0) s.step = data.step;
     if (data.reviewed === true) s.reviewed = true;
     copyGroup(s.constraints, data.constraints);
+    ["role", "task", "constraints"].forEach(function (k) { if (data.rtcc && typeof data.rtcc[k] === "string") s.rtcc[k] = data.rtcc[k]; });
     var R = data.rank || {}, ids = (Q.rank.measures || []).map(function (m) { return m.id; });
     if (R.use === "yes" || R.use === "no") s.rank.use = R.use;
     if (R.measures && R.measures.length) s.rank.measures = R.measures.filter(function (id) { return ids.indexOf(id) > -1; }).slice(0, 3);

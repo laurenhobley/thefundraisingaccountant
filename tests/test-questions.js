@@ -28,6 +28,8 @@ T.run("Questions (js/questions.js)", function (check) {
   check("\"Yes, continue\" and \"Build our story\" buttons have wording", !!Q.flow.checkpointYes && Q.flow.buildStory === "Build our story");
   check("stack rank: four measures to pick three from, and its messages", Q.rank.measures.length === 4 &&
     ["ask", "yes", "no", "needChoice", "needMeasures", "needScores", "wrongScore", "sortButton", "lineLabel", "belowLine"].every(function (k) { return !!Q.rank[k]; }));
+  check("the editable Role / Task / Constraints and benchmark fields have their wording", ["title", "text", "roleHelp", "reset", "resetConstraints"].every(function (k) { return !!Q.rtccEdit[k]; }) &&
+    ["source", "program", "connects"].every(function (k) { return !!Q.benchmarkFields[k].label && !!Q.benchmarkFields[k].exportLabel; }));
   check("RTCC headings are there; Role is empty until FAC writes it", ["roleHeading", "contextHeading", "taskHeading", "constraintsHeading"].every(function (k) { return !!Q.rtcc[k]; }) && Q.rtcc.role === "");
   check("saved versions have their wording", ["versionsTitle", "versionsNone", "versionDownload"].every(function (k) { return !!Q.review[k]; }) &&
     Q.review.versionLabel.indexOf("{n}") > -1 && Q.review.versionLabel.indexOf("{date}") > -1);
