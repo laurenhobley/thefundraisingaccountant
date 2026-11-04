@@ -15,7 +15,9 @@ var FACSheet = (function () {
   // separate: the member confirmed this program is separate from an earlier
   // one with the same name or description. overlap: for a number shared with
   // an earlier program's Outputs, "different" or "same" group.
-  function answer() { return { text: "", label: "", note: "", asks: 0, skipped: false, separate: false, overlap: "" }; }
+  // src, prog and how are a benchmark's source, the program it connects to
+  // (by name) and how it connects (FAC's process guide, form 2.3).
+  function answer() { return { text: "", label: "", note: "", asks: 0, skipped: false, separate: false, overlap: "", src: "", prog: "", how: "" }; }
 
   function section(Q, id) {
     for (var i = 0; i < Q.sections.length; i++) if (Q.sections[i].id === id) return Q.sections[i];
@@ -61,6 +63,7 @@ var FACSheet = (function () {
       if (from.skipped === true) a.skipped = true;
       if (from.separate === true) a.separate = true;
       if (from.overlap === "different" || from.overlap === "same") a.overlap = from.overlap;
+      ["src", "prog", "how"].forEach(function (k) { if (typeof from[k] === "string") a[k] = from[k]; });
     }
     return a;
   }

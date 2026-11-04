@@ -191,6 +191,11 @@ T.run("Builder screens (builder.html)", function (check) {
   check("Keep my answer: text stays, flagged Unsupported: vague", $("f-pain-0").value === "TBD" && $("f-pain-0-skipped").textContent === F.keptVague && !$("f-pain-0-skipped").hidden);
   $("next").click();
   check("blank optional section doesn't block Next", /Benchmarks/.test(title()));
+  check("each benchmark has Source, Program and How it connects", !!$("f-benchmarks-0-src") && !!$("f-benchmarks-0-prog") && !!$("f-benchmarks-0-how"));
+  check("the program list offers the member's own program names", Array.prototype.some.call($("f-benchmarks-0-prog").options, function (o) { return o.value === "Emergency shelter"; }));
+  var bsrc = $("f-benchmarks-0-src"); bsrc.value = "County housing report"; bsrc.dispatchEvent(new Event("input", { bubbles: true }));
+  var bprog = $("f-benchmarks-0-prog"); bprog.value = "Emergency shelter"; bprog.dispatchEvent(new Event("change", { bubbles: true }));
+  check("they save with the draft", saved().benchmarks[0].src === "County housing report" && saved().benchmarks[0].prog === "Emergency shelter");
 
   // ---------- "If..." assumptions ----------
   type("f-benchmarks-0", "If a voucher costs $8,000 a year, then 200 units cost $1,600,000");

@@ -25,6 +25,7 @@ T.run("Export (js/export.js)", function (check) {
   set("pain.0", "If a stay costs $40/day, then 300 × 60 × $40 = $720,000"); source("pain.0", "estimate", "county shelter rates");
   set("benchmarks.0", "TBD"); keep("benchmarks.0");
   set("benchmarks.1", "Meals cost $3 each");
+  var b1 = S.get(s, "benchmarks.1"); b1.src = "County food survey"; b1.prog = "Weekend Meals"; b1.how = "Sets the cost of a meal kit";
   set("constraints.tone", "Warm and hopeful"); set("constraints.audience", "Major donors");
 
   var expected = [
@@ -56,6 +57,9 @@ T.run("Export (js/export.js)", function (check) {
     "Benchmarks (optional)",
     "* TBD [Unsupported]",
     "* Meals cost $3 each [Unsupported]",
+    "   * Source: County food survey",
+    "   * Program: Weekend Meals",
+    "   * How it connects: Sets the cost of a meal kit",
     "",
     "Note: Program 3 and Program 1 both report 300 for the same group. Do not add them together.",
     "",
@@ -87,9 +91,10 @@ T.run("Export (js/export.js)", function (check) {
   check("Known with a source: source in brackets, no tag", out.indexOf("in 2024 (source: 2024 annual report)") > -1);
   check("Known with no source: [Unsupported]", E.answerText(Q, { org: {}, programs: [{ outputs: { text: "90 kids in 2024", label: "known", note: "", asks: 0, skipped: false } }] }, "programs.0.outputs") === "90 kids in 2024 [Unsupported]");
   check("blank optional answers are left out of the lists", lines.filter(function (l) { return l === "* "; }).length === 0 && out.split("\n* ").length - 1 === 3);
+  check("a benchmark with no source, program or how-it-connects has no sub-lines", out.indexOf("* TBD [Unsupported]\n* Meals") > -1);
 
   // Rule 2: every number in the export is one the member typed.
-  var typed = S.paths(s).map(function (p) { var a = S.get(s, p); return a.text + " " + a.note; }).join(" ");
+  var typed = S.paths(s).map(function (p) { var a = S.get(s, p); return a.text + " " + a.note + " " + a.src + " " + a.how; }).join(" ");
   var body = out.replace(Q.finalPrompt, "").replace(Q.guardrail, "").replace(/^\d+\. /gm, "").replace(/Program \d+/g, "");
   var strays = (body.match(/\d[\d,.]*\d|\d/g) || []).filter(function (n) { return typed.indexOf(n) === -1; });
   check("no number in the export that the member didn't type" + (strays.length ? " (found: " + strays.join(" ") + ")" : ""), strays.length === 0);

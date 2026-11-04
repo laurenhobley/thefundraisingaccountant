@@ -189,9 +189,10 @@ var FAC_QUESTIONS = {
 
   // Extra fields for each benchmark (FAC's process guide, form 2.3). Draft for Steve.
   benchmarkFields: {
-    source: { label: "Source", help: "Where the finding comes from: a report, study or website." },
-    program: { label: "Which program it connects to", none: "Choose a program" },
-    connects: { label: "How it connects to the program", help: "A sentence on why this finding matters for that program." }
+    // exportLabel is how each one is named in the finished prompt.
+    source: { label: "Source", exportLabel: "Source", help: "Where the finding comes from: a report, study or website." },
+    program: { label: "Which program it connects to", exportLabel: "Program", none: "Choose a program" },
+    connects: { label: "How it connects to the program", exportLabel: "How it connects", help: "A sentence on why this finding matters for that program." }
   },
 
   // The review screen's editable RTCC parts (FAC's process guide, step 2.5).

@@ -80,8 +80,14 @@ var FACExport = (function () {
       var sec = S.section(Q, id);
       L.push("");
       L.push(sec.title + " " + sec.note);
+      var B = Q.benchmarkFields;
       state[id].forEach(function (a, i) {
-        if (S.trim(a.text)) L.push("* " + answerText(Q, state, id + "." + i));
+        if (!S.trim(a.text)) return;
+        L.push("* " + answerText(Q, state, id + "." + i));
+        // A benchmark's source, program and how it connects, when filled in.
+        if (id === "benchmarks") [["src", B.source], ["prog", B.program], ["how", B.connects]].forEach(function (f) {
+          if (S.trim(a[f[0]])) L.push("   * " + line(f[1].exportLabel, S.trim(a[f[0]])));
+        });
       });
     });
 

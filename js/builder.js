@@ -157,6 +157,7 @@
         '<div class="item-head"><label for="' + fid + '">' + esc(sec.itemLabel) + ' ' + (i + 1) + '</label>' +
         '<button type="button" class="icon-btn" data-act="removeItem" data-list="' + id + '" data-index="' + i + '" aria-label="Remove ' + esc(sec.itemLabel.toLowerCase()) + ' ' + (i + 1) + '">×</button></div>' +
         '<textarea class="ans" id="' + fid + '" data-path="' + path + '"></textarea>' + followUpBox(path) + labelBox(path) +
+        (id === "benchmarks" ? benchmarkFields(path, a) : "") +
         '</div>';
     }).join("");
     return heading(num, sec.title, sec.note) +
@@ -164,6 +165,22 @@
       '<div class="examples"><span class="ex-tag">Example</span><ul>' + examples + '</ul></div>' +
       rows +
       '<div><button type="button" class="btn ghost" data-act="addItem" data-list="' + id + '">' + esc(sec.addLabel) + '</button></div>';
+  }
+
+  // A benchmark's source, the program it connects to and how it connects.
+  function benchmarkFields(path, a) {
+    var B = Q.benchmarkFields, id = idOf(path);
+    var names = state.programs.map(function (p) { return S.trim(p.name.text); }).filter(function (t) { return t; });
+    if (a.prog && names.indexOf(a.prog) < 0) names.push(a.prog);
+    return '<div class="bench-extra">' +
+      '<div class="f"><label for="' + id + '-src">' + esc(B.source.label) + '</label><p class="hint">' + esc(B.source.help) + '</p>' +
+      '<input type="text" class="ext" data-path="' + path + '" data-ext="src" id="' + id + '-src" value="' + esc(a.src) + '"></div>' +
+      '<div class="f"><label for="' + id + '-prog">' + esc(B.program.label) + '</label>' +
+      '<select class="ext" data-path="' + path + '" data-ext="prog" id="' + id + '-prog"><option value="">' + esc(B.program.none) + '</option>' +
+      names.map(function (t) { return '<option' + (t === a.prog ? " selected" : "") + '>' + esc(t) + '</option>'; }).join("") + '</select></div>' +
+      '<div class="f"><label for="' + id + '-how">' + esc(B.connects.label) + '</label><p class="hint">' + esc(B.connects.help) + '</p>' +
+      '<textarea class="ext" data-path="' + path + '" data-ext="how" id="' + id + '-how">' + esc(a.how) + '</textarea></div>' +
+      '</div>';
   }
 
   function programName(i) { return S.section(Q, "programs").itemLabel + " " + (i + 1); }
@@ -397,6 +414,7 @@
     if (el.id === "reviewed") { state.reviewed = el.checked; refreshReview(); save(); return; }
     if (onRankEdit(e)) return;
     if (!path) return;
+    if (el.classList.contains("ext")) { S.get(state, path)[el.getAttribute("data-ext")] = el.value; unreview(); save(); return; }
     if (el.classList.contains("ans")) S.setText(Q, state, path, el.value);
     else if (el.classList.contains("lab-radio")) S.setLabel(Q, state, path, el.value);
     else if (el.classList.contains("lab-note")) S.setNote(Q, state, path, el.value);
