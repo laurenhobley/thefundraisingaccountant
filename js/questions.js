@@ -25,8 +25,13 @@ var FAC_QUESTIONS = {
   // "Fill from a document" on Organization Info (FAC's plan). Draft for Steve.
   documents: {
     title: "Fill from a document (optional)",
-    intro: "Paste text from your own document. The builder finds answers written the way FAC's sheet writes them (for example “Mission Statement: …” or “Program Name: …”), plus a web address and a ZIP code. Nothing is uploaded or saved: the text is read in this browser only.",
-    pasteLabel: "Paste text",
+    intro: "Paste text from your own document, or choose a file. The builder finds answers written the way FAC's sheet writes them (for example “Mission Statement: …” or “Program Name: …”), plus a web address and a ZIP code. Nothing is uploaded or saved: the document is read in this browser only.",
+    fileLabel: "Choose a file (Word .docx or .txt)",
+    reading: "Reading {file}…",
+    readDone: "Read {file}.",
+    wrongType: "This kind of file can't be read here. Choose a Word (.docx) or .txt file, or copy its text into the box below.",
+    readFailed: "This file couldn't be read. Try copying its text into the box below instead.",
+    pasteLabel: "Or paste text",
     findButton: "Find answers",
     found: "{n} suggested answers. Accept, edit or skip each one. Suggestions for later screens also show on those screens.",
     none: "No answers found. The builder looks for lines like “Name:”, “Program Name:” or “Outputs:”.",

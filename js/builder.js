@@ -67,11 +67,33 @@
   // The pasted text and the suggestions found in it are kept in memory
   // only, so nothing from the member's document is saved in the browser.
   var docText = "", suggestions = [];
+  var DOC_TYPES = ".docx,.txt";
+
+  // Finds suggestions in docText and says how many, after "before" (e.g. "Read report.docx.").
+  function findAnswers(before) {
+    suggestions = FACRead.suggest(docText).map(function (s) { s.done = ""; return s; });
+    render("doc-text");
+    var D = Q.documents, n = suggestions.length;
+    $("doc-msg").textContent = (before ? before + " " : "") + (n ? D.found.replace(/\{n\}/g, n) : D.none);
+  }
+
+  // A chosen file: its text goes into the paste box, then Find answers.
+  function readChosenFile(file) {
+    var D = Q.documents, name = file.name;
+    $("doc-msg").textContent = D.reading.replace(/\{file\}/g, name);
+    FACRead.readFile(file).then(function (text) {
+      docText = text;
+      findAnswers(D.readDone.replace(/\{file\}/g, name));
+    }, function (err) {
+      if ($("doc-msg")) $("doc-msg").textContent = err && err.message === "type" ? D.wrongType : D.readFailed;
+    });
+  }
 
   function docPanel() {
     var D = Q.documents;
     return '<details class="doc-panel" id="doc-panel"' + (suggestions.length || docText ? " open" : "") + '><summary>' + esc(D.title) + '</summary>' +
       '<p class="hint">' + esc(D.intro) + '</p>' +
+      '<div class="f"><label for="doc-file">' + esc(D.fileLabel) + '</label><input type="file" id="doc-file" accept="' + DOC_TYPES + '"></div>' +
       '<div class="f"><label for="doc-text">' + esc(D.pasteLabel) + '</label><textarea id="doc-text">' + esc(docText) + '</textarea></div>' +
       '<div class="actions"><button type="button" class="btn ghost" data-act="findAnswers">' + esc(D.findButton) + '</button></div>' +
       '<p class="hint" id="doc-msg" aria-live="polite"></p>' + suggestionList("") + '</details>';
@@ -766,6 +788,7 @@
     var el = e.target, path = el.getAttribute("data-path");
     if (el.id === "reviewed") { state.reviewed = el.checked; refreshReview(); save(); return; }
     if (el.id === "doc-text") { docText = el.value; return; }
+    if (el.id === "doc-file") { if (e.type === "change" && el.files && el.files[0]) readChosenFile(el.files[0]); return; }
     if (onRankEdit(e)) return;
     if (onStoryEdit(e)) return;
     if (el.classList.contains("why-type")) {
@@ -841,12 +864,7 @@
     if (act === "addDonorRow") { S.addDonorRow(state, b.getAttribute("data-table")); unreview(); render(); return; }
     if (act === "removeDonorRow") { S.removeDonorRow(state, b.getAttribute("data-table"), i); unreview(); render(); return; }
     if (act === "rtccReset") { state.rtcc[b.getAttribute("data-part")] = null; unreview(); render(); return; }
-    if (act === "findAnswers") {
-      suggestions = FACRead.suggest(docText).map(function (s) { s.done = ""; return s; });
-      render("doc-text");
-      $("doc-msg").textContent = suggestions.length ? Q.documents.found.replace(/\{n\}/g, suggestions.length) : Q.documents.none;
-      return;
-    }
+    if (act === "findAnswers") { findAnswers(""); return; }
     if (act === "suggSkip") { suggestions[i].done = "skipped"; render(); return; }
     if (act === "suggAccept") { acceptSuggestion(i); render(); return; }
     if (act === "suggEdit") { var put = acceptSuggestion(i); go(S.stepOf(state, put), idOf(put)); return; }

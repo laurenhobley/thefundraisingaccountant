@@ -100,3 +100,30 @@ T.run("Fill from a document (read-documents.js)", function (check) {
   check("nothing found in blank text", R.suggest("").length === 0 && R.suggest("   \n  ").length === 0);
   check("the same box is suggested once (the first one found)", R.suggest("Name: First Org\nName: Second Org").filter(function (g) { return g.path === "org.name"; }).length === 1);
 });
+
+// The kit's Word files (tests/kit/*.docx, made from the .txt sheets) are
+// read in this browser with our own copy of mammoth, and must give exactly
+// the same suggestions, with the same quotes, as the .txt files.
+T.runAsync("Fill from a document: Word files (tests/kit/*.docx)", function (check, done) {
+  var R = FACRead;
+  R.lib = "../lib/";
+  function file(name) {
+    return fetch("kit/" + name).then(function (r) { if (!r.ok) throw new Error(name); return r.arrayBuffer(); })
+      .then(function (buf) { return new File([buf], name); });
+  }
+  function key(list) { return JSON.stringify(list); }
+  var waits = FAC_TEST_KIT.map(function (org) {
+    var base = org.file.replace(/\.txt$/, "");
+    return Promise.all([file(base + ".txt").then(R.readFile), file(base + ".docx").then(R.readFile)]).then(function (t) {
+      var fromTxt = R.suggest(t[0]), fromWord = R.suggest(t[1]);
+      check(org.name + ": the Word file gives the same suggestions and quotes as the .txt", fromWord.length > 0 && key(fromWord) === key(fromTxt));
+      check(org.name + ": every program found", fromWord.filter(function (s) { return /^programs\.\d+\.name$/.test(s.path); }).length === org.answers.programs.length);
+    });
+  });
+  waits.push(R.readFile(new File(["x"], "old-report.doc")).then(function () { check("an old .doc file is turned away", false); },
+    function (e) { check("an old .doc file is turned away with \"type\"", e.message === "type"); }));
+  Promise.all(waits).then(done, function (e) {
+    check("Word files couldn't be read (" + e.message + "). From the D: drive, Chrome needs --allow-file-access-from-files", false);
+    done();
+  });
+});

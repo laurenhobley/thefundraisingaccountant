@@ -121,5 +121,35 @@ var FACRead = (function () {
     return out;
   }
 
-  return { suggest: suggest };
+  // ---------- Reading a file, in this browser ----------
+
+  // Our own saved copies of the readers (lib/), each loaded only when a
+  // file needs it. The test page sets this to "../lib/".
+  var api = { suggest: suggest, readFile: readFile, lib: "lib/" };
+  function loadLib(src, ready) {
+    return new Promise(function (resolve, reject) {
+      if (ready()) { resolve(); return; }
+      var s = document.createElement("script");
+      s.src = api.lib + src;
+      s.onload = function () { if (ready()) resolve(); else reject(new Error("load")); };
+      s.onerror = function () { reject(new Error("load")); };
+      document.head.appendChild(s);
+    });
+  }
+
+  // The text of a .txt or Word (.docx) file. Rejects with "type" for any
+  // other kind of file. Nothing is sent anywhere.
+  function readFile(file) {
+    var name = String(file.name || "").toLowerCase();
+    if (/\.txt$/.test(name)) return file.text();
+    if (/\.docx$/.test(name)) {
+      return loadLib("mammoth.browser.min.js", function () { return !!window.mammoth; })
+        .then(function () { return file.arrayBuffer(); })
+        .then(function (buf) { return window.mammoth.extractRawText({ arrayBuffer: buf }); })
+        .then(function (r) { return r.value; });
+    }
+    return Promise.reject(new Error("type"));
+  }
+
+  return api;
 })();
