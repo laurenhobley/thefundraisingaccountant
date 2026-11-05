@@ -306,7 +306,8 @@
       own.map(storyField).join("") +
       (part === "outcome" ? '<label class="review-check"><input type="checkbox" class="story-approved"' + (state.storyApproved ? " checked" : "") + '> ' + esc(T.approved) + '</label>' : "") +
       '<div class="f"><span class="lbl">' + esc(ST.promptTitle) + '</span><pre class="step-prompt" id="step-prompt"></pre></div>' +
-      '<div class="actions"><button type="button" class="btn primary" id="copyStep" data-act="copyStep" data-part="' + part + '">' + esc(ST.copyButton) + '</button></div>' +
+      '<div class="actions"><button type="button" class="btn primary" id="copyStep" data-act="copyStep" data-part="' + part + '">' + esc(ST.copyButton) + '</button>' +
+      roiBotLink("openRoiBotStep") + '</div>' +
       '<p id="step-msg" aria-live="polite" class="hint"></p>' +
       '<div class="f"><label for="story-out">' + esc(ST.outputLabel) + '</label><p class="hint">' + esc(ST.outputHelp) + '</p>' +
       '<textarea class="story-out" id="story-out" data-part="' + part + '">' + esc(o.draft || S.latest(state, part)) + '</textarea></div>' +
@@ -563,6 +564,7 @@
       '<button type="button" class="btn primary" id="copyPrompt" data-act="copy">' + esc(R.copyButton) + '</button>' +
       '<button type="button" class="btn ghost" id="downloadPrompt" data-act="download">' + esc(R.downloadButton) + '</button>' +
       '<button type="button" class="btn ghost" id="downloadPromptMd" data-act="downloadMd">' + esc(R.downloadMdButton) + '</button>' +
+      roiBotLink("openRoiBot") +
       '</div>' +
       saveCopyLine() +
       '<p id="exportMsg" aria-live="polite"></p>' +
@@ -571,6 +573,11 @@
 
   // FAC's sheet: "Save a copy in your FA community google folder...". The
   // folder becomes a link once Steve adds its address to questions.js.
+  // "Open ROI.bot" in a new tab. Nothing is sent: the member pastes the prompt there.
+  function roiBotLink(id) {
+    return '<a class="btn ghost" id="' + id + '" href="' + esc(Q.roiBotUrl) + '" target="_blank" rel="noopener">' + esc(Q.openRoiBot) + '</a>';
+  }
+
   function saveCopyLine() {
     var C = Q.saveCopy;
     var folder = C.url ? '<a href="' + esc(C.url) + '" target="_blank" rel="noopener">' + esc(C.linkText) + '</a>' : esc(C.linkText);
@@ -620,6 +627,7 @@
     pre.textContent = FACExport.build(Q, state);
     $("reviewed").checked = state.reviewed;
     $("copyPrompt").disabled = $("downloadPrompt").disabled = $("downloadPromptMd").disabled = !state.reviewed;
+    $("openRoiBot").hidden = !state.reviewed;
     if (!state.reviewed) say(Q.review.locked);
   }
   function say(text) { var m = $("exportMsg"); if (m) m.textContent = text; }

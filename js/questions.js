@@ -46,8 +46,11 @@ var FAC_QUESTIONS = {
     sameAlready: "Already your answer"
   },
 
-  // Link from FAC's sheet. Waiting on Steve to confirm (open question 13).
-  roiBotUrl: "https://chatgpt.com/g/g-68c9c810e72481919f05f0c6964dc678-fundraising-accountant-roi-impact-statements-gpt",
+  // Where members run their finished prompt: ROI.bot, FAC's custom GPT in
+  // ChatGPT (Lauren, 2026-11-05; open question 13).
+  roiBotUrl: "https://chatgpt.com/g/g-68c9c810e72481919f05f0c6964dc678-roi-bot",
+  // The link beside Copy on the review screen and the Step 3 screens. Draft for Steve.
+  openRoiBot: "Open ROI.bot",
 
   // The "how to use" page (help.html) and the link to it. Draft for Steve.
   howTo: {

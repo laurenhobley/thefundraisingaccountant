@@ -270,10 +270,12 @@ T.run("Builder screens (builder.html)", function (check) {
   check("review screen shows the finished prompt", $("exportPreview").textContent === FACExport.build(FAC_QUESTIONS, FACSheet.load(FAC_QUESTIONS)) &&
     $("exportPreview").textContent.indexOf("Context:\nOrganization Info") === 0 && $("exportPreview").textContent.indexOf("Tone: Warm") > -1);
   check("Copy and Download are locked until \"I reviewed this\" is ticked", $("copyPrompt").disabled && $("downloadPrompt").disabled && $("downloadPromptMd").disabled && $("exportMsg").textContent === R.locked);
+  check("Open ROI.bot stays hidden until reviewed", $("openRoiBot").hidden);
   check("the save-a-copy line sits beside Download (no link until FAC adds one)",
     document.querySelector("#screen .save-copy").textContent === "Save a copy in your FA community google folder and watch your story evolve." && !document.querySelector("#screen .save-copy a"));
   $("reviewed").click();
   check("ticking it unlocks Copy and Download", !$("copyPrompt").disabled && !$("downloadPrompt").disabled && !$("downloadPromptMd").disabled && saved().reviewed === true);
+  check("then Open ROI.bot shows, opening FAC's ROI.bot in a new tab", !$("openRoiBot").hidden && $("openRoiBot").getAttribute("href") === FAC_QUESTIONS.roiBotUrl && $("openRoiBot").target === "_blank" && $("openRoiBot").rel === "noopener");
   check("no saved versions yet", saved().versions.length === 0 && $("versions").textContent === R.versionsNone);
   $("copyPrompt").click();
   check("Copy keeps the prompt as version 1", saved().versions.length === 1 && saved().versions[0].text === $("exportPreview").textContent &&
@@ -347,6 +349,7 @@ T.run("Builder screens (builder.html)", function (check) {
   paste("ROI.bot's first challenge");
   paste("ROI.bot's second challenge");
   check("each new paste is a round", saved().storyOut.challenge.rounds.length === 2 && document.querySelectorAll("#story-rounds .version").length === 2);
+  check("3.1 has Open ROI.bot next to Copy this step's prompt", !!$("openRoiBotStep") && $("openRoiBotStep").getAttribute("href") === FAC_QUESTIONS.roiBotUrl && $("openRoiBotStep").target === "_blank");
   function choose(v) { document.querySelector('#screen .story-choice[value="' + v + '"]').click(); }
   function goLink() { return document.querySelector('#story-revise [data-act="goto"]'); }
   check("Keep or revise: neither chosen, no revise question yet", document.querySelectorAll("#screen .story-choice").length === 2 && $("story-revise").hidden);
