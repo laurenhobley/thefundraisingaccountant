@@ -263,8 +263,29 @@ var FACExport = (function () {
     return out.join("\n").replace(/\n+$/, "") + "\n";
   }
 
+  // The same text as a Markdown file (FAC's plan: text and Markdown). The
+  // RTCC headings ("Context:") and the package's "== … ==" sections become
+  // headings; every other line keeps its own line break, so nothing runs
+  // together. The words are unchanged.
+  function markdown(Q, text) {
+    var R = Q.rtcc, lines = text.replace(/\n+$/, "").split("\n");
+    var rtcc = [R.roleHeading, R.contextHeading, R.taskHeading, R.constraintsHeading].map(function (h) { return h + ":"; });
+    var pkg = lines.some(function (l) { return /^== .+ ==$/.test(l); });
+    function heading(l, i) {
+      if (/^== .+ ==$/.test(l)) return "## " + l.slice(3, -3);
+      if (rtcc.indexOf(l) > -1) return (pkg ? "### " : "## ") + l.slice(0, -1);
+      if (pkg && i === 0) return "# " + l;
+      return "";
+    }
+    return lines.map(function (l, i) {
+      var h = heading(l, i), next = lines[i + 1];
+      if (h) return h;
+      return l && next && !heading(next, i + 1) && !/^\s*([*-]|\d+\.) /.test(next) ? l + "  " : l;
+    }).join("\n") + "\n";
+  }
+
   return {
-    build: build, answerText: answerText, defaults: defaults, parts: parts, whyNow: whyNow, FILE_NAME: FILE_NAME,
+    markdown: markdown, build: build, answerText: answerText, defaults: defaults, parts: parts, whyNow: whyNow, FILE_NAME: FILE_NAME,
     stepPrompt: stepPrompt, funderPart: funderPart, funderText: funderText, investSentence: investSentence, packageText: packageText, PACKAGE_FILE: PACKAGE_FILE
   };
 })();

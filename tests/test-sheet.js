@@ -93,6 +93,9 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("finds \"tbd\" and \"TBD.\"", S.vagueWord(Q, "tbd") === "tbd" && S.vagueWord(Q, "Cost: TBD.") === "TBD");
   check("ignores \"variously\" and \"T B D\"", S.vagueWord(Q, "variously") === "" && S.vagueWord(Q, "T B D") === "");
   check("nothing in a blank answer", S.vagueWord(Q, "") === "");
+  check("finds \"a lot\", \"many\" and \"several\" (the plan's example: \"a lot\" gets a follow-up)", S.vagueWord(Q, "We served a lot of families") === "a lot" &&
+    S.vagueWord(Q, "Many families") === "Many" && S.vagueWord(Q, "several towns") === "several");
+  check("but not inside other words: \"lots\", \"Germany\", \"a lottery\"", S.vagueWord(Q, "lots of help") === "" && S.vagueWord(Q, "Germany") === "" && S.vagueWord(Q, "a lottery") === "");
   check("finds \"N/a\" and \"n/a\"", S.vagueWord(Q, "N/a") === "N/a" && S.vagueWord(Q, "Benchmarks: n/a") === "n/a");
   var na = S.blank(Q);
   S.setText(Q, na, "benchmarks.0", "N/a");

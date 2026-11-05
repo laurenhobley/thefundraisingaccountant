@@ -284,7 +284,8 @@
       '<pre id="pkgPreview"></pre>' +
       '<label class="review-check"><input type="checkbox" id="pkg-reviewed"' + (state.pkgReviewed ? " checked" : "") + '> ' + esc(P.checkbox) + '</label>' +
       '<div class="actions"><button type="button" class="btn primary" id="copyPkg" data-act="copyPkg">' + esc(P.copyButton) + '</button>' +
-      '<button type="button" class="btn ghost" id="downloadPkg" data-act="downloadPkg">' + esc(P.downloadButton) + '</button></div>' +
+      '<button type="button" class="btn ghost" id="downloadPkg" data-act="downloadPkg">' + esc(P.downloadButton) + '</button>' +
+      '<button type="button" class="btn ghost" id="downloadPkgMd" data-act="downloadPkgMd">' + esc(P.downloadMdButton) + '</button></div>' +
       saveCopyLine() +
       '<p id="exportMsg" aria-live="polite"></p>';
   }
@@ -293,7 +294,7 @@
     if (pre) {
       pre.textContent = FACExport.packageText(Q, state);
       $("pkg-reviewed").checked = state.pkgReviewed;
-      $("copyPkg").disabled = $("downloadPkg").disabled = !state.pkgReviewed;
+      $("copyPkg").disabled = $("downloadPkg").disabled = $("downloadPkgMd").disabled = !state.pkgReviewed;
       if (!state.pkgReviewed) say(Q.review.locked.replace(Q.review.checkbox, Q.packageText.checkbox));
     }
     var inv = $("invest-sentence");
@@ -464,6 +465,7 @@
       '<div class="actions">' +
       '<button type="button" class="btn primary" id="copyPrompt" data-act="copy">' + esc(R.copyButton) + '</button>' +
       '<button type="button" class="btn ghost" id="downloadPrompt" data-act="download">' + esc(R.downloadButton) + '</button>' +
+      '<button type="button" class="btn ghost" id="downloadPromptMd" data-act="downloadMd">' + esc(R.downloadMdButton) + '</button>' +
       '</div>' +
       saveCopyLine() +
       '<p id="exportMsg" aria-live="polite"></p>' +
@@ -520,7 +522,7 @@
     if (!pre) return;
     pre.textContent = FACExport.build(Q, state);
     $("reviewed").checked = state.reviewed;
-    $("copyPrompt").disabled = $("downloadPrompt").disabled = !state.reviewed;
+    $("copyPrompt").disabled = $("downloadPrompt").disabled = $("downloadPromptMd").disabled = !state.reviewed;
     if (!state.reviewed) say(Q.review.locked);
   }
   function say(text) { var m = $("exportMsg"); if (m) m.textContent = text; }
@@ -543,7 +545,8 @@
   }
 
   function saveFile(text, name) {
-    var url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+    var type = /\.md$/.test(name) ? "text/markdown;charset=utf-8" : "text/plain;charset=utf-8";
+    var url = URL.createObjectURL(new Blob([text], { type: type }));
     var link = document.createElement("a");
     link.href = url;
     link.download = name;
@@ -553,13 +556,16 @@
     setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
   }
 
-  function downloadPrompt() {
+  // The .txt, or (md) the same prompt as a Markdown file. Either is kept as a version.
+  function downloadPrompt(md) {
     if (!state.reviewed) return;
     var text = FACExport.build(Q, state);
     keepVersion(text);
-    saveFile(text, FACExport.FILE_NAME);
+    if (md) saveFile(FACExport.markdown(Q, text), mdName(FACExport.FILE_NAME));
+    else saveFile(text, FACExport.FILE_NAME);
     say(Q.review.downloaded);
   }
+  function mdName(name) { return name.replace(/\.txt$/, ".md"); }
 
   function downloadVersion(n) {
     var v = state.versions.filter(function (x) { return x.n === n; })[0];
@@ -744,6 +750,8 @@
     var act = b.getAttribute("data-act"), i = +b.getAttribute("data-index"), list = b.getAttribute("data-list");
     if (act === "copy") { copyPrompt(); return; }
     if (act === "download") { downloadPrompt(); return; }
+    if (act === "downloadMd") { downloadPrompt(true); return; }
+    if (act === "downloadPkgMd") { if (state.pkgReviewed) { saveFile(FACExport.markdown(Q, FACExport.packageText(Q, state)), mdName(FACExport.PACKAGE_FILE)); say(Q.review.downloaded); } return; }
     if (act === "downloadVersion") { downloadVersion(i); return; }
     if (act === "copyStep") {
       var sp = S.steps(state)[state.step].of;

@@ -269,11 +269,11 @@ T.run("Builder screens (builder.html)", function (check) {
   var R = FAC_QUESTIONS.review;
   check("review screen shows the finished prompt", $("exportPreview").textContent === FACExport.build(FAC_QUESTIONS, FACSheet.load(FAC_QUESTIONS)) &&
     $("exportPreview").textContent.indexOf("Context:\nOrganization Info") === 0 && $("exportPreview").textContent.indexOf("Tone: Warm") > -1);
-  check("Copy and Download are locked until \"I reviewed this\" is ticked", $("copyPrompt").disabled && $("downloadPrompt").disabled && $("exportMsg").textContent === R.locked);
+  check("Copy and Download are locked until \"I reviewed this\" is ticked", $("copyPrompt").disabled && $("downloadPrompt").disabled && $("downloadPromptMd").disabled && $("exportMsg").textContent === R.locked);
   check("the save-a-copy line sits beside Download (no link until FAC adds one)",
     document.querySelector("#screen .save-copy").textContent === "Save a copy in your FA community google folder and watch your story evolve." && !document.querySelector("#screen .save-copy a"));
   $("reviewed").click();
-  check("ticking it unlocks Copy and Download", !$("copyPrompt").disabled && !$("downloadPrompt").disabled && saved().reviewed === true);
+  check("ticking it unlocks Copy and Download", !$("copyPrompt").disabled && !$("downloadPrompt").disabled && !$("downloadPromptMd").disabled && saved().reviewed === true);
   check("no saved versions yet", saved().versions.length === 0 && $("versions").textContent === R.versionsNone);
   $("copyPrompt").click();
   check("Copy keeps the prompt as version 1", saved().versions.length === 1 && saved().versions[0].text === $("exportPreview").textContent &&
@@ -401,12 +401,12 @@ T.run("Builder screens (builder.html)", function (check) {
   document.querySelector('#screen .rate[data-row="1"][value="4"]').click();
   check("a rating saves", saved().assess.ratings[1] === "4");
   $("next").click();
-  check("the package: last screen, locked until reviewed", $("next").hidden && $("counter").textContent === "Step 22 of 22" && $("copyPkg").disabled && $("downloadPkg").disabled);
+  check("the package: last screen, locked until reviewed", $("next").hidden && $("counter").textContent === "Step 22 of 22" && $("copyPkg").disabled && $("downloadPkg").disabled && $("downloadPkgMd").disabled);
   var pk = $("pkgPreview").textContent;
   check("the package holds the prompt, the story and the next steps", pk.indexOf(FACExport.build(FAC_QUESTIONS, FACSheet.load(FAC_QUESTIONS))) > -1 &&
     pk.indexOf(S3.fromRoibot) > -1 && pk.indexOf("Title: Share the package") > -1);
   check("the package has the member's own ROI and ask, with the For every $1 line and timeframe", pk.indexOf("== " + FAC_QUESTIONS.packageText.sections.roiAsk + " ==\nInvestment (gift amount): $500\n") > -1 &&
     pk.indexOf("For every $1: For every $1 invested, $3 of value is created") > -1 && pk.indexOf("Timeframe: over 12 months") > -1);
   $("pkg-reviewed").click();
-  check("ticking I reviewed my package unlocks Copy and Download", !$("copyPkg").disabled && !$("downloadPkg").disabled && saved().pkgReviewed === true);
+  check("ticking I reviewed my package unlocks Copy and Download", !$("copyPkg").disabled && !$("downloadPkg").disabled && !$("downloadPkgMd").disabled && saved().pkgReviewed === true);
 });

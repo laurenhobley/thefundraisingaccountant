@@ -77,6 +77,13 @@ T.run("Export (js/export.js)", function (check) {
   var firstDiff = -1;
   for (var i = 0; i < Math.max(lines.length, expected.length); i++) if (lines[i] !== expected[i]) { firstDiff = i; break; }
   check("matches FAC's sheet format line for line, in RTCC parts" + (firstDiff > -1 ? " (first difference at line " + (firstDiff + 1) + ": \"" + lines[firstDiff] + "\")" : ""), firstDiff === -1);
+
+  // The Markdown download: the same words, with headings and kept line breaks.
+  var md = E.markdown(Q, out), mdLines = md.replace(/\n$/, "").split("\n");
+  check("Markdown: Context, Task and Constraints become headings", ["## Context", "## Task", "## Constraints"].every(function (h) { return mdLines.indexOf(h) > -1; }) && mdLines.indexOf("Context:") === -1);
+  check("Markdown: taking the headings and line breaks back out gives exactly the .txt", mdLines.map(function (l) { return /^## /.test(l) ? l.slice(3) + ":" : l.replace(/  $/, ""); }).join("\n") === out);
+  check("Markdown: a line before a list item or a heading gets no forced break; other lines do",
+    mdLines.every(function (l, i) { var n = mdLines[i + 1]; return !n || !l || /^#/.test(l) ? true : (/^\s*([*-]|\d+\.) |^#/.test(n) ? !/  $/.test(l) : /  $/.test(l)); }));
   check("order: Context (the answers), then Task (FAC's Final Prompt word for word), then Constraints ending with the guardrail line",
     out.indexOf("Context:") === 0 && out.indexOf("Benchmarks (optional)") < out.indexOf(Q.finalPrompt) && out.indexOf(Q.finalPrompt) < out.indexOf("Constraints:") &&
     lines[lines.length - 1] === Q.guardrail);
@@ -150,6 +157,9 @@ T.run("Export (js/export.js)", function (check) {
     return pkg.indexOf("== " + h + " ==") > -1 && (i === 0 || pkg.indexOf("== " + a[i - 1] + " ==") < pkg.indexOf("== " + h + " =="));
   }));
   check("the package contains the full prompt", pkg.indexOf(E.build(Q, s)) > -1);
+  var pmd = E.markdown(Q, pkg).split("\n");
+  check("package as Markdown: title, sections and the prompt's own parts as headings", pmd[0] === "# " + pkg.split("\n")[0] &&
+    pmd.indexOf("## " + PS.prompt) > -1 && pmd.indexOf("### Context") > -1 && pmd.indexOf("== " + PS.prompt + " ==") === -1);
   check("ROI.bot's answers are marked as ROI.bot's", pkg.indexOf("== " + PS.story + " ==\n" + ST.fromRoibot) > -1);
   check("next steps and self-assessment, only what was filled in", pkg.indexOf("* Assignee: Lauren; Title: Share the package; Date: 2026-11-20; Status: Not started") > -1 &&
     pkg.indexOf(Q.assess.statements[0] + " 4/5") > -1 && pkg.indexOf(Q.assess.statements[1]) === -1 && pkg.indexOf("Lead with the pain statement") > -1);

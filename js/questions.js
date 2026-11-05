@@ -163,6 +163,7 @@ var FAC_QUESTIONS = {
     locked: "Tick “I reviewed this” to unlock Copy and Download.",
     copyButton: "Copy prompt",
     downloadButton: "Download .txt",
+    downloadMdButton: "Download .md",
     copied: "Copied. Paste it into ROI.bot.",
     selected: "The prompt is selected. Press Ctrl+C (or ⌘C) to copy it.",
     downloaded: "Downloaded. Open the file and paste the prompt into ROI.bot.",
@@ -334,6 +335,7 @@ var FAC_QUESTIONS = {
     checkbox: "I reviewed my package",
     copyButton: "Copy package",
     downloadButton: "Download package (.txt)",
+    downloadMdButton: "Download package (.md)",
     heading: "ROI.bot package",
     sections: { prompt: "Your ROI.bot prompt", whyNow: "Why Now statement", programs: "Programs in priority order", rank: "Stack ranking", roiAsk: "Your ROI and ask", story: "Your story parts", funder: "Your funder story", actions: "My next steps", assess: "Self assessment" }
   },
@@ -469,7 +471,8 @@ var FAC_QUESTIONS = {
 
   // Filler words that get a follow-up wherever they appear in an answer.
   // Whole words only, in any capitals. Steve can add more (open question 9).
-  vagueWords: ["various", "TBD", "N/A"],
+  // "a lot", "many" and "several": draft for Steve (the plan's own example).
+  vagueWords: ["various", "TBD", "N/A", "a lot", "many", "several"],
 
   // Filler words that mean "nothing here". On an optional answer the
   // follow-up suggests leaving the box blank (followUps.notNeeded) instead.
