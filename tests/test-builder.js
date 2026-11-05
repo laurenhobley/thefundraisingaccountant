@@ -170,6 +170,9 @@ T.run("Builder screens (builder.html)", function (check) {
   score(1, "16");
   act("rankSort");
   check("Sort by Stack Rank keeps Program 1 first (1 before 16)", rankMsg() === RK.sorted && saved().programs[0].name.text === "Emergency shelter");
+  check("once sorted, a red line suggestion with only the member's own Stack Ranks", !!$("rank-suggest") && $("rank-suggest").textContent.indexOf("Program 1: Emergency shelter (1)") > -1 &&
+    $("rank-suggest").textContent.indexOf("(16)") > -1 && $("rank-suggest").textContent.indexOf("15") === -1);
+  check("the suggestion doesn't move the red line", saved().rank.line === null);
   var line = $("rank-line"); line.value = "1"; line.dispatchEvent(new Event("change", { bubbles: true }));
   check("red line after Program 1: Program 2 is below it", saved().rank.line === 1 && $("rank-row-1").textContent.indexOf(RK.belowLine) > -1);
   document.querySelector('#screen .rank-use[value="no"]').click();
@@ -344,10 +347,19 @@ T.run("Builder screens (builder.html)", function (check) {
   paste("ROI.bot's first challenge");
   paste("ROI.bot's second challenge");
   check("each new paste is a round", saved().storyOut.challenge.rounds.length === 2 && document.querySelectorAll("#story-rounds .version").length === 2);
-  document.querySelector("#screen .story-happy").click();
-  check("I'm happy with this part saves", saved().storyOut.challenge.happy === true);
+  function choose(v) { document.querySelector('#screen .story-choice[value="' + v + '"]').click(); }
+  function goLink() { return document.querySelector('#story-revise [data-act="goto"]'); }
+  check("Keep or revise: neither chosen, no revise question yet", document.querySelectorAll("#screen .story-choice").length === 2 && $("story-revise").hidden);
+  choose("revise");
+  check("Revise: one targeted question, with a link to Local Context/Data", !$("story-revise").hidden && saved().storyOut.challenge.choice === "revise" &&
+    $("story-revise").textContent.indexOf(S3.challenge.revise) > -1 && goLink().textContent === S3.reviseGo.replace("{screen}", "Local Context/Data") &&
+    +goLink().getAttribute("data-step") === FACSheet.stepOf(saved(), "pain.0"));
+  choose("keep");
+  check("Keep hides the question and saves", $("story-revise").hidden && saved().storyOut.challenge.choice === "keep");
   $("next").click();
   check("3.2 the response, built from the programs", title().indexOf(S3.response.number) > -1 && $("step-prompt").textContent.indexOf("Program name: Emergency shelter") > -1);
+  choose("revise");
+  check("3.2 Revise links to the programs", $("story-revise").textContent.indexOf(S3.response.revise) > -1 && goLink().textContent === S3.reviseGo.replace("{screen}", "Program 1"));
   paste("ROI.bot's response");
   $("next").click();
   check("3.3 the outcome: Copy is locked until the story is marked anonymized and approved", title().indexOf(S3.outcome.number) > -1 && $("copyStep").disabled && $("step-msg").textContent === S3.outcome.needApproved);
@@ -356,9 +368,20 @@ T.run("Builder screens (builder.html)", function (check) {
   check("ticking it unlocks Copy", !$("copyStep").disabled && saved().storyApproved === true);
   $("next").click();
   check("3.4 the ROI", title().indexOf(S3.roi.number) > -1);
+  check("3.4 has the For every $1 and Timeframe boxes, and Revise has no link", !!$("f-story-everyDollar") && !!$("f-story-timeframe") && (choose("revise"), !goLink()));
+  type("f-story-investment", "$500"); type("f-story-value", "$1,500 in documented service value");
   type("f-story-roi", "$1,500 \u00f7 $500 = 4");
+  type("f-story-everyDollar", "For every $1 invested, $4 of value is created");
   $("next").click();
   check("a wrong ROI line gets the arithmetic follow-up", title().indexOf(S3.roi.number) > -1 && fu("f-story-roi") === F.mathWrong[0].replace("{calc}", "$1,500 \u00f7 $500 = 4"));
+  check("a For every $1 line that doesn't match the investment and value gets its follow-up, without the right figure",
+    fu("f-story-everyDollar") === F.dollarWrong[0] && fu("f-story-everyDollar").indexOf("3") === -1);
+  type("f-story-everyDollar", "For every $1 invested, $3 of value is created");
+  check("a matching line clears it", fu("f-story-everyDollar") === "");
+  type("f-story-timeframe", "over 12 months");
+  var sp = $("step-prompt").textContent;
+  check("both go into the 3.4 prompt: For every $1 after the ROI line, Timeframe last", sp.indexOf("ROI: ") > -1 &&
+    sp.indexOf("ROI: ") < sp.indexOf("For every $1: For every $1 invested, $3 of value is created") && /Timeframe: over 12 months\n\n/.test(sp));
   type("f-story-roi", "$1,500 \u00f7 $500 = 3");
   paste("ROI.bot's ROI");
   $("next").click();
@@ -382,6 +405,8 @@ T.run("Builder screens (builder.html)", function (check) {
   var pk = $("pkgPreview").textContent;
   check("the package holds the prompt, the story and the next steps", pk.indexOf(FACExport.build(FAC_QUESTIONS, FACSheet.load(FAC_QUESTIONS))) > -1 &&
     pk.indexOf(S3.fromRoibot) > -1 && pk.indexOf("Title: Share the package") > -1);
+  check("the package has the member's own ROI and ask, with the For every $1 line and timeframe", pk.indexOf("== " + FAC_QUESTIONS.packageText.sections.roiAsk + " ==\nInvestment (gift amount): $500\n") > -1 &&
+    pk.indexOf("For every $1: For every $1 invested, $3 of value is created") > -1 && pk.indexOf("Timeframe: over 12 months") > -1);
   $("pkg-reviewed").click();
   check("ticking I reviewed my package unlocks Copy and Download", !$("copyPkg").disabled && !$("downloadPkg").disabled && saved().pkgReviewed === true);
 });

@@ -19,7 +19,7 @@ var FACExport = (function () {
   // One answer as it appears in the prompt: the text, then its tags.
   function answerText(Q, state, path) {
     var a = S.get(state, path), text = S.trim(a.text), tags = [];
-    var kept = a.skipped && S.baseIssue(Q, path, a);
+    var kept = a.skipped && S.baseIssue(Q, path, a, state);
     if (S.needsLabel(path) && S.hasNumber(text)) {
       var note = S.trim(a.note), source = Q.exportText.source.replace(/\{note\}/g, function () { return note; });
       if (a.label === "known" && note) tags.push(source);
@@ -173,6 +173,9 @@ var FACExport = (function () {
 
   // One step's prompt: FAC's line from the workbook, that step's inputs (only
   // the ones filled in, with their labels), then the guardrail line.
+  // The member's own 3.4 boxes, in order.
+  var ROI_ASK = ["investment", "value", "roi", "everyDollar", "ask", "timeframe"];
+
   function stepPrompt(Q, state, part) {
     var T = Q.story[part], L = [T.prompt, ""];
     function add(label, path) { var t = answerText(Q, state, path); if (t) L.push(line(label, t)); }
@@ -197,7 +200,7 @@ var FACExport = (function () {
       });
     } else {
       var F = Q.story.fields;
-      (part === "outcome" ? ["clientStory", "clientQuote", "secondQuote"] : ["investment", "value", "roi", "ask"]).forEach(function (id) {
+      (part === "outcome" ? ["clientStory", "clientQuote", "secondQuote"] : ROI_ASK).forEach(function (id) {
         add(F[id].label, "story." + id);
       });
     }
@@ -242,6 +245,11 @@ var FACExport = (function () {
           "; " + Q.rank.scoreLabel + " " + (S.trim(row.score) || Q.flow.empty);
       }).join("\n"));
     }
+    // The member's own ROI and ask (with the "For every $1" line), not ROI.bot's.
+    section(H.roiAsk, ROI_ASK.map(function (id) {
+      var t = answerText(Q, state, "story." + id);
+      return t ? line(Q.story.fields[id].label, t) : "";
+    }).filter(function (x) { return x; }).join("\n"));
     var parts = S.STORY_PARTS.map(function (p) { return S.trim(S.latest(state, p)) ? Q.story.funder.parts[p] + ":\n" + S.trim(S.latest(state, p)) : ""; }).filter(function (x) { return x; });
     if (parts.length) section(H.story, Q.story.fromRoibot + "\n\n" + parts.join("\n\n"));
     section(H.funder, funderText(Q, state));

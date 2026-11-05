@@ -71,9 +71,10 @@ var FACSheet = (function () {
     };
   }
 
-  var storyIds = ["keyFact", "clientStory", "clientQuote", "secondQuote", "investment", "value", "roi", "ask", "investProgram", "investOutcomes", "investDollars"];
+  var storyIds = ["keyFact", "clientStory", "clientQuote", "secondQuote", "investment", "value", "roi", "everyDollar", "ask", "timeframe", "investProgram", "investOutcomes", "investDollars"];
   var STORY_PARTS = ["challenge", "response", "outcome", "roi"];
-  function storyOut() { return { draft: "", rounds: [], happy: false }; }
+  // choice: "", "keep" or "revise" (FAC's process guide: keep or revise each part).
+  function storyOut() { return { draft: "", rounds: [], choice: "" }; }
   function action() { return { assignee: "", title: "", date: "", status: "" }; }
 
   // A new paste from ROI.bot becomes a new round, unless it's the same as the last.
@@ -150,7 +151,9 @@ var FACSheet = (function () {
       var from = data.storyOut && data.storyOut[p], to = s.storyOut[p];
       if (from) {
         if (typeof from.draft === "string") to.draft = from.draft;
-        if (from.happy === true) to.happy = true;
+        if (from.choice === "keep" || from.choice === "revise") to.choice = from.choice;
+        // Drafts from before Keep or revise had an "I'm happy with this part" tick.
+        else if (from.happy === true) to.choice = "keep";
         (from.rounds || []).forEach(function (r) { if (r && typeof r.n === "number" && typeof r.text === "string") to.rounds.push({ n: r.n, text: r.text }); });
       }
       if (data.funder && typeof data.funder[p] === "string") s.funder[p] = data.funder[p];
@@ -457,14 +460,36 @@ var FACSheet = (function () {
   }
 
   // The answer's own problem: "missing", "vague", "output" (an Outputs answer
-  // with no number or no year) or "", in that order. Skip or Keep my answer
-  // settles it (a.skipped).
-  function baseIssue(Q, path, a) {
+  // with no number or no year), "math", "dollar" (with state: a "For every
+  // $1" line that doesn't match the investment and value) or "", in that
+  // order. Skip or Keep my answer settles it (a.skipped).
+  function baseIssue(Q, path, a, state) {
     if (isRequired(Q, path) && isMissing(path, a)) return "missing";
     if (vagueWord(Q, a.text)) return "vague";
     if (isOutputs(path) && trim(a.text) && outputGap(a.text)) return "output";
     if (mathProblem(a.text)) return "math";
+    if (state && path === "story.everyDollar" && dollarOff(state)) return "dollar";
     return "";
+  }
+
+  // ---------- "For every $1" ----------
+
+  // The first dollar figure in a text ($1,500 or $ 1500), as a number, or null.
+  function firstDollars(text) {
+    var m = /\$\s?(\d[\d,]*(?:\.\d+)?)/.exec(text || "");
+    return m ? parseFloat(m[1].replace(/,/g, "")) : null;
+  }
+
+  // True when the member's "For every $1, $X" doesn't match their own value
+  // created divided by their investment. Checked only when all three have a
+  // dollar figure. X may be rounded to as many decimals as the member typed.
+  // The right figure is never shown.
+  function dollarOff(state) {
+    var s = state.story, m = /\$\s?1(?!\d|[,.]\d)[^$]*\$\s?(\d[\d,]*(?:\.(\d+))?)/.exec(s.everyDollar.text || "");
+    var inv = firstDollars(s.investment.text), val = firstDollars(s.value.text);
+    if (!m || !inv || val === null) return false;
+    var typed = parseFloat(m[1].replace(/,/g, "")), places = m[2] ? m[2].length : 0;
+    return Math.abs(typed - val / inv) > 0.5 * Math.pow(10, -places) + 1e-9;
   }
 
   // The next unsettled problem a follow-up should ask about: the answer's
@@ -473,7 +498,7 @@ var FACSheet = (function () {
   // (shares a number with an earlier program), or "".
   // A kept answer still gets the later checks.
   function issueOf(Q, path, a, state) {
-    var base = baseIssue(Q, path, a);
+    var base = baseIssue(Q, path, a, state);
     if (base && !a.skipped) return base;
     if (base === "missing") return "";
     if (assumptionOpen(Q, path, a)) return "assumption";
@@ -496,7 +521,7 @@ var FACSheet = (function () {
   }
 
   // Which of Step 3's own boxes sit on which screen.
-  var STORY_FIELDS = { challenge: ["keyFact"], response: [], outcome: ["clientStory", "clientQuote", "secondQuote"], roi: ["investment", "value", "roi", "ask"], funder: ["investProgram", "investOutcomes", "investDollars"] };
+  var STORY_FIELDS = { challenge: ["keyFact"], response: [], outcome: ["clientStory", "clientQuote", "secondQuote"], roi: ["investment", "value", "roi", "everyDollar", "ask", "timeframe"], funder: ["investProgram", "investOutcomes", "investDollars"] };
 
   function donorPaths(state) {
     var out = [];
@@ -572,10 +597,10 @@ var FACSheet = (function () {
   // problem (a blank answer that becomes "TBD") starts again at the first
   // follow-up. Any edit asks again about a matching program or shared number.
   function setText(Q, state, path, text) {
-    var a = get(state, path), baseBefore = baseIssue(Q, path, a), before = issueOf(Q, path, a, state);
+    var a = get(state, path), baseBefore = baseIssue(Q, path, a, state), before = issueOf(Q, path, a, state);
     if (a.text !== text) { a.separate = false; a.overlap = ""; }
     a.text = text;
-    var base = baseIssue(Q, path, a), now = issueOf(Q, path, a, state);
+    var base = baseIssue(Q, path, a, state), now = issueOf(Q, path, a, state);
     if (base !== baseBefore || !base) a.skipped = false;
     if (now !== before || !now) a.asks = 0;
   }
@@ -690,6 +715,22 @@ var FACSheet = (function () {
     return true;
   }
 
+  // Where the member might draw the red line (FAC's process guide: "where
+  // scores jump"): after the program whose next Stack Rank is the most
+  // times bigger, since the scores are multiplied. Only once every Stack
+  // Rank checks out and the list is sorted. Returns how many programs are
+  // above that line, or 0 for no suggestion (fewer than 2 programs, or no
+  // jump at all). Only a suggestion: it never moves the line.
+  function suggestLine(state) {
+    if (state.rank.use !== "yes" || rankCheck(state).msg) return 0;
+    var r = state.rankRows.map(function (row) { return +trim(row.score); }), best = 0, at = 0;
+    for (var i = 1; i < r.length; i++) {
+      if (r[i] < r[i - 1]) return 0;
+      if (r[i] / r[i - 1] > best + 1e-9) { best = r[i] / r[i - 1]; at = i; }
+    }
+    return best > 1 ? at : 0;
+  }
+
   // How many programs go into the prompt: those above the red line.
   function included(state) {
     var n = state.programs.length;
@@ -709,10 +750,11 @@ var FACSheet = (function () {
     for (i = 0; i < all.length; i++) {
       var a = get(state, all[i]);
       if (req[all[i]] && isMissing(all[i], a)) { out.push({ path: all[i], status: a.skipped ? "skipped" : "blank" }); continue; }
-      var base = Q ? baseIssue(Q, all[i], a) : "";
+      var base = Q ? baseIssue(Q, all[i], a, state) : "";
       if (base === "vague") out.push({ path: all[i], status: a.skipped ? "keptVague" : "vague" });
       else if (base === "output") out.push({ path: all[i], status: outputGap(a.text) + (a.skipped ? "Kept" : "") });
       else if (base === "math") out.push({ path: all[i], status: a.skipped ? "keptMath" : "math" });
+      else if (base === "dollar") out.push({ path: all[i], status: a.skipped ? "keptDollar" : "dollar" });
       // An open "if..." assumption is listed once, instead of "needs a label".
       var assumed = Q && assumptionOpen(Q, all[i], a);
       if (assumed) out.push({ path: all[i], status: "assumption" });
@@ -764,7 +806,7 @@ var FACSheet = (function () {
     isAssumption: isAssumption, assumptionOpen: assumptionOpen, setLabel: setLabel, setNote: setNote,
     calculations: calculations, mathProblem: mathProblem,
     paths: paths, steps: steps, stepOf: stepOf, problems: problems, addVersion: addVersion,
-    RANK_COLUMNS: RANK_COLUMNS, rankCheck: rankCheck, sortByScore: sortByScore, included: included,
+    RANK_COLUMNS: RANK_COLUMNS, rankCheck: rankCheck, sortByScore: sortByScore, suggestLine: suggestLine, dollarOff: dollarOff, included: included,
     addDonorRow: addDonorRow, removeDonorRow: removeDonorRow, importLive: importLive,
     addRound: addRound, latest: latest, STORY_PARTS: STORY_PARTS,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,

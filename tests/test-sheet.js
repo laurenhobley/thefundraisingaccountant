@@ -348,6 +348,47 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("draft from before the four columns: yes and the red line kept, old scores cleared",
     old.rank.use === "yes" && old.rank.line === 1 && old.rank.names.d1 === "" && !old.rankRows[0].m.money && old.rankRows[0].score === "" && S.rankCheck(old).msg === "needNames");
 
+  // Suggested red line: where the next Stack Rank is the most times bigger.
+  function ranked(scores) {
+    var g = S.blank(Q);
+    scores.forEach(function (x, i) {
+      if (i) S.addProgram(Q, g);
+      var row = Q.rank.example.rows.filter(function (r) { return r[5] === x; })[0] || ["", "1", "1", "1", "1", "1"];
+      g.rankRows[i] = { m: { d1: row[1], d2: row[2], d3: row[3], money: row[4] }, score: row[5] };
+    });
+    g.rank.use = "yes"; g.rank.names = { d1: "Quantity", d2: "Impact", d3: "Unique" };
+    return g;
+  }
+  var mne = ranked(["1", "2", "3", "3", "3", "8", "12", "27"]);
+  check("Mission NE's grid: the line is suggested after its 5th program (3 to 8)", S.rankCheck(mne).msg === "" && S.suggestLine(mne) === 5);
+  check("the suggestion never moves the red line", mne.rank.line === null && S.included(mne) === 8);
+  check("no suggestion when every Stack Rank is the same, or with one program", S.suggestLine(ranked(["1", "1"])) === 0 && S.suggestLine(ranked(["8"])) === 0);
+  check("no suggestion until the list is sorted", S.suggestLine(ranked(["8", "3"])) === 0);
+  var bad = ranked(["1", "2"]); bad.rankRows[1].score = "5";
+  check("no suggestion while a Stack Rank doesn't check out", S.suggestLine(bad) === 0);
+  check("the jump is measured in times, not the gap: 1, 2, 3, 12, 27 suggests after 3", S.suggestLine(ranked(["1", "2", "3", "12", "27"])) === 3);
+
+  // "For every $1": checked against the member's own investment and value.
+  var fd = S.blank(Q);
+  function dollar(inv, val, line) { fd.story.investment.text = inv; fd.story.value.text = val; fd.story.everyDollar.text = line; return S.dollarOff(fd); }
+  check("$1,500 ÷ $500: \"For every $1 invested, $3 of value\" matches", !dollar("$500", "$1,500 in service value", "For every $1 invested, $3 of value is created"));
+  check("rounded to what the member typed: $3.0 and $3 both match; $2.5 matches $1,250 ÷ $500", !dollar("$500", "$1,500", "For every $1, $3.0") && !dollar("$500", "$1,250", "For every $1, $2.5"));
+  check("a wrong figure is caught: $4", dollar("$500", "$1,500", "For every $1 invested, $4 of value is created"));
+  check("rounding counts: $3.33 matches $1,000 ÷ $300, $3.3 does too, $3.4 doesn't", !dollar("$300", "$1,000", "For every $1, $3.33") && !dollar("$300", "$1,000", "For every $1, $3.3") && dollar("$300", "$1,000", "For every $1, $3.4"));
+  check("not checked without a dollar investment and value, or without \"$1\"", !dollar("", "$1,500", "For every $1, $9") && !dollar("$500", "lots", "For every $1, $9") &&
+    !dollar("$500", "$1,500", "For every $10, $30") && !dollar("$500", "$1,500", "For every $1,000, $3,000"));
+  check("a wrong line is a follow-up, listed on the review screen, and Keep my answer settles it", S.issueOf(Q, "story.everyDollar", fd.story.everyDollar, fd) === "" &&
+    (dollar("$500", "$1,500", "For every $1, $4"), S.issueOf(Q, "story.everyDollar", fd.story.everyDollar, fd) === "dollar") &&
+    S.problems(fd, Q).some(function (p) { return p.path === "story.everyDollar" && p.status === "dollar"; }) &&
+    (fd.story.everyDollar.asks = 2, S.skip(fd, "story.everyDollar"), S.issueOf(Q, "story.everyDollar", fd.story.everyDollar, fd) === "") &&
+    S.problems(fd, Q).some(function (p) { return p.path === "story.everyDollar" && p.status === "keptDollar"; }));
+  check("the timeframe and For every $1 need no label box", !S.needsLabel("story.timeframe") && !S.needsLabel("story.everyDollar"));
+
+  // Keep or revise each story part.
+  var kr = S.repair(Q, { storyOut: { challenge: { happy: true }, response: { choice: "revise" }, outcome: { choice: "maybe" } } });
+  check("old \"happy\" tick opens as Keep; Revise is kept; anything else is cleared", kr.storyOut.challenge.choice === "keep" && kr.storyOut.response.choice === "revise" &&
+    kr.storyOut.outcome.choice === "" && kr.storyOut.roi.choice === "");
+
   // Step 2: pain statement questions, donor tables, magic wand.
   var s2 = S.blank(Q);
   check("Step 2 screens come after the 1.5 review, then the review again", S.steps(s2).slice(-13, -8).map(function (x) { return x.kind + (x.stage || ""); }).join() === "end1,why,donors,wand,end2");
@@ -389,7 +430,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   var r4 = S.repair(Q, { story: { keyFact: { text: "Rents rose" } }, storyApproved: true, storyOut: { outcome: { draft: "d", happy: true, rounds: [{ n: 1, text: "A" }, { n: "x" }] } },
     funder: { roi: "My ask" }, actions: [{ title: "Call Steve", date: "2026-11-20" }], assess: { ratings: ["5", "9"], takeaway: "Numbers matter" } });
   check("old draft: Step 3 kept, bad values dropped", r4.story.keyFact.text === "Rents rose" && r4.storyApproved && r4.storyOut.outcome.rounds.length === 1 &&
-    r4.storyOut.outcome.happy && r4.funder.roi === "My ask" && r4.funder.challenge === null && r4.actions.length === 3 && r4.actions[0].date === "2026-11-20" &&
+    r4.storyOut.outcome.choice === "keep" && r4.funder.roi === "My ask" && r4.funder.challenge === null && r4.actions.length === 3 && r4.actions[0].date === "2026-11-20" &&
     r4.assess.ratings.join() === "5,," && r4.assess.takeaway === "Numbers matter");
   // Saving and loading, with a stand-in for the browser's storage.
   var store = {}, fake = { setItem: function (k, v) { store[k] = v; }, getItem: function (k) { return store[k] || null; }, removeItem: function (k) { delete store[k]; } };

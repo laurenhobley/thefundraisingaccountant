@@ -118,9 +118,18 @@
         '<div class="f"><label for="rank-line">' + esc(R.lineLabel) + '</label><select id="rank-line" class="rank-line">' +
         state.programs.map(function (p, i) {
           return '<option value="' + (i + 1) + '"' + (S.included(state) === i + 1 ? " selected" : "") + '>' + esc(programName(i) + (S.trim(p.name.text) ? ": " + p.name.text : "")) + '</option>';
-        }).join("") + '</select><p class="hint">' + esc(R.lineHelp) + '</p></div>';
+        }).join("") + '</select><p class="hint">' + esc(R.lineHelp) + '</p>' + suggestion() + '</div>';
     }
     return html + '<p class="fu-q" id="rank-msg" aria-live="polite"></p>';
+  }
+
+  // "Where scores jump": only the member's own Stack Ranks, never the jump itself.
+  function suggestion() {
+    var k = S.suggestLine(state);
+    if (!k) return "";
+    function named(i) { var t = S.trim(state.programs[i].name.text); return programName(i) + (t ? ": " + t : ""); }
+    var v = { a: named(k - 1), x: S.trim(state.rankRows[k - 1].score), b: named(k), y: S.trim(state.rankRows[k].score) };
+    return '<p class="hint rank-suggest" id="rank-suggest">' + esc(Q.rank.suggest.replace(/\{(\w)\}/g, function (m, c) { return v[c]; })) + '</p>';
   }
 
   // ---------- Step 2 ----------
@@ -188,10 +197,15 @@
   }
 
   // 3.1 to 3.4: FAC's prompt with this step's inputs, a copy button, a box
-  // for ROI.bot's answer (each new paste kept as a round) and "happy" tick.
+  // for ROI.bot's answer (each new paste kept as a round), then Keep or
+  // Revise. Revise asks one question and links to the screen that feeds it.
   function storyScreen(part) {
     var T = Q.story[part], ST = Q.story, o = state.storyOut[part];
-    var own = { challenge: ["keyFact"], response: [], outcome: ["clientStory", "clientQuote", "secondQuote"], roi: ["investment", "value", "roi", "ask"] }[part];
+    var own = { challenge: ["keyFact"], response: [], outcome: ["clientStory", "clientQuote", "secondQuote"], roi: ["investment", "value", "roi", "everyDollar", "ask", "timeframe"] }[part];
+    var feeds = { challenge: { path: "pain.0", name: S.section(Q, "pain").title }, response: { path: "programs.0.outputs", name: programName(0) } }[part];
+    function choice(v, label) {
+      return '<label><input type="radio" class="story-choice" name="story-choice" data-part="' + part + '" value="' + v + '"' + (o.choice === v ? " checked" : "") + '> ' + esc(label) + '</label>';
+    }
     var html = heading(T.number, T.title) + '<p class="hint">' + esc(T.intro) + '</p>' +
       (T.example ? '<div class="examples"><span class="ex-tag">Example</span><p>' + esc(T.example) + '</p></div>' : "") +
       own.map(storyField).join("") +
@@ -202,7 +216,12 @@
       '<div class="f"><label for="story-out">' + esc(ST.outputLabel) + '</label><p class="hint">' + esc(ST.outputHelp) + '</p>' +
       '<textarea class="story-out" id="story-out" data-part="' + part + '">' + esc(o.draft || S.latest(state, part)) + '</textarea></div>' +
       '<div class="f"><span class="lbl">' + esc(ST.roundsTitle) + '</span><div id="story-rounds"></div></div>' +
-      '<label class="review-check"><input type="checkbox" class="story-happy" data-part="' + part + '"' + (o.happy ? " checked" : "") + '> ' + esc(ST.happy) + '</label>';
+      '<div class="f"><span class="lbl">' + esc(ST.choiceLabel) + '</span><div class="choice" role="radiogroup" aria-label="' + esc(ST.choiceLabel) + '">' +
+      choice("keep", ST.keep) + choice("revise", ST.revise) + '</div>' +
+      '<div class="revise" id="story-revise"' + (o.choice === "revise" ? "" : " hidden") + '><p class="revise-q">' + esc(T.revise) +
+      (feeds ? ' <button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, feeds.path) + '" data-focus="' + idOf(feeds.path) + '">' +
+        esc(ST.reviseGo.replace(/\{screen\}/g, feeds.name)) + '</button>' : "") +
+      '</p><p class="hint">' + esc(ST.reviseNext) + '</p></div></div>';
     return html;
   }
   function refreshStory() {
@@ -298,7 +317,11 @@
       var part = el.getAttribute("data-part");
       if (e.type === "change") S.addRound(state, part, el.value); else state.storyOut[part].draft = el.value;
     }
-    else if (c.contains("story-happy")) { if (e.type !== "change") return true; state.storyOut[el.getAttribute("data-part")].happy = el.checked; }
+    else if (c.contains("story-choice")) {
+      if (e.type !== "change") return true;
+      state.storyOut[el.getAttribute("data-part")].choice = el.value;
+      $("story-revise").hidden = el.value !== "revise";
+    }
     else if (c.contains("story-approved")) { if (e.type !== "change") return true; state.storyApproved = el.checked; }
     else if (c.contains("funder-edit")) state.funder[el.getAttribute("data-part")] = el.value;
     else if (c.contains("act")) state.actions[+el.getAttribute("data-row")][el.getAttribute("data-k")] = el.value;
@@ -425,6 +448,7 @@
       outputNoNumber: "has no number", outputNoYear: "has no year", outputNoNumberOrYear: "has no number or year",
       assumption: "is an “if” assumption with no source",
       math: "has a calculation that doesn't add up", keptMath: "has a calculation that doesn't add up (Unsupported)",
+      dollar: "doesn't match your investment and value", keptDollar: "doesn't match your investment and value (Unsupported)",
       outputNoNumberKept: "has no number (Unsupported)", outputNoYearKept: "has no year (Unsupported)", outputNoNumberOrYearKept: "has no number or year (Unsupported)" };
     var list = probs.length
       ? '<ul class="todo">' + probs.map(function (p) {
@@ -595,11 +619,11 @@
     fu.hidden = !open;
 
     // The flag under the answer: kept as is (Unsupported), or a noted same group.
-    var flag = $(id + "-skipped"), base = S.baseIssue(Q, path, a), shared = S.sharedCount(state, path);
+    var flag = $(id + "-skipped"), base = S.baseIssue(Q, path, a, state), shared = S.sharedCount(state, path);
     var noted = a.overlap === "same" && !!shared;
     flag.hidden = !((a.skipped && base) || noted);
     flag.classList.toggle("noted", noted && !(a.skipped && base));
-    flag.textContent = a.skipped && base ? (base === "vague" ? F.keptVague : base === "output" ? F.keptOutput : base === "math" ? F.keptMath : F.skipped)
+    flag.textContent = a.skipped && base ? (base === "vague" ? F.keptVague : base === "output" ? F.keptOutput : base === "math" ? F.keptMath : base === "dollar" ? F.keptDollar : F.skipped)
       : noted ? F.overlapSameNote.replace(/\{program\}/g, programName(shared.other)) : "";
 
     $(id).classList.toggle("invalid", open);
@@ -620,7 +644,7 @@
       btn.textContent = F.separateButton;
       btn.hidden = !S.canConfirmSeparate(a);
     } else {
-      var lines = kind === "vague" ? (S.notNeeded(Q, path, a) ? F.notNeeded : F.vague) : kind === "output" ? F[S.outputGap(a.text)] : kind === "math" ? F.mathWrong : path === "org.zip" ? F.missingZip : F.missing;
+      var lines = kind === "vague" ? (S.notNeeded(Q, path, a) ? F.notNeeded : F.vague) : kind === "output" ? F[S.outputGap(a.text)] : kind === "math" ? F.mathWrong : kind === "dollar" ? F.dollarWrong : path === "org.zip" ? F.missingZip : F.missing;
       text = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text)).replace(/\{calc\}/g, function () { return S.mathProblem(a.text); });
       btn.textContent = kind === "missing" ? F.skipButton : F.keepButton;
       btn.hidden = !S.canSkip(a);

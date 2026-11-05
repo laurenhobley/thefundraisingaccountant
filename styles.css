@@ -143,6 +143,7 @@ a { color: var(--accent); font-weight: 600; }
 .rank-score { width: 5em !important; }
 .rank-name { width: 10em !important; }
 .rank-op { color: var(--muted); font-weight: 600; }
+.revise-q { font-weight: 600; margin: 10px 0 2px; }
 .rank-total { display: flex; gap: 16px; align-items: center; }
 .rank-example { margin-bottom: 14px; overflow-x: auto; max-width: 100%; }
 .rank-example td:not(:first-child), .rank-example th:not(:first-child) { text-align: center; }

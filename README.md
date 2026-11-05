@@ -37,7 +37,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 
 **Step 1, Measure your ROI**
 1. **1.1** Organization Info
-2. **1.2** one screen per program, then an optional stack rank from FAC's template (three drivers the member names, plus Money, each scored 1–3; the member types the Stack Rank, the tool checks it equals the four multiplied and sorts by it, and programs below the red line are left out of the prompt), then a "Happy with your programs and keywords?" check
+2. **1.2** one screen per program, then an optional stack rank from FAC's template (three drivers the member names, plus Money, each scored 1–3; the member types the Stack Rank, the tool checks it equals the four multiplied and sorts by it, then suggests where the Stack Ranks jump most; the member draws the red line, and programs below it are left out of the prompt), then a "Happy with your programs and keywords?" check
 3. Local Context/Data, from FAC's sheet
 4. **1.3** Benchmarks (with source, program and how it connects), then its check
 5. **1.4** Constraints (tone, length, format, audience), then its check
@@ -50,7 +50,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 4. Then the review screen again.
 
 **Step 3, Tell your story**
-1. **3.1–3.4** Challenge, Response, Outcome and ROI. Each step has FAC's prompt, a Copy button and a box for ROI.bot's answer, with rounds kept.
+1. **3.1–3.4** Challenge, Response, Outcome and ROI. Each step has FAC's prompt, a Copy button and a box for ROI.bot's answer, with rounds kept, then Keep or Revise (Revise asks one question and links to the screen that feeds it). 3.4 also has the member's own "For every $1" line, checked against their investment and value, and a timeframe for the ask.
 2. **3.5** Funder story
 3. My Next Steps and a Self Assessment
 4. **The package:** one .txt file with everything the member made.

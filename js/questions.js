@@ -247,24 +247,33 @@ var FAC_QUESTIONS = {
     outputHelp: "Each time you paste a new answer, it's kept as a new round so you can compare.",
     roundsTitle: "Your rounds",
     roundLabel: "Round {n}",
-    happy: "I'm happy with this part",
+    // Keep or revise each part (FAC's process guide, the Step 3 loop).
+    // Each part's own "revise" question is below. Draft for Steve.
+    choiceLabel: "Is this part right?",
+    keep: "Keep this part",
+    revise: "Revise this part",
+    reviseNext: "Then copy this step's prompt again and paste ROI.bot's new answer. Each answer is kept as a round.",
+    reviseGo: "Go to {screen}",
     fromRoibot: "From ROI.bot: check its figures before using them.",
     challenge: {
       number: "3.1", title: "Define the challenge",
       intro: "Your answers from Step 2.1 are brought in so ROI.bot can write the challenge part of your story.",
       prompt: "Here is a narrative list of the challenges faced in the world that we seek to change:",
+      revise: "Add a local fact or benchmark that shows the need?",
       inputs: { lost: "Funding lost ($ and type)", unserved: "People not served", demand: "Increased demand", served: "Currently served", keyFact: "Key fact" }
     },
     response: {
       number: "3.2", title: "Define your response",
       intro: "Your program information is brought in so ROI.bot can show how your programs respond to the challenge.",
       prompt: "Provide a narrative with our response to those challenges. Explain how our programs help make the world a better place.",
+      revise: "Add more detail to a program's outputs?",
       inputs: { name: "Program name", description: "Description", outputs: "Outputs", impact: "Impact statement" }
     },
     outcome: {
       number: "3.3", title: "Define the outcome",
       intro: "Show what changed for one real person. A single story with a quote does more than a page of statistics.",
       prompt: "Using our challenge and response, describe the outcome for the people we serve. Include one real client story and quote.",
+      revise: "Add or strengthen the client story or quote above?",
       approved: "This story and quote are anonymized and approved for public use.",
       needApproved: "Tick the box above before copying this prompt."
     },
@@ -272,6 +281,7 @@ var FAC_QUESTIONS = {
       number: "3.4", title: "Calculate the ROI",
       intro: "Turn the outcome into a number a funder can compare.",
       prompt: "Calculate the ROI of a gift to this program.",
+      revise: "Check the value created above and where it comes from?",
       example: "Illustrative example from FAC's workbook: $500 toward survivor support; $1,500 in documented equivalent service value; $1,500 ÷ $500 = 3:1; $5,000 funds 10 survivor support packages at $500 each."
     },
     // The new boxes in Step 3. Only the key fact, value created and dollars saved get a Known / Estimate / Unsupported box.
@@ -283,7 +293,10 @@ var FAC_QUESTIONS = {
       investment: { label: "Investment (gift amount)", help: "The gift you're asking for." },
       value: { label: "Value created or cost avoided", help: "What the gift creates or saves, with where the figure comes from." },
       roi: { label: "ROI", help: "Type your own calculation: the value divided by the investment. The builder checks the math." },
+      // Draft for Steve: the "For every $1" line and the timeframe (FAC's process guide, 3.4 and 3.6).
+      everyDollar: { label: "For every $1", help: "Type your own line, for example “For every $1 invested, $3 of value is created.” The builder checks it against your investment and value above." },
       ask: { label: "The ask", help: "What you're asking a funder to give, and what it funds." },
+      timeframe: { label: "Timeframe", note: "(optional)", help: "When the gift would be used, for example over 12 months." },
       investProgram: { label: "An investment in…", help: "Your program." },
       investOutcomes: { label: "helps create…", help: "The outcomes, in your words or from ROI.bot's answers." },
       investDollars: { label: "and saves…", help: "The dollars saved, with where the figure comes from." }
@@ -322,7 +335,7 @@ var FAC_QUESTIONS = {
     copyButton: "Copy package",
     downloadButton: "Download package (.txt)",
     heading: "ROI.bot package",
-    sections: { prompt: "Your ROI.bot prompt", whyNow: "Why Now statement", programs: "Programs in priority order", rank: "Stack ranking", story: "Your story parts", funder: "Your funder story", actions: "My next steps", assess: "Self assessment" }
+    sections: { prompt: "Your ROI.bot prompt", whyNow: "Why Now statement", programs: "Programs in priority order", rank: "Stack ranking", roiAsk: "Your ROI and ask", story: "Your story parts", funder: "Your funder story", actions: "My next steps", assess: "Self assessment" }
   },
 
   // Optional stack rank (FAC's process guide, form 1.2), after the programs.
@@ -385,6 +398,8 @@ var FAC_QUESTIONS = {
     wrongScore: "This Stack Rank doesn't match the four numbers multiplied together. Please check it.",
     sortButton: "Sort by Stack Rank, lowest first",
     sorted: "Sorted. The programs at the top are most impactful to the mission.",
+    // Draft for Steve. Shown once the list is sorted; only the member's own Stack Ranks.
+    suggest: "Suggestion: your Stack Ranks jump most between {a} ({x}) and {b} ({y}). You could draw the red line after {a}.",
     lineLabel: "Draw the red line after",
     lineHelp: "Programs below the red line are left out of the prompt. They stay saved, so you can move the line later.",
     belowLine: "below the red line"
@@ -521,6 +536,13 @@ var FAC_QUESTIONS = {
       "This calculation still doesn't come out to the result written: “{calc}”. If you can't check it now, you can keep your answer, and it will be marked Unsupported."
     ],
     keptMath: "Unsupported: a calculation doesn't add up. Edit your answer any time to clear this.",
+    // Draft for Steve. The "For every $1" line checked against the member's
+    // own investment and value. The right figure is never shown.
+    dollarWrong: [
+      "This doesn't match your investment and value created above. Please check it.",
+      "This still doesn't match your investment and value created. If you can't check it now, you can keep your answer, and it will be marked Unsupported."
+    ],
+    keptDollar: "Unsupported: doesn't match your investment and value. Edit your answer any time to clear this.",
     // Draft for Steve. Settled with the label box, so there is no button.
     ifNoSource: [
       "This answer is based on an “if…” assumption. Where does the figure come from? Choose a label below and add the source, or mark it Unsupported.",

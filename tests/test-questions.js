@@ -32,6 +32,10 @@ T.run("Questions (js/questions.js)", function (check) {
   check("stack rank: FAC's template columns (Driver 1-3, Money), matching the sheet's, and its messages",
     Q.rank.columns.map(function (c) { return c.label; }).join() === "Driver 1,Driver 2,Driver 3,Money" && Q.rank.columns.map(function (c) { return c.id; }).join() === S.RANK_COLUMNS.join() &&
     ["ask", "yes", "no", "needChoice", "needNames", "needScores", "wrongScore", "sortButton", "lineLabel", "belowLine"].every(function (k) { return !!Q.rank[k]; }));
+  check("the guide's Step 3 additions have their wording: keep or revise per part, For every $1, timeframe, red line suggestion",
+    ["challenge", "response", "outcome", "roi"].every(function (p) { return !!Q.story[p].revise; }) && !!Q.story.keep && !!Q.story.revise && Q.story.reviseGo.indexOf("{screen}") > -1 &&
+    !!Q.story.fields.everyDollar.label && !!Q.story.fields.timeframe.label && Q.followUps.dollarWrong.length === 2 && !!Q.followUps.keptDollar &&
+    ["{a}", "{x}", "{b}", "{y}"].every(function (k) { return Q.rank.suggest.indexOf(k) > -1; }) && !!Q.packageText.sections.roiAsk);
   check("FAC's Mission NE example: 8 programs, and every Stack Rank is its four scores multiplied", Q.rank.example.rows.length === 8 &&
     Q.rank.example.rows.every(function (r) { return r.length === 6 && +r[1] * +r[2] * +r[3] * +r[4] === +r[5]; }));
   check("stack rank wording follows FAC's template", Q.rank.key.join() === "1 = Most,2 = OK,3 = Least" && Q.rank.scoreLabel === "Stack Rank" &&
