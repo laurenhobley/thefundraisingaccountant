@@ -142,6 +142,10 @@ a { color: var(--accent); font-weight: 600; }
 .rank-cells select, .rank-line, .f select { font: inherit; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; }
 .rank-score { width: 5em !important; }
 .rank-name { width: 10em !important; }
+.rank-op { color: var(--muted); font-weight: 600; }
+.rank-total { display: flex; gap: 16px; align-items: center; }
+.rank-example { margin-bottom: 14px; overflow-x: auto; max-width: 100%; }
+.rank-example td:not(:first-child), .rank-example th:not(:first-child) { text-align: center; }
 .rank-intro p, .rank-intro ul { margin: 0 0 6px; }
 .rank-intro ul { padding-left: 1.3em; }
 

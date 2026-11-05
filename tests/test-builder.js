@@ -146,7 +146,13 @@ T.run("Builder screens (builder.html)", function (check) {
   check("Yes shows FAC's template instructions and key", intro.indexOf(RK.intro) > -1 && intro.indexOf(RK.instructions[2]) > -1 && intro.indexOf("1 = Most · 2 = OK · 3 = Least") > -1);
   check("three driver boxes, blank, and four columns per program", document.querySelectorAll("#screen .rank-name").length === 3 && $("rank-name-d1").value === "" &&
     document.querySelectorAll('#screen .rank-m[data-row="0"]').length === 4 && !!document.querySelector('#screen .rank-m[data-m="money"]'));
-  check("the template's example row is grey text, not boxes", document.querySelector("#screen .rank-example").textContent === "Example: Vocational: Driver 1 1, Driver 2 1, Driver 3 1, Money 1; Stack Rank 1");
+  var exTable = document.querySelector("#screen .rank-example");
+  check("FAC's Mission NE example is a grey table of 8 programs, with no boxes", exTable.classList.contains("examples") && exTable.querySelectorAll("tbody tr").length === 8 &&
+    exTable.querySelector("tbody tr").textContent === "Food Distribution11111" && !exTable.querySelector("input, select"));
+  var row0 = $("rank-row-0").querySelector(".rank-cells");
+  check("each row reads Driver 1 × Driver 2 × Driver 3 × Money = Stack Rank, signs hidden from screen readers",
+    Array.prototype.map.call(row0.querySelectorAll(".rank-op"), function (e) { return e.textContent; }).join("") === "×××=" &&
+    Array.prototype.every.call(row0.querySelectorAll(".rank-op"), function (e) { return e.getAttribute("aria-hidden") === "true"; }));
   $("next").click();
   check("Next with no driver names: asks for them", rankMsg() === RK.needNames);
   type("rank-name-d1", "Quality"); type("rank-name-d3", "Impact");

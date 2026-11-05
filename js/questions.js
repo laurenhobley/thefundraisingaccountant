@@ -363,8 +363,22 @@ var FAC_QUESTIONS = {
     namesLabel: "Name your three drivers",
     namesHelp: "Example: Quality, Quantity, Uniqueness, Impact",
     needNames: "Please name all three drivers.",
-    // The template's example row, shown as grey text only.
-    exampleRow: { name: "Example: Vocational", scores: ["1", "1", "1", "1"], rank: "1" },
+    // FAC's filled-in template for Mission NE, shown as a grey table only.
+    // Each row: program, the four scores, then the Stack Rank.
+    example: {
+      title: "Example: Mission NE",
+      headings: ["Program", "Quantity ×", "Impact ×", "Unique ×", "Money =", "Stack Rank"],
+      rows: [
+        ["Food Distribution", "1", "1", "1", "1", "1"],
+        ["Buddy Backpack", "2", "1", "1", "1", "2"],
+        ["Rental/Utility Assistance", "1", "1", "3", "1", "3"],
+        ["Mental Health (ISS)", "3", "1", "1", "1", "3"],
+        ["Childcare", "3", "1", "1", "1", "3"],
+        ["Scholarship Program", "2", "1", "2", "2", "8"],
+        ["College Classes", "3", "1", "2", "2", "12"],
+        ["Senior Citizen Delivery", "3", "3", "3", "1", "27"]
+      ]
+    },
     scoreLabel: "Stack Rank",
     // Draft for Steve.
     needScores: "Please score every program on each driver and Money, and type its Stack Rank.",

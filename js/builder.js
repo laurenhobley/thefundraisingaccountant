@@ -94,17 +94,23 @@
         R.columns.filter(function (c) { return c.named; }).map(function (c) {
           return '<label>' + esc(c.label) + ' <input type="text" class="rank-name" id="rank-name-' + c.id + '" data-id="' + c.id + '" value="' + esc(st.names[c.id]) + '"></label>';
         }).join("") + '</div><p class="hint">' + esc(R.namesHelp) + '</p></div>';
-      var ex = R.exampleRow;
-      html += '<div class="rank-table"><p class="hint rank-example">' + esc(ex.name) + ': ' +
-        R.columns.map(function (c, k) { return esc(c.label) + ' ' + esc(ex.scores[k]); }).join(", ") + '; ' + esc(R.scoreLabel) + ' ' + esc(ex.rank) + '</p>' +
+      // × and = between the columns, for the eye only.
+      function op(sign) { return '<span class="rank-op" aria-hidden="true">' + sign + '</span>'; }
+      var ex = R.example;
+      html += '<div class="examples rank-example"><span class="ex-tag">' + esc(ex.title) + '</span><table><thead><tr>' +
+        ex.headings.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join("") + '</tr></thead><tbody>' +
+        ex.rows.map(function (r) { return '<tr>' + r.map(function (v) { return '<td>' + esc(v) + '</td>'; }).join("") + '</tr>'; }).join("") +
+        '</tbody></table></div>';
+      html += '<div class="rank-table">' +
         state.programs.map(function (p, i) {
           var row = state.rankRows[i];
           return '<div class="rank-row" id="rank-row-' + i + '"><span class="lbl">' + esc(programName(i)) + ': ' + esc(S.trim(p.name.text) || Q.flow.empty) + '</span><div class="rank-cells">' +
-            R.columns.map(function (m) {
-              return '<label>' + col(m) + ' <select class="rank-m" data-row="' + i + '" data-m="' + m.id + '"><option value=""></option>' +
+            R.columns.map(function (m, k) {
+              return (k ? op("×") : "") + '<label>' + col(m) + ' <select class="rank-m" data-row="' + i + '" data-m="' + m.id + '"><option value=""></option>' +
                 ["1", "2", "3"].map(function (v) { return '<option' + (row.m[m.id] === v ? " selected" : "") + '>' + v + '</option>'; }).join("") + '</select></label>';
             }).join("") +
-            '<label>' + esc(R.scoreLabel) + ' <input type="text" class="rank-score" inputmode="numeric" data-row="' + i + '" value="' + esc(row.score) + '"></label>' +
+            // "= Stack Rank" stays together when the row wraps.
+            '<span class="rank-total">' + op("=") + '<label>' + esc(R.scoreLabel) + ' <input type="text" class="rank-score" inputmode="numeric" data-row="' + i + '" value="' + esc(row.score) + '"></label></span>' +
             (i >= S.included(state) ? ' <span class="opt">(' + esc(R.belowLine) + ')</span>' : "") +
             '</div></div>';
         }).join("") + '</div>' +

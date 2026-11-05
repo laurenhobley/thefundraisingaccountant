@@ -32,6 +32,8 @@ T.run("Questions (js/questions.js)", function (check) {
   check("stack rank: FAC's template columns (Driver 1-3, Money), matching the sheet's, and its messages",
     Q.rank.columns.map(function (c) { return c.label; }).join() === "Driver 1,Driver 2,Driver 3,Money" && Q.rank.columns.map(function (c) { return c.id; }).join() === S.RANK_COLUMNS.join() &&
     ["ask", "yes", "no", "needChoice", "needNames", "needScores", "wrongScore", "sortButton", "lineLabel", "belowLine"].every(function (k) { return !!Q.rank[k]; }));
+  check("FAC's Mission NE example: 8 programs, and every Stack Rank is its four scores multiplied", Q.rank.example.rows.length === 8 &&
+    Q.rank.example.rows.every(function (r) { return r.length === 6 && +r[1] * +r[2] * +r[3] * +r[4] === +r[5]; }));
   check("stack rank wording follows FAC's template", Q.rank.key.join() === "1 = Most,2 = OK,3 = Least" && Q.rank.scoreLabel === "Stack Rank" &&
     Q.rank.intro === "A stack ranking grid helps you compare your programs based on any three drivers. For example:" &&
     Q.rank.instructions.join("|") === "Rank each program with a 1, 2 or 3 to which does it most, just ok, or least.|Multiply these four numbers to produce a Stack ranking.|" +
