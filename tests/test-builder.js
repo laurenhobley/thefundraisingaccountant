@@ -409,4 +409,36 @@ T.run("Builder screens (builder.html)", function (check) {
     pk.indexOf("For every $1: For every $1 invested, $3 of value is created") > -1 && pk.indexOf("Timeframe: over 12 months") > -1);
   $("pkg-reviewed").click();
   check("ticking I reviewed my package unlocks Copy and Download", !$("copyPkg").disabled && !$("downloadPkg").disabled && !$("downloadPkgMd").disabled && saved().pkgReviewed === true);
+
+  // ---------- Fill from a document (made-up text) ----------
+  var DOC = FAC_QUESTIONS.documents;
+  $("clear").click(); $("clear").click();
+  check("Start over: back on Organization Info, with the document panel closed", $("counter").textContent === "Step 1 of 22" && !$("doc-panel").open);
+  function sugg(path) {
+    return Array.prototype.filter.call(document.querySelectorAll("#screen .sugg"), function (d) { return d.querySelector(".lbl").textContent === path; })[0];
+  }
+  function press(path, act) { sugg(path).querySelector('[data-act="' + act + '"]').click(); }
+  type("f-org-city", "Old Town, MN");
+  var docT = $("doc-text");
+  docT.value = "Name: Riverbend Family Services\nLocation (include zip): Lake Ruth, MN 55999\nMission Statement: Zebra-striped secret phrase.\n" +
+    "1. Program Name: Family Pantry\n2. Program Name: Rent Help\n   * Outputs: 75 households in 2024";
+  docT.dispatchEvent(new Event("input", { bubbles: true }));
+  act("findAnswers");
+  check("Find answers: each suggestion with its exact quote, and a count", $("doc-msg").textContent === DOC.found.replace("{n}", "7") &&
+    document.querySelectorAll("#screen .sugg").length === 7 && sugg("Name").querySelector(".sugg-quote").textContent === DOC.quoteLabel + "Name: Riverbend Family Services");
+  check("nothing is filled in until accepted", $("f-org-name").value === "" && saved().org.name.text === "");
+  check("a box with an answer says Replace my answer; a blank one says Accept", sugg("Location: City and state").querySelector('[data-act="suggAccept"]').textContent === DOC.replace &&
+    sugg("Name").querySelector('[data-act="suggAccept"]').textContent === DOC.accept);
+  press("Name", "suggAccept");
+  check("Accept fills the box and marks it Accepted", $("f-org-name").value === "Riverbend Family Services" && saved().org.name.text === "Riverbend Family Services" &&
+    sugg("Name").querySelector(".sugg-done").textContent === DOC.accepted);
+  press("Location: ZIP code", "suggSkip");
+  check("Skip leaves the box blank and marks it Skipped", $("f-org-zip").value === "" && sugg("Location: ZIP code").querySelector(".sugg-done").textContent === DOC.skipped);
+  check("the document's text is never saved in the browser", JSON.stringify(localStorage).indexOf("Zebra-striped") === -1);
+  press("Program 2: Program Name", "suggEdit");
+  check("Edit accepts it and goes to that box, adding Program 2", title().indexOf("Program 2 of 2") > -1 && $("f-programs-1-name").value === "Rent Help" &&
+    document.activeElement === $("f-programs-1-name"));
+  check("a program's screen shows only its own suggestions", document.querySelectorAll("#screen .sugg").length === 2 && !!sugg("Program 2: Outputs") && !!sugg("Program 2: Program Name"));
+  press("Program 2: Outputs", "suggAccept");
+  check("an accepted figure still needs a label, like a typed one", $("f-programs-1-outputs").value === "75 households in 2024" && !$("f-programs-1-outputs-lab").hidden);
 });

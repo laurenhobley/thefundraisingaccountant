@@ -60,8 +60,75 @@
 
   function orgScreen() {
     var sec = S.section(Q, "org");
-    return heading(N.org, sec.title) + sec.questions.map(function (q) { return field(q, "org." + q.id); }).join("");
+    return heading(N.org, sec.title) + docPanel() + sec.questions.map(function (q) { return field(q, "org." + q.id); }).join("");
   }
+
+  // ---------- Fill from a document ----------
+  // The pasted text and the suggestions found in it are kept in memory
+  // only, so nothing from the member's document is saved in the browser.
+  var docText = "", suggestions = [];
+
+  function docPanel() {
+    var D = Q.documents;
+    return '<details class="doc-panel" id="doc-panel"' + (suggestions.length || docText ? " open" : "") + '><summary>' + esc(D.title) + '</summary>' +
+      '<p class="hint">' + esc(D.intro) + '</p>' +
+      '<div class="f"><label for="doc-text">' + esc(D.pasteLabel) + '</label><textarea id="doc-text">' + esc(docText) + '</textarea></div>' +
+      '<div class="actions"><button type="button" class="btn ghost" data-act="findAnswers">' + esc(D.findButton) + '</button></div>' +
+      '<p class="hint" id="doc-msg" aria-live="polite"></p>' + suggestionList("") + '</details>';
+  }
+
+  // A suggestion's box: Local Context and Benchmarks items go into the
+  // first blank item, so they're named by their section.
+  function isList(path) { return /^(pain|benchmarks)\./.test(path); }
+  function suggestionName(path) { return isList(path) ? S.section(Q, path.split(".")[0]).title : nameOf(path); }
+  function currentText(path) {
+    var p = path.split(".");
+    if (isList(path) || (p[0] === "programs" && +p[1] >= state.programs.length)) return "";
+    return S.trim(S.get(state, path).text);
+  }
+  function alreadyThere(s) {
+    return isList(s.path) ? state[s.path.split(".")[0]].some(function (a) { return S.trim(a.text) === s.text; }) : currentText(s.path) === s.text;
+  }
+
+  // The suggestions whose path starts with prefix ("" for all), each with
+  // its quote and Accept (or Replace my answer), Edit and Skip.
+  function suggestionList(prefix) {
+    var D = Q.documents, rows = suggestions.map(function (s, k) {
+      if (s.path.indexOf(prefix) !== 0) return "";
+      var buttons = s.done ? '<span class="sugg-done">' + esc(D[s.done]) + '</span>' :
+        alreadyThere(s) ? '<span class="sugg-done">' + esc(D.sameAlready) + '</span>' :
+        '<button type="button" class="btn ghost" data-act="suggAccept" data-index="' + k + '">' + esc(currentText(s.path) ? D.replace : D.accept) + '</button>' +
+        '<button type="button" class="btn quiet" data-act="suggEdit" data-index="' + k + '">' + esc(D.edit) + '</button>' +
+        '<button type="button" class="btn quiet" data-act="suggSkip" data-index="' + k + '">' + esc(D.skip) + '</button>';
+      return '<div class="sugg" id="sugg-' + k + '"><span class="lbl">' + esc(suggestionName(s.path)) + '</span>' +
+        '<p class="sugg-text">' + esc(s.text) + '</p>' +
+        '<p class="sugg-quote"><span class="ex-tag">' + esc(D.quoteLabel) + '</span>' + esc(s.quote) + '</p>' +
+        '<div class="actions">' + buttons + '</div></div>';
+    }).join("");
+    return rows ? '<div class="suggs"><span class="lbl">' + esc(D.listTitle) + '</span>' + rows + '</div>' : "";
+  }
+
+  // Puts a suggestion into its box, the way typing it would: a program by
+  // its number in the document, a list item into the first blank item.
+  // Returns where it went.
+  function acceptSuggestion(k) {
+    var s = suggestions[k], p = s.path.split("."), path = s.path;
+    if (p[0] === "programs") while (state.programs.length <= +p[1]) S.addProgram(Q, state);
+    if (isList(path)) {
+      var at = -1;
+      state[p[0]].forEach(function (a, i) { if (at < 0 && !S.trim(a.text)) at = i; });
+      if (at < 0) { S.addItem(state, p[0]); at = state[p[0]].length - 1; }
+      path = p[0] + "." + at;
+    }
+    S.setText(Q, state, path, s.text);
+    s.done = "accepted";
+    unreview();
+    save();
+    return path;
+  }
+  // Program suggestions follow the document's order, so they're dropped
+  // once the member reorders or removes programs.
+  function dropProgramSuggestions() { suggestions = suggestions.filter(function (s) { return !/^programs\./.test(s.path); }); }
 
   // Step 1.4: how the member wants the story written.
   function constraintsScreen() {
@@ -370,6 +437,7 @@
   function programScreen(i) {
     var sec = S.section(Q, "programs"), n = state.programs.length;
     return heading(N.program, sec.itemLabel + " " + (i + 1) + " of " + n, sec.note) +
+      suggestionList("programs." + i + ".") +
       sec.questions.map(function (q) { return field(q, "programs." + i + "." + q.id); }).join("") +
       '<div class="actions">' +
       '<button type="button" class="btn ghost" data-act="addProgram">' + esc(sec.addLabel) + '</button>' +
@@ -393,6 +461,7 @@
       (sec.help ? '<p class="hint">' + esc(sec.help) + '</p>' : "") +
       '<div class="examples"><span class="ex-tag">Example</span><ul>' + examples + '</ul></div>' +
       (id === "benchmarks" ? researchExamples() : "") +
+      suggestionList(id + ".") +
       rows +
       '<div><button type="button" class="btn ghost" data-act="addItem" data-list="' + id + '">' + esc(sec.addLabel) + '</button></div>';
   }
@@ -696,6 +765,7 @@
   function onEdit(e) {
     var el = e.target, path = el.getAttribute("data-path");
     if (el.id === "reviewed") { state.reviewed = el.checked; refreshReview(); save(); return; }
+    if (el.id === "doc-text") { docText = el.value; return; }
     if (onRankEdit(e)) return;
     if (onStoryEdit(e)) return;
     if (el.classList.contains("why-type")) {
@@ -771,8 +841,18 @@
     if (act === "addDonorRow") { S.addDonorRow(state, b.getAttribute("data-table")); unreview(); render(); return; }
     if (act === "removeDonorRow") { S.removeDonorRow(state, b.getAttribute("data-table"), i); unreview(); render(); return; }
     if (act === "rtccReset") { state.rtcc[b.getAttribute("data-part")] = null; unreview(); render(); return; }
+    if (act === "findAnswers") {
+      suggestions = FACRead.suggest(docText).map(function (s) { s.done = ""; return s; });
+      render("doc-text");
+      $("doc-msg").textContent = suggestions.length ? Q.documents.found.replace(/\{n\}/g, suggestions.length) : Q.documents.none;
+      return;
+    }
+    if (act === "suggSkip") { suggestions[i].done = "skipped"; render(); return; }
+    if (act === "suggAccept") { acceptSuggestion(i); render(); return; }
+    if (act === "suggEdit") { var put = acceptSuggestion(i); go(S.stepOf(state, put), idOf(put)); return; }
     if (act === "rankSort") {
       var ok = S.sortByScore(state);
+      if (ok) dropProgramSuggestions();
       if (ok) { unreview(); render(); $("rank-msg").textContent = Q.rank.sorted; }
       else showRankCheck(S.rankCheck(state));
       save();
@@ -783,7 +863,7 @@
     if (act === "addProgram") { go(1 + S.addProgram(Q, state)); }
     else if (act === "removeProgram") {
       if (armed !== b) { armed = b; b.textContent = "Click again to remove this program"; return; }
-      S.removeProgram(state, i); go(Math.min(1 + i, state.programs.length));
+      S.removeProgram(state, i); dropProgramSuggestions(); go(Math.min(1 + i, state.programs.length));
     }
     else if (act === "addItem") { S.addItem(state, list); render(idOf(list + "." + (state[list].length - 1))); }
     else if (act === "removeItem") { S.removeItem(state, list, i); render(); }
@@ -824,7 +904,7 @@
   $("clear").addEventListener("click", function () {
     if (!clearArmed) { clearArmed = true; $("clear").textContent = "Click again to clear everything"; setTimeout(function () { clearArmed = false; $("clear").textContent = "Start over"; }, 4000); return; }
     clearArmed = false; $("clear").textContent = "Start over";
-    S.clear(); state = S.blank(Q); go(0);
+    S.clear(); state = S.blank(Q); docText = ""; suggestions = []; go(0);
   });
 
   $("intro").textContent = Q.intro;

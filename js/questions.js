@@ -22,6 +22,25 @@ var FAC_QUESTIONS = {
   // From FAC's prompt sheet. Shown beside Download. Steve to add the folder's link (url).
   saveCopy: { before: "Save a copy in your ", linkText: "FA community google folder", after: " and watch your story evolve.", url: "" },
 
+  // "Fill from a document" on Organization Info (FAC's plan). Draft for Steve.
+  documents: {
+    title: "Fill from a document (optional)",
+    intro: "Paste text from your own document. The builder finds answers written the way FAC's sheet writes them (for example “Mission Statement: …” or “Program Name: …”), plus a web address and a ZIP code. Nothing is uploaded or saved: the text is read in this browser only.",
+    pasteLabel: "Paste text",
+    findButton: "Find answers",
+    found: "{n} suggested answers. Accept, edit or skip each one. Suggestions for later screens also show on those screens.",
+    none: "No answers found. The builder looks for lines like “Name:”, “Program Name:” or “Outputs:”.",
+    listTitle: "From your document",
+    quoteLabel: "From your document:",
+    accept: "Accept",
+    replace: "Replace my answer",
+    edit: "Edit",
+    skip: "Skip",
+    accepted: "Accepted",
+    skipped: "Skipped",
+    sameAlready: "Already your answer"
+  },
+
   // Link from FAC's sheet. Waiting on Steve to confirm (open question 13).
   roiBotUrl: "https://chatgpt.com/g/g-68c9c810e72481919f05f0c6964dc678-fundraising-accountant-roi-impact-statements-gpt",
 
