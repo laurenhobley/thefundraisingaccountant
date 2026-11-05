@@ -26,10 +26,10 @@ var FAC_QUESTIONS = {
   documents: {
     title: "Fill from a document (optional)",
     intro: "Paste text from your own document, or choose a file. The builder finds answers written the way FAC's sheet writes them (for example “Mission Statement: …” or “Program Name: …”), plus a web address and a ZIP code. Nothing is uploaded or saved: the document is read in this browser only.",
-    fileLabel: "Choose a file (Word .docx or .txt)",
+    fileLabel: "Choose a file (Word .docx, PDF or .txt)",
     reading: "Reading {file}…",
     readDone: "Read {file}.",
-    wrongType: "This kind of file can't be read here. Choose a Word (.docx) or .txt file, or copy its text into the box below.",
+    wrongType: "This kind of file can't be read here. Choose a Word (.docx), PDF or .txt file, or copy its text into the box below.",
     readFailed: "This file couldn't be read. Try copying its text into the box below instead.",
     pasteLabel: "Or paste text",
     findButton: "Find answers",

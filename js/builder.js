@@ -67,7 +67,7 @@
   // The pasted text and the suggestions found in it are kept in memory
   // only, so nothing from the member's document is saved in the browser.
   var docText = "", suggestions = [];
-  var DOC_TYPES = ".docx,.txt";
+  var DOC_TYPES = ".docx,.pdf,.txt";
 
   // Finds suggestions in docText and says how many, after "before" (e.g. "Read report.docx.").
   function findAnswers(before) {
@@ -80,13 +80,19 @@
   // A chosen file: its text goes into the paste box, then Find answers.
   function readChosenFile(file) {
     var D = Q.documents, name = file.name;
+    var finished = false;
     $("doc-msg").textContent = D.reading.replace(/\{file\}/g, name);
     FACRead.readFile(file).then(function (text) {
+      finished = true;
       docText = text;
       findAnswers(D.readDone.replace(/\{file\}/g, name));
     }, function (err) {
+      finished = true;
       if ($("doc-msg")) $("doc-msg").textContent = err && err.message === "type" ? D.wrongType : D.readFailed;
     });
+    // A file that never finishes reading (a PDF opened from the computer
+    // rather than the website) says so instead of "Reading…" for ever.
+    setTimeout(function () { if (!finished && $("doc-msg")) $("doc-msg").textContent = D.readFailed; }, 30000);
   }
 
   function docPanel() {

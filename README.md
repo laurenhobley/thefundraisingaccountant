@@ -27,7 +27,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 | `js/export.js` | Builds the finished prompt in RTCC parts, with the member's answers in FAC's sheet format. |
 | `js/builder.js` | Shows the screens, the follow-ups, the review lock, and the Copy and Download buttons. |
 | `js/read-documents.js` | "Fill from a document": finds suggested answers in the member's own text, Word or PDF file, in the browser. No AI: only lines written the way FAC's sheet writes them, plus a web address and a ZIP code. |
-| `lib/` | Our own saved copies of the free readers it uses, with their licences: mammoth (Word, BSD licence). Loaded only when a member chooses a file. |
+| `lib/` | Our own saved copies of the free readers it uses, with their licences: mammoth 1.13.0 (Word, BSD licence) and pdf.js 6.4.299 (PDF, Apache licence, by Mozilla). Loaded only when a member chooses a file. |
 | `styles.css` | How the builder and the how-to page look. |
 
 **Every figure is labeled:**
@@ -38,7 +38,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 **The screens** follow FAC's flowchart and workshop workbook, three steps in order:
 
 **Step 1, Measure your ROI**
-1. **1.1** Organization Info, with an optional "Fill from a document" panel: the member pastes text or chooses a Word or .txt file, and each suggested answer shows the exact lines it came from, with Accept, Edit or Skip. Nothing is filled in until they accept it, and the document is never saved or sent.
+1. **1.1** Organization Info, with an optional "Fill from a document" panel: the member pastes text or chooses a Word, PDF or .txt file, and each suggested answer shows the exact lines it came from, with Accept, Edit or Skip. Nothing is filled in until they accept it, and the document is never saved or sent.
 2. **1.2** one screen per program, then an optional stack rank from FAC's template (three drivers the member names, plus Money, each scored 1–3; the member types the Stack Rank, the tool checks it equals the four multiplied and sorts by it, then suggests where the Stack Ranks jump most; the member draws the red line, and programs below it are left out of the prompt), then a "Happy with your programs and keywords?" check
 3. Local Context/Data, from FAC's sheet
 4. **1.3** Benchmarks (with source, program and how it connects), then its check
@@ -88,7 +88,7 @@ Edit the text between quotes in `js/questions.js`. Keep the structure the same. 
 
 Open `tests/tests.html` in a browser, from the files or from the live site. The live-form tests only run on the live site.
 
-`tests/kit/` has three made-up organizations with flaws planted on purpose: a missing ZIP, a duplicate program, double counting, a wrong calculation, a "TBD", an output with no year and an "if" figure with no source. The test page checks each flaw is caught. The `.txt` and `.docx` files are the same sheets, for trying the builder by hand and for testing "Fill from a document". From the files on your computer, Chrome needs to be started with `--allow-file-access-from-files` for the Word tests; on the live site they just run. Use made-up data for testing, never real member data.
+`tests/kit/` has three made-up organizations with flaws planted on purpose: a missing ZIP, a duplicate program, double counting, a wrong calculation, a "TBD", an output with no year and an "if" figure with no source. The test page checks each flaw is caught. The `.txt`, `.docx` and `.pdf` files are the same sheets, for trying the builder by hand and for testing "Fill from a document". From the files on your computer, Chrome needs to be started with `--allow-file-access-from-files` for the Word tests, and the PDF tests run only from a web address (browsers won't load pdf.js from files on the computer); on the live site they all run. Use made-up data for testing, never real member data.
 
 ## Hosting
 

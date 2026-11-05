@@ -33,7 +33,7 @@ var FACRead = (function () {
   ];
   var BULLET = /^\s*([*•●○◦▪‣–-]|\d+[.)])\s+/;
   var ZIP = /\b(\d{5})(-\d{4})?\b/;
-  var URL = /(https?:\/\/[^\s<>"')]+|\bwww\.[^\s<>"')]+)/i;
+  var WEB = /(https?:\/\/[^\s<>"')]+|\bwww\.[^\s<>"')]+)/i;
 
   function trim(s) { return String(s || "").replace(/^\s+|\s+$/g, ""); }
   // A line without its bullet or list number.
@@ -111,7 +111,7 @@ var FACRead = (function () {
     // A ZIP only right after a state's two letters ("TX 77001"), so a
     // count like 12345 is never taken for one.
     for (i = 0; i < lines.length && !seen["org.website"]; i++) {
-      var u = URL.exec(lines[i]);
+      var u = WEB.exec(lines[i]);
       if (u) add("org.website", u[0].replace(/[.,;:]+$/, ""), trim(lines[i]));
     }
     for (i = 0; i < lines.length && !seen["org.zip"]; i++) {
@@ -137,11 +137,36 @@ var FACRead = (function () {
     });
   }
 
-  // The text of a .txt or Word (.docx) file. Rejects with "type" for any
-  // other kind of file. Nothing is sent anywhere.
+  // A PDF's text, page by page, keeping its line breaks.
+  function pdfText(doc) {
+    var pages = [];
+    for (var n = 1; n <= doc.numPages; n++) {
+      pages.push(doc.getPage(n).then(function (p) { return p.getTextContent(); }).then(function (c) {
+        return c.items.map(function (it) { return it.str + (it.hasEOL ? "\n" : ""); }).join("");
+      }));
+    }
+    return Promise.all(pages).then(function (t) { return t.join("\n"); });
+  }
+
+  // The text of a .txt, Word (.docx) or PDF file. Rejects with "type" for
+  // any other kind of file. Nothing is sent anywhere.
   function readFile(file) {
     var name = String(file.name || "").toLowerCase();
     if (/\.txt$/.test(name)) return file.text();
+    if (/\.pdf$/.test(name)) {
+      // pdf.js comes only as a module, so it's brought in with import().
+      // Its worker is loaded into this page too (window.pdfjsWorker), so it
+      // runs here instead of in a separate thread: members' documents are
+      // small, and it works the same inside an embedded frame.
+      // isEvalSupported: false, so a PDF can never run code.
+      var url = function (f) { return new URL(api.lib + f, document.baseURI).href; };
+      return Promise.all([import(url("pdf.min.mjs")), import(url("pdf.worker.min.mjs"))]).then(function (m) {
+        var pdfjs = m[0];
+        window.pdfjsWorker = m[1];
+        pdfjs.GlobalWorkerOptions.workerSrc = url("pdf.worker.min.mjs");
+        return file.arrayBuffer().then(function (buf) { return pdfjs.getDocument({ data: buf, isEvalSupported: false }).promise; });
+      }).then(pdfText);
+    }
     if (/\.docx$/.test(name)) {
       return loadLib("mammoth.browser.min.js", function () { return !!window.mammoth; })
         .then(function () { return file.arrayBuffer(); })

@@ -2,8 +2,25 @@
   read-documents.js: suggested answers from the member's own document text.
   Made-up text only. Nothing is filled in until the member accepts it.
 */
+
+// Accepts every suggestion into a blank sheet, as the builder's Accept does.
+function acceptAllSuggestions(list) {
+  var Q = FAC_QUESTIONS, S = FACSheet, s = S.blank(Q);
+  list.forEach(function (g) {
+    var p = g.path.split("."), path = g.path;
+    if (p[0] === "programs") while (s.programs.length <= +p[1]) S.addProgram(Q, s);
+    if (p[0] === "pain" || p[0] === "benchmarks") {
+      var at = -1; s[p[0]].forEach(function (a, i) { if (at < 0 && !S.trim(a.text)) at = i; });
+      if (at < 0) { S.addItem(s, p[0]); at = s[p[0]].length - 1; }
+      path = p[0] + "." + at;
+    }
+    S.setText(Q, s, path, g.text);
+  });
+  return s;
+}
+
 T.run("Fill from a document (read-documents.js)", function (check) {
-  var Q = FAC_QUESTIONS, S = FACSheet, R = FACRead;
+  var Q = FAC_QUESTIONS, S = FACSheet, R = FACRead, acceptAll = acceptAllSuggestions;
   function find(list, path) { return list.filter(function (s) { return s.path === path; })[0]; }
 
   // The three made-up kit sheets, written the way the .txt files are.
@@ -20,22 +37,6 @@ T.run("Fill from a document (read-documents.js)", function (check) {
     A.benchmarks.forEach(function (t) { L.push("* " + t); });
     return L.join("\n");
   }
-  // Accepts every suggestion into a blank sheet, as the builder's Accept does.
-  function acceptAll(list) {
-    var s = S.blank(Q);
-    list.forEach(function (g) {
-      var p = g.path.split("."), path = g.path;
-      if (p[0] === "programs") while (s.programs.length <= +p[1]) S.addProgram(Q, s);
-      if (p[0] === "pain" || p[0] === "benchmarks") {
-        var at = -1; s[p[0]].forEach(function (a, i) { if (at < 0 && !S.trim(a.text)) at = i; });
-        if (at < 0) { S.addItem(s, p[0]); at = s[p[0]].length - 1; }
-        path = p[0] + "." + at;
-      }
-      S.setText(Q, s, path, g.text);
-    });
-    return s;
-  }
-
   FAC_TEST_KIT.forEach(function (org) {
     var text = sheetText(org), got = R.suggest(text), s = acceptAll(got), A = org.answers, same = true, k;
     for (k in A.org) if (S.trim(s.org[k].text) !== A.org[k]) same = false;
@@ -101,10 +102,11 @@ T.run("Fill from a document (read-documents.js)", function (check) {
   check("the same box is suggested once (the first one found)", R.suggest("Name: First Org\nName: Second Org").filter(function (g) { return g.path === "org.name"; }).length === 1);
 });
 
-// The kit's Word files (tests/kit/*.docx, made from the .txt sheets) are
-// read in this browser with our own copy of mammoth, and must give exactly
-// the same suggestions, with the same quotes, as the .txt files.
-T.runAsync("Fill from a document: Word files (tests/kit/*.docx)", function (check, done) {
+// The kit's Word and PDF files (tests/kit/*.docx and *.pdf, made from the
+// .txt sheets) are read in this browser with our own copies of mammoth and
+// pdf.js. Word must give exactly the same suggestions and quotes as the
+// .txt; PDF the same answers, with quotes the same apart from spacing.
+T.runAsync("Fill from a document: Word and PDF files (tests/kit/)", function (check, done) {
   var R = FACRead;
   R.lib = "../lib/";
   function file(name) {
@@ -112,12 +114,22 @@ T.runAsync("Fill from a document: Word files (tests/kit/*.docx)", function (chec
       .then(function (buf) { return new File([buf], name); });
   }
   function key(list) { return JSON.stringify(list); }
+  // Browsers won't load pdf.js (a module) from files on the computer, so
+  // the PDF checks run only from a web address, like the live site.
+  var web = location.protocol !== "file:";
+  if (!web) check.note("The PDF checks run only from a web address: https://laurenhobley.github.io/thefundraisingaccountant/tests/tests.html");
   var waits = FAC_TEST_KIT.map(function (org) {
     var base = org.file.replace(/\.txt$/, "");
-    return Promise.all([file(base + ".txt").then(R.readFile), file(base + ".docx").then(R.readFile)]).then(function (t) {
-      var fromTxt = R.suggest(t[0]), fromWord = R.suggest(t[1]);
+    return Promise.all([base + ".txt", base + ".docx"].concat(web ? [base + ".pdf"] : []).map(function (n) { return file(n).then(R.readFile); })).then(function (t) {
+      var fromTxt = R.suggest(t[0]), fromWord = R.suggest(t[1]), fromPdf = web && R.suggest(t[2]);
+      function spaced(list) { return key(list.map(function (s) { return { path: s.path, text: s.text, quote: s.quote.replace(/\s+/g, " ") }; })); }
       check(org.name + ": the Word file gives the same suggestions and quotes as the .txt", fromWord.length > 0 && key(fromWord) === key(fromTxt));
       check(org.name + ": every program found", fromWord.filter(function (s) { return /^programs\.\d+\.name$/.test(s.path); }).length === org.answers.programs.length);
+      var fromFile = acceptAllSuggestions(web ? fromPdf : fromWord), Q = FAC_QUESTIONS, S = FACSheet;
+      check(org.name + ": after accepting the " + (web ? "PDF" : "Word file") + "'s suggestions, every planted flaw is still caught",
+        org.flaws.every(function (f) { return S.issueOf(Q, f.path, S.get(fromFile, f.path), fromFile) === f.issue; }));
+      if (web) check(org.name + ": the PDF gives the same answers as the .txt, and the same quotes apart from spacing", fromPdf.length > 0 &&
+        key(fromPdf.map(function (s) { return [s.path, s.text]; })) === key(fromTxt.map(function (s) { return [s.path, s.text]; })) && spaced(fromPdf) === spaced(fromTxt));
     });
   });
   waits.push(R.readFile(new File(["x"], "old-report.doc")).then(function () { check("an old .doc file is turned away", false); },
