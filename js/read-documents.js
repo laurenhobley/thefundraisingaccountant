@@ -14,7 +14,8 @@ var FACRead = (function () {
   // the next lines (a wrapped paragraph in a PDF).
   var ORG = [
     { path: "org.name", re: /^name\s*:\s*/i },
-    { path: "org.city", re: /^location\b[^:]*:\s*/i, zip: true },
+    // "Location (include zip): Port Jensen, ME 04999" gives only the ZIP.
+    { path: "org.zip", re: /^location\b[^:]*:\s*/i, zip: true },
     { path: "org.website", re: /^web\s?site\s*:\s*/i },
     { path: "org.mission", re: /^mission(\s+statement)?\s*:\s*/i, long: true },
     { path: "org.keywords", re: /^key\s?words\s*:\s*/i, long: true }
@@ -89,7 +90,6 @@ var FACRead = (function () {
         var o = take(i, l.org.re, l.org.long);
         if (l.org.zip) {
           var z = ZIP.exec(o.value);
-          add("org.city", o.value.replace(ZIP, "").replace(/[\s,]+$/, ""), o.quote);
           if (z) add("org.zip", z[0], o.quote);
         } else add(l.org.path, l.org.path === "org.website" ? trim(o.value).replace(/[.,;:]+$/, "") : o.value, o.quote);
         i = o.next - 1;

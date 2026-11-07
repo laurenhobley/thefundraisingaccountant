@@ -121,8 +121,7 @@ var FACExport = (function () {
 
     L.push(org.title);
     L.push(line(q(org, "name").label, answerText(Q, state, "org.name")));
-    L.push(line(Q.exportText.location, [answerText(Q, state, "org.city"), answerText(Q, state, "org.zip")].join(" ")
-      .replace(/\[Unsupported\] \[Unsupported\]/, UNSUPPORTED)));
+    L.push(line(Q.exportText.location, answerText(Q, state, "org.zip")));
     ["website", "mission", "keywords"].forEach(function (id) { L.push(line(q(org, id).label, answerText(Q, state, "org." + id))); });
     L.push("");
 

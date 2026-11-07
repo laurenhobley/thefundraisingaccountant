@@ -6,7 +6,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   var s = S.blank(Q);
   check("blank sheet starts with 1 program", s.programs.length === 1);
-  check("blank sheet has every Organization Info question", ["name", "city", "zip", "website", "mission", "keywords"].every(function (id) { return !!s.org[id]; }));
+  check("blank sheet has every Organization Info question", ["name", "zip", "website", "mission", "keywords"].every(function (id) { return !!s.org[id]; }) && !s.org.city);
   check("blank sheet has no numbers in it", S.problems(s).length === 0);
   check("screens: Organization, 1 program, stack rank, check, Pain Statements, Benchmarks, check, Constraints, check, review", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,rank,check:programs,pain,benchmarks,check:benchmarks,constraints,check:constraints,end,why,donors,wand,end,story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
 
@@ -57,7 +57,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   // Missing answers: follow-ups, then skip.
   var m = S.blank(Q);
-  check("blank Organization Info: all 6 required answers missing", S.missing(Q, m, 0).join() === "org.name,org.city,org.zip,org.website,org.mission,org.keywords");
+  check("blank Organization Info: all 5 required answers missing", S.missing(Q, m, 0).join() === "org.name,org.zip,org.website,org.mission,org.keywords");
   check("blank program: Program Name, Description, Outputs missing (not Current Impact Statement)",
     S.missing(Q, m, 1).join() === "programs.0.name,programs.0.description,programs.0.outputs");
   check("Pain Statements and Benchmarks never block Next", S.missing(Q, m, S.stepOf(m, "pain.0")).length === 0 && S.missing(Q, m, S.stepOf(m, "benchmarks.0")).length === 0);
@@ -79,13 +79,14 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   S.skip(m, "org.website");
   check("skipped answer no longer blocks Next", web.skipped && S.missing(Q, m, 0).indexOf("org.website") === -1);
   check("end screen list shows it as skipped", S.problems(m, Q).some(function (p) { return p.path === "org.website" && p.status === "skipped"; }));
-  check("and other missing answers as still blank", S.problems(m, Q).some(function (p) { return p.path === "org.city" && p.status === "blank"; }));
+  check("and other missing answers as still blank", S.problems(m, Q).some(function (p) { return p.path === "org.keywords" && p.status === "blank"; }));
   S.setText(Q, m,"org.website", " ");
   check("typing only a space keeps the skip", web.skipped);
   S.setText(Q, m,"org.website", "https://example.org");
   check("a real answer clears the skip and the follow-ups", !web.skipped && web.asks === 0);
-  var r2 = S.repair(Q, { org: { city: { text: "", asks: 2, skipped: true }, name: { asks: "lots", skipped: "yes" } } });
-  check("old draft: follow-ups and skips kept", r2.org.city.asks === 2 && r2.org.city.skipped === true);
+  var r2 = S.repair(Q, { org: { website: { text: "", asks: 2, skipped: true }, city: { text: "Old Town, MN" }, name: { asks: "lots", skipped: "yes" } } });
+  check("old draft: follow-ups and skips kept", r2.org.website.asks === 2 && r2.org.website.skipped === true);
+  check("old draft with a city: the city is left out (ZIP only now)", !r2.org.city && FACExport.build(Q, r2).indexOf("Old Town") === -1);
   check("old draft: bad follow-up values dropped", r2.org.name.asks === 0 && r2.org.name.skipped === false);
 
   // Filler words: found as whole words, in any capitals.

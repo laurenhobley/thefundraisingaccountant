@@ -6,8 +6,8 @@
   between quotes.
 
   Wording comes word for word from FAC's "ROI.bot Prompt Builder" sheet.
-  The one change is Location, which is split into City and state and ZIP code
-  (decided 2026-10-27).
+  The one change is Location, which asks only for the ZIP code (decided
+  2026-11-07; it was City and state plus ZIP code from 2026-10-27).
 
   "required: true" means the builder asks a follow-up if the answer is
   missing. After two follow-ups the member can skip, and the field is marked
@@ -90,8 +90,8 @@ var FAC_QUESTIONS = {
       title: "Organization Info",
       questions: [
         { id: "name", label: "Name", kind: "text", required: true, help: "Your organization's name, as donors know it." },
-        { id: "city", label: "Location: City and state", kind: "text", required: true, help: "Where you do most of your work. ROI.bot uses your location to find local and state figures." },
-        { id: "zip", label: "Location: ZIP code", kind: "zip", required: true, help: "The ZIP code of your main office." },
+        // Only the ZIP code, no city and state (Lauren, 2026-11-07). Help: draft for Steve.
+        { id: "zip", label: "Location: ZIP code", kind: "zip", required: true, help: "Where you do most of your work. ROI.bot uses your ZIP code to find local and state figures." },
         { id: "website", label: "Web Site", kind: "url", required: true, help: "Your main web address." },
         { id: "mission", label: "Mission Statement", kind: "long", required: true, help: "Your mission statement, as you share it with donors." },
         { id: "keywords", label: "Key Words", kind: "text", required: true, help: "A few words about your work, separated by commas." }

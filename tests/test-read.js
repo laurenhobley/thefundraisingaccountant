@@ -26,7 +26,7 @@ T.run("Fill from a document (read-documents.js)", function (check) {
   // The three made-up kit sheets, written the way the .txt files are.
   function sheetText(org) {
     var A = org.answers, L = ["Organization Info", "Name: " + A.org.name,
-      "Location (include zip): " + [A.org.city, A.org.zip].filter(function (x) { return x; }).join(" "),
+      "Location (include zip): " + A.org.zip,
       "Web Site: " + A.org.website, "Mission Statement: " + A.org.mission, "Key Words: " + A.org.keywords, "", "Programs (in order of priority)"];
     A.programs.forEach(function (p, i) {
       L.push((i + 1) + ". Program Name: " + p.name, "   * Description: " + p.description, "   * Outputs: " + p.outputs, "   * Current Impact Statement (if any): " + p.impact);
@@ -78,8 +78,8 @@ T.run("Fill from a document (read-documents.js)", function (check) {
     "Using the information above, convert outputs into outcomes."
   ].join("\n");
   var p = R.suggest(pdf);
-  check("labelled answers: name, and a location split into city and ZIP", find(p, "org.name").text === "Riverbend Family Services" &&
-    find(p, "org.city").text === "Lake Ruth, MN" && find(p, "org.zip").text === "55999");
+  check("labelled answers: name, and only the ZIP from the location line (no city box)", find(p, "org.name").text === "Riverbend Family Services" &&
+    !find(p, "org.city") && find(p, "org.zip").text === "55999" && find(p, "org.zip").quote === "Location (include zip): Lake Ruth, MN 55999");
   check("\"Website:\" counts as Web Site, without the full stop at the end", find(p, "org.website").text === "www.example.org/riverbend");
   check("a wrapped mission is joined, and its quote keeps both lines", find(p, "org.mission").text === "We help families in crisis find food, housing and hope." &&
     find(p, "org.mission").quote === "Mission Statement: We help families in crisis find\nfood, housing and hope.");

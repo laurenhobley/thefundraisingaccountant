@@ -16,7 +16,7 @@ var FAC_TEST_KIT = [
       { path: "programs.1.name", issue: "duplicate", what: "Two programs named \"After-School Club\"" }
     ],
     answers: {
-      org: { name: "Maple Street Youth Center", city: "Maple Falls, OH", zip: "", website: "https://example.org/maple",
+      org: { name: "Maple Street Youth Center", zip: "", website: "https://example.org/maple",
         mission: "We give young people a safe place to learn and grow after school.", keywords: "youth, after-school, mentoring" },
       programs: [
         { name: "After-School Club", description: "Homework help and snacks for middle schoolers", outputs: "260 students served in 2024", impact: "" },
@@ -34,7 +34,7 @@ var FAC_TEST_KIT = [
       { path: "pain.0", issue: "math", what: "620 × 30 × $45 written as $830,000" }
     ],
     answers: {
-      org: { name: "Harbor Light Shelter", city: "Port Jensen, ME", zip: "04999", website: "https://example.org/harbor",
+      org: { name: "Harbor Light Shelter", zip: "04999", website: "https://example.org/harbor",
         mission: "Safe shelter and a warm meal for anyone without a home.", keywords: "shelter, homelessness, meals" },
       programs: [
         { name: "Emergency Beds", description: "Overnight beds for adults", outputs: "620 guests sheltered in 2024", impact: "" },
@@ -53,7 +53,7 @@ var FAC_TEST_KIT = [
       { path: "benchmarks.0", issue: "assumption", what: "An \"if\" figure with no source" }
     ],
     answers: {
-      org: { name: "Prairie Health Clinic", city: "Dune City, KS", zip: "67999", website: "https://example.org/prairie",
+      org: { name: "Prairie Health Clinic", zip: "67999", website: "https://example.org/prairie",
         mission: "TBD", keywords: "health care, rural, free clinic" },
       programs: [
         { name: "Mobile Clinic", description: "Free checkups in small rural towns", outputs: "1,150 checkups", impact: "Fewer emergency room visits" }

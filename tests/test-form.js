@@ -26,7 +26,8 @@ T.runAsync("Live form numbers (index.html)", function (check, done) {
       var ready = function () { return $("pill").className.indexOf("ok") > -1; };
 
       $("driverBoth").click();
-      type($("orgName"), "Test Org"); type($("city"), "Houston, TX"); type($("zip"), "77001"); type($("program"), "Shelter");
+      check("no City and state box any more, only ZIP code", !$("city") && !!$("zip"));
+      type($("orgName"), "Test Org"); type($("zip"), "77001"); type($("program"), "Shelter");
       $("lossGov").click();
       type($("servicesLost"), "Beds"); type($("outcomes"), "Safety");
       $("servedPeriod").value = "per year"; $("servedPeriod").dispatchEvent(new w.Event("change", { bubbles: true }));
@@ -51,11 +52,11 @@ T.runAsync("Live form numbers (index.html)", function (check, done) {
       type($("servedCount"), "414");
       type(d.querySelector(".r-amt"), "125");
       check("gift amount: $125 provides…", prompt().indexOf("- $125 provides a night of safety") > -1);
-      check("ZIP code in the prompt: Houston, TX 77001", prompt().indexOf("Location: Houston, TX 77001") > -1);
+      check("ZIP code alone in the prompt: Location: 77001", prompt().indexOf("Location: 77001\n") > -1);
       check("everything filled in: ready to copy", ready());
 
       type($("zip"), "7700");
-      check("ZIP 7700: not ready", !ready() && /Location: Houston, TX \[MISSING/.test(prompt()));
+      check("ZIP 7700: not ready", !ready() && /Location: \[MISSING/.test(prompt()));
       type($("zip"), "77001");
       type($("saves"), "2e6");
       check("optional dollars saved 2e6: not ready", !ready());

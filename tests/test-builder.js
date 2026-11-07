@@ -24,14 +24,14 @@ T.run("Builder screens (builder.html)", function (check) {
 
   $("next").click();
   check("Next with blanks stays on Step 1", $("counter").textContent === "Step 1 of 22");
-  check("first Next: a follow-up under each of the 6 required answers", shown(".fu") === 6);
+  check("first Next: a follow-up under each of the 5 required answers", shown(".fu") === 5);
   check("first follow-up wording", fu("f-org-name") === F.missing[0] && fu("f-org-zip") === F.missingZip[0]);
   check("no Skip buttons after one follow-up", shown(".fu-skip") === 0);
   check("cursor goes to the first missing answer", document.activeElement.id === "f-org-name");
 
   $("next").click();
   check("second Next: second follow-up wording", fu("f-org-name") === F.missing[1] && fu("f-org-zip") === F.missingZip[1]);
-  check("second Next: a Skip button for each", shown(".fu-skip") === 6);
+  check("second Next: a Skip button for each", shown(".fu-skip") === 5);
 
   type("f-org-name", "Test Org");
   check("answering hides its follow-up", fu("f-org-name") === "");
@@ -48,8 +48,7 @@ T.run("Builder screens (builder.html)", function (check) {
   skip("f-org-website");
   check("Skip marks it skipped and Unsupported", !$("f-org-website-skipped").hidden && fu("f-org-website") === "" && saved().org.website.skipped === true);
   $("next").click();
-  check("Next still blocked by City and Key Words", $("counter").textContent === "Step 1 of 22" && shown(".fu") === 2);
-  skip("f-org-city");
+  check("Next still blocked by Key Words", $("counter").textContent === "Step 1 of 22" && shown(".fu") === 1);
   type("f-org-keywords", "shelter, safety");
   $("next").click();
   check("all answered or skipped: Next goes to Program 1 of 1", $("counter").textContent === "Step 2 of 22" && /Program 1 of 1/.test(title()));
@@ -260,7 +259,7 @@ T.run("Builder screens (builder.html)", function (check) {
   check("1.5 review: Next says Continue to Step 2", !$("next").hidden && $("next").textContent === FAC_QUESTIONS.flow.continueStep2 && $("counter").textContent === "Step 11 of 23");
   var todo = Array.prototype.map.call(document.querySelectorAll("#screen .todo li"), function (li) { return li.textContent; });
   check("end screen lists everything still needing attention, in sheet order", todo.join(" | ") ===
-    "Location: City and state was skipped (Unsupported) | Mission Statement needs a label | " +
+    "Mission Statement needs a label | " +
     "Program 2: Program Name was skipped (Unsupported) | Program 2: Description was skipped (Unsupported) | " +
     "Program 2: Outputs is marked Unsupported | " +
     "Local context 1 is vague (Unsupported) | Local context 2 needs a label");
@@ -292,9 +291,9 @@ T.run("Builder screens (builder.html)", function (check) {
   $("reviewed").click();
 
   document.querySelector('#screen .todo button[data-act="goto"]').click();
-  check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 23" && document.activeElement.id === "f-org-city");
+  check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 23" && document.activeElement.id === "f-org-mission");
   check("jumping there doesn't clear the tick", saved().reviewed === true);
-  type("f-org-city", "Houston, TX");
+  type("f-org-mission", "We help 450 families");
   check("changing an answer clears the tick", saved().reviewed === false);
 
   $("next").click(); $("next").click();
@@ -304,7 +303,8 @@ T.run("Builder screens (builder.html)", function (check) {
   check("second click removes program 2", saved().programs.length === 1);
   for (var k = 0; k < 8; k++) $("next").click();
   check("back on the review screen: still unticked and locked", $("counter").textContent === "Step 10 of 22" && !$("reviewed").checked && $("copyPrompt").disabled);
-  check("the preview now shows the new city", $("exportPreview").textContent.indexOf("Location (include zip): Houston, TX 77001") > -1);
+  check("the preview now shows the new mission, and the location is only the ZIP", $("exportPreview").textContent.indexOf("Mission Statement: We help 450 families") > -1 &&
+    $("exportPreview").textContent.indexOf("Location (include zip): 77001\n") > -1);
 
   // ---------- Step 2: Get the Right Numbers ----------
   var W2 = FAC_QUESTIONS.why;
@@ -421,16 +421,16 @@ T.run("Builder screens (builder.html)", function (check) {
     return Array.prototype.filter.call(document.querySelectorAll("#screen .sugg"), function (d) { return d.querySelector(".lbl").textContent === path; })[0];
   }
   function press(path, act) { sugg(path).querySelector('[data-act="' + act + '"]').click(); }
-  type("f-org-city", "Old Town, MN");
+  type("f-org-website", "https://old.example.org");
   var docT = $("doc-text");
-  docT.value = "Name: Riverbend Family Services\nLocation (include zip): Lake Ruth, MN 55999\nMission Statement: Zebra-striped secret phrase.\n" +
+  docT.value = "Name: Riverbend Family Services\nLocation (include zip): Lake Ruth, MN 55999\nWeb Site: https://example.org/riverbend\nMission Statement: Zebra-striped secret phrase.\n" +
     "1. Program Name: Family Pantry\n2. Program Name: Rent Help\n   * Outputs: 75 households in 2024";
   docT.dispatchEvent(new Event("input", { bubbles: true }));
   act("findAnswers");
   check("Find answers: each suggestion with its exact quote, and a count", $("doc-msg").textContent === DOC.found.replace("{n}", "7") &&
     document.querySelectorAll("#screen .sugg").length === 7 && sugg("Name").querySelector(".sugg-quote").textContent === DOC.quoteLabel + "Name: Riverbend Family Services");
   check("nothing is filled in until accepted", $("f-org-name").value === "" && saved().org.name.text === "");
-  check("a box with an answer says Replace my answer; a blank one says Accept", sugg("Location: City and state").querySelector('[data-act="suggAccept"]').textContent === DOC.replace &&
+  check("a box with an answer says Replace my answer; a blank one says Accept", sugg("Web Site").querySelector('[data-act="suggAccept"]').textContent === DOC.replace &&
     sugg("Name").querySelector('[data-act="suggAccept"]').textContent === DOC.accept);
   press("Name", "suggAccept");
   check("Accept fills the box and marks it Accepted", $("f-org-name").value === "Riverbend Family Services" && saved().org.name.text === "Riverbend Family Services" &&

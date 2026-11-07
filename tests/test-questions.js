@@ -47,8 +47,8 @@ T.run("Questions (js/questions.js)", function (check) {
   check("RTCC headings are there; Role is empty until FAC writes it", ["roleHeading", "contextHeading", "taskHeading", "constraintsHeading"].every(function (k) { return !!Q.rtcc[k]; }) && Q.rtcc.role === "");
   check("saved versions have their wording", ["versionsTitle", "versionsNone", "versionDownload"].every(function (k) { return !!Q.review[k]; }) &&
     Q.review.versionLabel.indexOf("{n}") > -1 && Q.review.versionLabel.indexOf("{date}") > -1);
-  check("Organization Info asks: Name, City and state, ZIP code, Website, Mission Statement, Key Words",
-    labels("org") === "Name, Location: City and state, Location: ZIP code, Web Site, Mission Statement, Key Words");
+  check("Organization Info asks: Name, ZIP code (no city and state), Website, Mission Statement, Key Words",
+    labels("org") === "Name, Location: ZIP code, Web Site, Mission Statement, Key Words");
   check("every Organization Info question is required", S.section(Q, "org").questions.every(function (q) { return q.required; }));
   check("Programs ask: Program Name, Description, Outputs, Current Impact Statement",
     labels("programs") === "Program Name, Description, Outputs, Current Impact Statement");

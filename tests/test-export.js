@@ -11,7 +11,7 @@ T.run("Export (js/export.js)", function (check) {
   function keep(p) { S.get(s, p).asks = 2; S.skip(s, p); }
 
   S.addProgram(Q, s); S.addProgram(Q, s); S.addItem(s, "pain"); S.addItem(s, "benchmarks");
-  set("org.name", "Riverbend Food Bank"); set("org.city", "Riverbend, TX"); set("org.zip", "77999");
+  set("org.name", "Riverbend Food Bank"); set("org.zip", "77999");
   set("org.website", "https://example.org"); set("org.mission", "We feed families in need.");
   keep("org.keywords");
   set("programs.0.name", "Weekend Meals"); set("programs.0.description", "Weekend meal kits for students");
@@ -32,7 +32,7 @@ T.run("Export (js/export.js)", function (check) {
     "Context:",
     "Organization Info",
     "Name: Riverbend Food Bank",
-    "Location (include zip): Riverbend, TX 77999",
+    "Location (include zip): 77999",
     "Web Site: https://example.org",
     "Mission Statement: We feed families in need.",
     "Key Words: [Unsupported]",
