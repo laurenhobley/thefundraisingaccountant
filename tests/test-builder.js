@@ -303,8 +303,8 @@ T.run("Builder screens (builder.html)", function (check) {
   check("second click removes program 2", saved().programs.length === 1);
   for (var k = 0; k < 8; k++) $("next").click();
   check("back on the review screen: still unticked and locked", $("counter").textContent === "Step 10 of 22" && !$("reviewed").checked && $("copyPrompt").disabled);
-  check("the preview now shows the new mission, and the location is only the ZIP", $("exportPreview").textContent.indexOf("Mission Statement: We help 450 families") > -1 &&
-    $("exportPreview").textContent.indexOf("Location (include zip): 77001\n") > -1);
+  check("the preview now shows the new mission, and the location is the ZIP (with its place once the ZIP list has loaded)", $("exportPreview").textContent.indexOf("Mission Statement: We help 450 families") > -1 &&
+    /Location \(include zip\): 77001( \(Houston, TX\))?\n/.test($("exportPreview").textContent));
 
   // ---------- Step 2: Get the Right Numbers ----------
   var W2 = FAC_QUESTIONS.why;

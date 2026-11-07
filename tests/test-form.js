@@ -52,7 +52,8 @@ T.runAsync("Live form numbers (index.html)", function (check, done) {
       type($("servedCount"), "414");
       type(d.querySelector(".r-amt"), "125");
       check("gift amount: $125 provides…", prompt().indexOf("- $125 provides a night of safety") > -1);
-      check("ZIP code alone in the prompt: Location: 77001", prompt().indexOf("Location: 77001\n") > -1);
+      // The place may already be there if the ZIP list has loaded.
+      check("ZIP code in the prompt: Location: 77001", /Location: 77001( \(Houston, TX\))?\n/.test(prompt()));
       check("everything filled in: ready to copy", ready());
 
       type($("zip"), "7700");
@@ -75,6 +76,24 @@ T.runAsync("Live form numbers (index.html)", function (check, done) {
       var found = prompt().match(/\d[\d,.]*\d|\d/g) || [];
       var strays = found.filter(function (n) { return typed.indexOf(n) === -1 && fixed.indexOf(n) === -1; });
       check("no number in the prompt that wasn't typed" + (strays.length ? " (found: " + strays.join(" ") + ")" : ""), strays.length === 0);
+
+      // The place for the ZIP, from our copy of GeoNames' ZIP list, once it has loaded.
+      var waitZip = setTimeout(function () { check("ZIP list loaded in the form", false); done(); }, 10000);
+      w.FACZip.load(function () {
+        clearTimeout(waitZip);
+        try {
+          type($("zip"), "77001");
+          check("ZIP 77001: Houston, TX shows under the box and goes into the prompt", $("zipPlace").textContent === "📍 Houston, TX" &&
+            prompt().indexOf("Location: 77001 (Houston, TX)\n") > -1);
+          type($("zip"), "99999");
+          check("an unknown ZIP says so, and the prompt has the ZIP alone", /couldn't find this ZIP/.test($("zipPlace").textContent) && prompt().indexOf("Location: 99999\n") > -1);
+          type($("zip"), "7700");
+          check("an unfinished ZIP shows no place", $("zipPlace").textContent === "");
+          type($("zip"), "77001");
+        } catch (e) { check("Stopped with an error: " + e.message, false); }
+        done();
+      });
+      return;
     } catch (e) { check("Stopped with an error: " + e.message, false); }
     done();
   };

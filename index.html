@@ -132,7 +132,7 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
           <div class="f"><label for="website">Website <span class="opt">(optional)</span></label><input type="url" id="website" placeholder="https://"></div>
         </div>
         <div class="row">
-          <div class="f"><label for="zip">ZIP code<span class="req">*</span></label><input type="text" id="zip" autocomplete="postal-code" inputmode="numeric" maxlength="10" placeholder="5-digit ZIP"></div>
+          <div class="f"><label for="zip">ZIP code<span class="req">*</span></label><input type="text" id="zip" autocomplete="postal-code" inputmode="numeric" maxlength="10" placeholder="5-digit ZIP"><p class="hint zip-place" id="zipPlace" aria-live="polite"></p></div>
         </div>
         <div class="f"><label for="program">Program or service this gift would fund<span class="req">*</span></label><input type="text" id="program" placeholder="Name of the program"></div>
         <div class="f"><label for="population">Who you serve <span class="opt">(optional)</span></label><input type="text" id="population" placeholder="The people and community you serve"></div>
@@ -224,6 +224,7 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
   </div>
 </div>
 
+<script src="js/zip-place.js"></script>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -341,7 +342,7 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
     L.push("");
     L.push("ORGANIZATION");
     L.push("Name: " + org);
-    L.push("Location: " + or(zipOk() && v("zip"), "5-digit ZIP code"));
+    L.push("Location: " + or(zipOk() && v("zip"), "5-digit ZIP code") + (zipPlace() ? " (" + zipPlace() + ")" : ""));
     if (v("website")) L.push("Website: " + v("website"));
     L.push("Program this gift would fund: " + or(v("program"), "program"));
     if (v("population")) L.push("Who we serve: " + v("population"));
@@ -386,7 +387,17 @@ pre#prompt mark { background: var(--mark-bg); color: var(--mark); border-radius:
     return parts.join("");
   }
 
+  // The place for the ZIP ("Houston, TX") from our own copy of GeoNames'
+  // ZIP list, loaded the first time a ZIP needs it. Nothing is sent anywhere.
+  function zipPlace() { return window.FACZip ? FACZip.place(v("zip")) : ""; }
+  function showZipPlace() {
+    var where = zipPlace();
+    if (where === null) FACZip.load(update);
+    $("zipPlace").textContent = where ? "📍 " + where : where === "" && zipOk() ? "We couldn't find this ZIP code. Check it, or leave it as is." : "";
+  }
+
   function update() {
+    showZipPlace();
     var d = driver();
     $("lossBox").hidden = !(d === "loss" || d === "both");
     $("demandBox").hidden = !(d === "demand" || d === "both");

@@ -22,6 +22,13 @@ var FAC_QUESTIONS = {
   // From FAC's prompt sheet. Shown beside Download. Steve to add the folder's link (url).
   saveCopy: { before: "Save a copy in your ", linkText: "FA community google folder", after: " and watch your story evolve.", url: "" },
 
+  // Under the ZIP box: the place for that ZIP, from GeoNames' free ZIP list
+  // (lib/zip-places.js). {place} is e.g. "Houston, TX". Draft for Steve.
+  zipPlace: {
+    found: "📍 {place}",
+    unknown: "We couldn't find this ZIP code. Check it, or leave it as is."
+  },
+
   // "Fill from a document" on Organization Info (FAC's plan). Draft for Steve.
   documents: {
     title: "Fill from a document (optional)",
@@ -80,7 +87,9 @@ var FAC_QUESTIONS = {
       "77% of nonprofits have seen an increase in demand for their services.",
       "Almost half of nonprofits lack the funds to deliver programs and services."
     ],
-    whyNowSource: "Source: Forvis Mazars, 2025 Annual Report – State of the Nonprofit Sector"
+    whyNowSource: "Source: Forvis Mazars, 2025 Annual Report – State of the Nonprofit Sector",
+    // The credit GeoNames' licence asks for (CC BY 4.0), for the ZIP code places.
+    zipCredit: { before: "The place shown for a ZIP code comes from ", linkText: "GeoNames", url: "https://www.geonames.org/", after: " (CC BY 4.0)." }
   },
 
   // Help under each question is draft wording for Steve (added 2026-10-28).
@@ -92,6 +101,7 @@ var FAC_QUESTIONS = {
         { id: "name", label: "Name", kind: "text", required: true, help: "Your organization's name, as donors know it." },
         // Only the ZIP code, no city and state (Lauren, 2026-11-07). Help: draft for Steve.
         { id: "zip", label: "Location: ZIP code", kind: "zip", required: true, help: "Where you do most of your work. ROI.bot uses your ZIP code to find local and state figures." },
+        // The place shown under the ZIP box comes from GeoNames' ZIP list (zipPlace, below).
         { id: "website", label: "Web Site", kind: "url", required: true, help: "Your main web address." },
         { id: "mission", label: "Mission Statement", kind: "long", required: true, help: "Your mission statement, as you share it with donors." },
         { id: "keywords", label: "Key Words", kind: "text", required: true, help: "A few words about your work, separated by commas." }

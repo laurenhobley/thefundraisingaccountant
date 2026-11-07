@@ -72,6 +72,7 @@ T.run("Questions (js/questions.js)", function (check) {
     Q.guardrail.indexOf(Q.labels.estimate.tag) > -1 && Q.guardrail.indexOf(Q.labels.unsupported.tag) > -1);
   check("Known and Reasonable estimate ask for a source note", !!Q.labels.known.noteLabel && !!Q.labels.estimate.noteLabel);
   check("ROI.bot link goes to FAC's ROI.bot GPT in ChatGPT", Q.roiBotUrl === "https://chatgpt.com/g/g-68c9c810e72481919f05f0c6964dc678-roi-bot");
+  check("the how-to page credits GeoNames for the ZIP places (their CC BY licence asks for it)", Q.howTo.zipCredit.url === "https://www.geonames.org/" && Q.howTo.zipCredit.linkText === "GeoNames" && !!Q.zipPlace.found && !!Q.zipPlace.unknown);
   check("missing-answer follow-ups: two lines each, for any answer and for the ZIP code",
     [Q.followUps.missing, Q.followUps.missingZip].every(function (l) { return l.length === 2 && !!l[0] && !!l[1]; }));
   check("Skip button and skipped flag have wording", !!Q.followUps.skipButton && !!Q.followUps.skipped);

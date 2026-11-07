@@ -48,8 +48,22 @@
     return '<div class="f">' +
       '<label for="' + id + '">' + esc(q.label) + (q.note ? ' <span class="opt">' + esc(q.note) + '</span>' : "") + (q.required ? '<span class="req">*</span>' : "") + '</label>' +
       (q.help ? '<p class="hint">' + esc(q.help) + '</p>' : "") +
-      input + followUpBox(path) + (S.needsLabel(path) ? labelBox(path) : "") +
+      input + (q.kind === "zip" ? '<p class="hint zip-place" id="' + id + '-place" aria-live="polite"></p>' : "") +
+      followUpBox(path) + (S.needsLabel(path) ? labelBox(path) : "") +
       '</div>';
+  }
+
+  // The place for the ZIP code ("Houston, TX"), from our own copy of
+  // GeoNames' ZIP list, shown under the box. The list loads the first time
+  // a ZIP needs it; then the prompt is shown again with the place in it.
+  function refreshZipPlace() {
+    var el = $("f-org-zip-place");
+    if (!el) return;
+    var zip = S.get(state, "org.zip").text, where = FACZip.place(zip);
+    el.textContent = where ? Q.zipPlace.found.replace(/\{place\}/g, where) : where === "" && S.zipOk(zip) ? Q.zipPlace.unknown : "";
+  }
+  function needZipList() {
+    if (FACZip.place(S.get(state, "org.zip").text) === null) FACZip.load(function () { refreshZipPlace(); refreshReview(); refreshPackage(); });
   }
 
   function heading(num, title, note) {
@@ -713,6 +727,7 @@
     refreshPackage();
     refreshReview();
     refreshVersions();
+    needZipList();
     save();
 
     var target = focusId && $(focusId);
@@ -766,6 +781,7 @@
   // Shows or hides the label box for one answer, without rebuilding the screen.
   function refresh(path) {
     refreshFollowUp(path);
+    if (path === "org.zip") { refreshZipPlace(); needZipList(); }
     var box = $(idOf(path) + "-lab");
     if (!box) return;
     var a = S.get(state, path), st = S.status(a);

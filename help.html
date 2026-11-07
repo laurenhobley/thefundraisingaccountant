@@ -21,6 +21,7 @@
   <div id="screen">
     <ol class="howto" id="steps"></ol>
     <p class="hint" id="privacy"></p>
+    <p class="hint" id="zipCredit"></p>
   </div>
   <div id="whyNow" class="note-box">
     <h2 id="whyNowTitle"></h2>
@@ -42,6 +43,9 @@
   document.getElementById("intro").textContent = H.intro;
   document.getElementById("privacy").textContent = H.privacy;
   document.getElementById("back").textContent = H.back;
+  var C = H.zipCredit, credit = document.getElementById("zipCredit"), a = document.createElement("a");
+  a.href = C.url; a.textContent = C.linkText; a.target = "_blank"; a.rel = "noopener";
+  credit.appendChild(document.createTextNode(C.before)); credit.appendChild(a); credit.appendChild(document.createTextNode(C.after));
   var list = document.getElementById("steps");
   H.steps.forEach(function (s) { var li = document.createElement("li"); li.textContent = s; list.appendChild(li); });
   ["whyNowTitle", "whyNowIntro", "whyNowSource", "aiNoteTitle"].forEach(function (k) { document.getElementById(k).textContent = H[k]; });

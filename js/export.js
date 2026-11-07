@@ -121,7 +121,9 @@ var FACExport = (function () {
 
     L.push(org.title);
     L.push(line(q(org, "name").label, answerText(Q, state, "org.name")));
-    L.push(line(Q.exportText.location, answerText(Q, state, "org.zip")));
+    // The ZIP, then its place from our copy of GeoNames' list: "77001 (Houston, TX)".
+    var where = window.FACZip && FACZip.place(state.org.zip.text);
+    L.push(line(Q.exportText.location, answerText(Q, state, "org.zip") + (where ? " (" + where + ")" : "")));
     ["website", "mission", "keywords"].forEach(function (id) { L.push(line(q(org, id).label, answerText(Q, state, "org." + id))); });
     L.push("");
 
