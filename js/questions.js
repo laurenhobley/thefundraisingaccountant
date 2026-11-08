@@ -39,11 +39,14 @@ var FAC_QUESTIONS = {
   saveCopy: { before: "Save a copy in your ", linkText: "FA community google folder", after: " and watch your story evolve.", url: "" },
 
   // Screen 1 (index.html), from FAC's Version 2 build plan: one short form,
-  // then Continue. The button stays off until all three are filled. Until
+  // then Continue. The button stays off until all four are filled. Until
   // ROI.bot's chat exists, Continue goes to the builder with these filled in.
   // nextLine is draft for Steve (the plan's line promises reading the website).
   screen1: {
     intro: "To get started, just enter your basic organizational information.",
+    // "Your name": Step 1.0's inputs (Steve's Step 1.1 instructions). Draft for Steve.
+    name: "Your name",
+    namePlaceholder: "First and last name",
     org: "Organization name",
     orgPlaceholder: "e.g. Northeast Houston Food Pantry",
     website: "Website",

@@ -33,7 +33,7 @@ T.runAsync("Screen 1 (index.html)", function (check, done) {
       check("FAC's header, title and one-line instruction", $("brand").textContent === Q.brand && $("title").textContent === Q.title && $("intro").textContent === T1.intro);
       check("progress bar: Step 1 current, part 1.1 Your Organization current", d.querySelector("#stepsTabs .current").textContent.indexOf("Measure Your ROI") > -1 &&
         d.querySelectorAll("#parts li").length === 5 && d.querySelector("#parts .current .part-label").textContent === "Your Organization");
-      check("only three fields: Organization name, Website, ZIP code", d.querySelectorAll("#s1 input").length === 3 &&
+      check("only four fields: Your name, Organization name, Website, ZIP code (Step 1.0's inputs)", d.querySelectorAll("#s1 input").length === 4 && $("s1-name-label").textContent === T1.name &&
         $("s1-org-label").textContent === T1.org && $("s1-website-label").textContent === T1.website && $("s1-zip-label").textContent === T1.zip);
       check("no prompt, MISSING tags, counters or asterisks for members", !/prompt|MISSING|required|\*/i.test(text));
       check("Continue is off until the fields are filled", $("continue").disabled);
@@ -42,8 +42,10 @@ T.runAsync("Screen 1 (index.html)", function (check, done) {
       type("s1-zip", "7700");
       check("still off with a 4-digit ZIP", $("continue").disabled);
       type("s1-zip", "77001");
-      check("all three filled: Continue is on", !$("continue").disabled);
-      check("what's typed is kept in this browser for the builder", JSON.parse(w.localStorage.getItem("roi-screen1-v1")).org === "Riverbend Food Bank");
+      check("still off without your name", $("continue").disabled);
+      type("s1-name", "Jordan Rivera");
+      check("all four filled: Continue is on", !$("continue").disabled);
+      check("what's typed is kept in this browser, your name too (not sent anywhere)", JSON.parse(w.localStorage.getItem("roi-screen1-v1")).org === "Riverbend Food Bank" && JSON.parse(w.localStorage.getItem("roi-screen1-v1")).name === "Jordan Rivera");
       w.FACZip.load(function () {
         try {
           type("s1-zip", "77001");

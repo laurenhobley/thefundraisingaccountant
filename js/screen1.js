@@ -1,7 +1,8 @@
 /*
   screen1.js: Screen 1 (index.html), from FAC's ROI.bot Version 2 build
-  plan. Organization name, website and ZIP; Continue stays off until all
-  three are filled. The ZIP shows its place to confirm. What the member
+  plan. Your name, organization name, website and ZIP (Step 1.0's inputs);
+  Continue stays off until all four are filled.
+  The ZIP shows its place to confirm. What the member
   types is kept in this browser (FACSheet.SCREEN1's key), and Continue goes
   to the builder, which fills its blank boxes from it. Nothing is sent
   anywhere.
@@ -28,9 +29,11 @@
   $("brand").textContent = Q.brand;
   $("title").textContent = Q.title;
   $("intro").textContent = T.intro;
+  $("s1-name-label").textContent = T.name;
   $("s1-org-label").textContent = T.org;
   $("s1-website-label").textContent = T.website;
   $("s1-zip-label").textContent = T.zip;
+  $("s1-name").placeholder = T.namePlaceholder;
   $("s1-org").placeholder = T.orgPlaceholder;
   $("s1-website").placeholder = T.websitePlaceholder;
   $("s1-zip").placeholder = T.zipPlaceholder;
@@ -40,7 +43,7 @@
   // What the member typed before, if they come back.
   try {
     var saved = JSON.parse(localStorage.getItem(STORE) || "null");
-    if (saved) { $("s1-org").value = saved.org || ""; $("s1-website").value = saved.website || ""; $("s1-zip").value = saved.zip || ""; }
+    if (saved) { $("s1-name").value = saved.name || ""; $("s1-org").value = saved.org || ""; $("s1-website").value = saved.website || ""; $("s1-zip").value = saved.zip || ""; }
   } catch (e) {}
 
   // The place for the ZIP, from our own copy of GeoNames' ZIP list.
@@ -51,9 +54,9 @@
   }
 
   function update() {
-    $("continue").disabled = !(v("s1-org") && v("s1-website") && zipOk());
+    $("continue").disabled = !(v("s1-name") && v("s1-org") && v("s1-website") && zipOk());
     showPlace();
-    try { localStorage.setItem(STORE, JSON.stringify({ org: v("s1-org"), website: v("s1-website"), zip: v("s1-zip") })); } catch (e) {}
+    try { localStorage.setItem(STORE, JSON.stringify({ name: v("s1-name"), org: v("s1-org"), website: v("s1-website"), zip: v("s1-zip") })); } catch (e) {}
   }
   $("s1").addEventListener("input", update);
   $("s1").addEventListener("submit", function (e) {
