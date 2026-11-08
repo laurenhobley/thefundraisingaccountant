@@ -26,7 +26,8 @@ T.run("Questions (js/questions.js)", function (check) {
     ["amount", "funds", "result", "words"].every(function (k) { return !!Q.donors.columns[k]; }) && !!Q.wand.possible && !!Q.flow.continueStep2);
   check("Constraints asks: Tone, Length, Format, Audience, all optional",
     labels("constraints") === "Tone, Length, Format, Audience" && S.section(Q, "constraints").questions.every(function (q) { return !q.required; }));
-  check("flowchart step numbers: 1.1 to 1.5", [Q.flow.numbers.org, Q.flow.numbers.program, Q.flow.numbers.benchmarks, Q.flow.numbers.constraints, Q.flow.numbers.review].join() === "1.1,1.2,1.3,1.4,1.5");
+  check("step numbers follow the workbook (Version 2 plan): 1.1 org, 1.2 programs, 1.3 review, 1.4 context, 1.5 constraints, 2.5 Step 2 review",
+    [Q.flow.numbers.org, Q.flow.numbers.program, Q.flow.numbers.review, Q.flow.numbers.pain, Q.flow.numbers.benchmarks, Q.flow.numbers.constraints, Q.flow.numbers.review2].join() === "1.1,1.2,1.3,1.4,1.4,1.5,2.5");
   check("the three \"Happy with…?\" checks have their wording", ["programs", "benchmarks", "constraints"].every(function (k) { return !!Q.flow.checkpoints[k].title && !!Q.flow.checkpoints[k].text; }));
   check("\"Yes, continue\" and \"Build our story\" buttons have wording", !!Q.flow.checkpointYes && Q.flow.buildStory === "Build our story");
   check("stack rank: FAC's template columns (Driver 1-3, Money), matching the sheet's, and its messages",

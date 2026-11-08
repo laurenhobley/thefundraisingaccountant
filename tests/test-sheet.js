@@ -8,7 +8,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("blank sheet starts with 1 program", s.programs.length === 1);
   check("blank sheet has every Organization Info question", ["name", "zip", "website", "mission", "keywords"].every(function (id) { return !!s.org[id]; }) && !s.org.city);
   check("blank sheet has no numbers in it", S.problems(s).length === 0);
-  check("screens: Organization, 1 program, stack rank, check, Pain Statements, Benchmarks, check, Constraints, check, review", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,rank,check:programs,pain,benchmarks,check:benchmarks,constraints,check:constraints,end,why,donors,wand,end,story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
+  check("screens: Organization, 1 program, stack rank, check, Pain Statements, Benchmarks, check, Constraints, check, review", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,rank,check:programs,pain,benchmarks,check:benchmarks,constraints,check:constraints,end,why,donors:regular,donors:major,wand,end,story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
 
   var out = S.get(s, "programs.0.outputs");
   out.text = "Served 414 families in 2024";
@@ -30,7 +30,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   var n = S.addProgram(Q, s);
   check("Add program gives program 2", n === 1 && s.programs.length === 2);
-  check("23 screens with 2 programs", S.steps(s).length === 23);
+  check("24 screens with 2 programs", S.steps(s).length === 24);
   check("program 2 is on screen 3", S.stepOf(s, "programs.1.name") === 2);
   check("with 2 programs: stack rank on screen 4, check on 5, Pain on 6, Benchmarks on 7, Constraints on 9", S.steps(s)[3].kind === "rank" && S.steps(s)[4].of === "programs" && S.stepOf(s, "pain.0") === 5 && S.stepOf(s, "benchmarks.0") === 6 && S.stepOf(s, "constraints.tone") === 8);
   S.removeProgram(s, 1); S.removeProgram(s, 0);
@@ -395,7 +395,9 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   // Step 2: pain statement questions, donor tables, magic wand.
   var s2 = S.blank(Q);
-  check("Step 2 screens come after the 1.5 review, then the review again", S.steps(s2).slice(-13, -8).map(function (x) { return x.kind + (x.stage || ""); }).join() === "end1,why,donors,wand,end2");
+  check("Step 2 screens come after the 1.5 review, then the review again", S.steps(s2).slice(-14, -8).map(function (x) { return x.kind + (x.stage || "") + (x.of ? ":" + x.of : ""); }).join() === "end1,why,donors:regular,donors:major,wand,end2");
+  check("2.2 and 2.3 each check only their own table", S.answersOn(s2, S.stepOf(s2, "donors.regular.0.result")).every(function (p) { return /^donors.regular./.test(p); }) &&
+    S.answersOn(s2, S.stepOf(s2, "donors.major.0.result")).every(function (p) { return /^donors.major./.test(p); }) && S.stepOf(s2, "donors.major.0.amount") === S.stepOf(s2, "donors.regular.0.amount") + 1);
   check("each donor table starts with four rows", s2.donors.regular.length === 4 && s2.donors.major.length === 4);
   S.addDonorRow(s2, "major");
   check("Add a row: five major donor rows", s2.donors.major.length === 5);
@@ -419,7 +421,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   var s3 = S.blank(Q);
   check("Step 3 screens come after the Step 2 review", S.steps(s3).slice(-8).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() ===
     "story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
-  check("each Step 3 box sits on its own screen", S.stepOf(s3, "story.keyFact") === 14 && S.stepOf(s3, "story.clientQuote") === 16 && S.stepOf(s3, "story.roi") === 17 && S.stepOf(s3, "story.investDollars") === 18);
+  check("each Step 3 box sits on its own screen", S.stepOf(s3, "story.keyFact") === 15 && S.stepOf(s3, "story.clientQuote") === 17 && S.stepOf(s3, "story.roi") === 18 && S.stepOf(s3, "story.investDollars") === 19);
   check("a pasted ROI.bot answer becomes round 1", S.addRound(s3, "challenge", "First try") && s3.storyOut.challenge.rounds.length === 1 && S.latest(s3, "challenge") === "First try");
   check("the same paste again isn't a new round", S.addRound(s3, "challenge", "First try") === false && s3.storyOut.challenge.rounds.length === 1);
   S.addRound(s3, "challenge", "Second try");

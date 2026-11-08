@@ -4,17 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>How to Use</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <!-- The wording comes from js/questions.js (howTo), like every other word members read. -->
+<div class="topbar">
+  <div class="topbar-in">
+    <p class="brand" id="brand"></p>
+    <!-- ROI.bot's logo goes here once FAC sends the file. -->
+  </div>
+</div>
 <div class="wrap">
   <header>
-    <div class="eyebrow">Fundraising toolkit · ROI.bot Prompt Builder</div>
     <h1 id="title"></h1>
     <p id="intro"></p>
   </header>
@@ -39,6 +41,7 @@
 <script>
 (function () {
   var H = FAC_QUESTIONS.howTo;
+  document.getElementById("brand").textContent = FAC_QUESTIONS.brand;
   document.getElementById("title").textContent = H.title;
   document.getElementById("intro").textContent = H.intro;
   document.getElementById("privacy").textContent = H.privacy;

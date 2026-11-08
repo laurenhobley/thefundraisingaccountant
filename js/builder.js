@@ -44,8 +44,8 @@
     var input = q.kind === "long"
       ? '<textarea class="ans" id="' + id + '" data-path="' + path + '"></textarea>'
       : '<input class="ans" id="' + id + '" data-path="' + path + '" type="' + (q.kind === "url" ? "url" : "text") + '"' +
-        (q.kind === "zip" ? ' inputmode="numeric" maxlength="10" autocomplete="postal-code"' : "") + '>';
-    return '<div class="f">' +
+        (q.kind === "zip" ? ' inputmode="numeric" maxlength="10" autocomplete="postal-code"' : "") + (q.placeholder ? ' placeholder="' + esc(q.placeholder) + '"' : "") + '>';
+    return '<div class="f' + (q.kind === "zip" ? " f-zip" : "") + '">' +
       '<label for="' + id + '">' + esc(q.label) + (q.note ? ' <span class="opt">' + esc(q.note) + '</span>' : "") + (q.required ? '<span class="req">*</span>' : "") + '</label>' +
       (q.help ? '<p class="hint">' + esc(q.help) + '</p>' : "") +
       input + (q.kind === "zip" ? '<p class="hint zip-place" id="' + id + '-place" aria-live="polite"></p>' : "") +
@@ -267,13 +267,14 @@
     box.innerHTML = FACExport.whyNow(Q, state).map(function (s) { return '<p>' + esc(s) + '</p>'; }).join("");
   }
 
-  // 2.2 The Regular and Major donor tables. The member types every amount;
-  // FAC's levels are a grey hint only.
-  function donorsScreen() {
-    var D = Q.donors, C = D.columns;
-    var html = heading(D.number, D.title) + '<p class="hint">' + esc(D.intro) + '</p><p class="hint">' + esc(D.tableIntro) + '</p>' +
+  // 2.2 Donate Now (the Regular donor table) and 2.3 Major Donors (the Major
+  // donor table), one screen each. The member types every amount; FAC's
+  // levels are a grey hint only.
+  function donorsScreen(of) {
+    var D = Q.donors, C = D.columns, html = heading(D[of].number, D[of].screenTitle);
+    if (of === "regular") html += '<p class="hint">' + esc(D.intro) + '</p><p class="hint">' + esc(D.tableIntro) + '</p>' +
       '<div class="examples"><span class="ex-tag">Example</span><p>' + esc(D.example) + '</p></div>';
-    ["regular", "major"].forEach(function (t) {
+    [of].forEach(function (t) {
       html += '<div class="donor-table"><span class="lbl">' + esc(D[t].title) + '</span>' + (D[t].intro ? '<p class="hint">' + esc(D[t].intro) + '</p>' : "") +
         '<p class="hint">' + esc(D[t].levelsHint) + '</p>' +
         state.donors[t].map(function (r, i) {
@@ -571,7 +572,8 @@
         }).join("") + '</ul>'
       : '<p>' + esc(Q.review.allClear) + '</p>';
     var R = Q.review;
-    return heading(N.review, R.title) + '<p>' + esc(R.text) + '</p>' + list + rtccEditor() +
+    var two = S.steps(state)[state.step].stage === 2;
+    return heading(two ? N.review2 : N.review, two ? R.title2 : R.title) + '<p>' + esc(R.text) + '</p>' + list + rtccEditor() +
       '<div class="f"><span class="lbl">' + esc(R.previewTitle) + '</span><pre id="exportPreview"></pre></div>' +
       '<label class="review-check"><input type="checkbox" id="reviewed"' + (state.reviewed ? " checked" : "") + '> ' + esc(R.checkbox) + '</label>' +
       '<div class="actions">' +
@@ -704,7 +706,7 @@
       st.kind === "benchmarks" ? listScreen("benchmarks", N.benchmarks) :
       st.kind === "constraints" ? constraintsScreen() :
       st.kind === "why" ? whyScreen() :
-      st.kind === "donors" ? donorsScreen() :
+      st.kind === "donors" ? donorsScreen(st.of) :
       st.kind === "wand" ? wandScreen() :
       st.kind === "story" ? storyScreen(st.of) :
       st.kind === "funder" ? funderScreen() :
@@ -718,6 +720,7 @@
     });
 
     $("counter").textContent = "Step " + (state.step + 1) + " of " + steps.length;
+    renderProgress(st);
     $("back").disabled = state.step === 0;
     $("next").hidden = state.step === steps.length - 1;
     $("next").textContent = st.kind === "end" ? (st.stage === 2 ? Q.flow.continueStep3 : Q.flow.continueStep2) :
@@ -733,6 +736,61 @@
     var target = focusId && $(focusId);
     if (target) target.focus();
     return st;
+  }
+
+  // The workbook part a screen belongs to, as [step, part] (0-based): 1.1
+  // Organization Info; 1.2 the programs, stack rank and their check; 1.3
+  // Outputs to Outcomes = the Step 1 review, where the prompt goes to
+  // ROI.bot; 1.4 Add Context = Local Context and Benchmarks; 1.5 Add
+  // Constraints; 2.1 Pain Statements; 2.2 Donate Now; 2.3 Major Donors; 2.4
+  // Magic Wand; 2.5 Build the Prompt = the Step 2 review; 3.1-3.4 the story
+  // parts; 3.5 Funder Story and what follows it.
+  function partOf(st) {
+    var k = st.kind;
+    if (k === "org") return [0, 0];
+    if (k === "program" || k === "rank" || (k === "check" && st.of === "programs")) return [0, 1];
+    if (k === "end") return st.stage === 2 ? [1, 4] : [0, 2];
+    if (k === "pain" || k === "benchmarks" || (k === "check" && st.of === "benchmarks")) return [0, 3];
+    if (k === "constraints" || k === "check") return [0, 4];
+    if (k === "why") return [1, 0];
+    if (k === "donors") return st.of === "major" ? [1, 2] : [1, 1];
+    if (k === "wand") return [1, 3];
+    if (k === "story") return [2, S.STORY_PARTS.indexOf(st.of)];
+    return [2, 4];
+  }
+
+  // The progress bar. A part is done once every screen in it comes before
+  // this one, so it stays right even where the order isn't the workbook's
+  // (1.3, the review, comes after 1.4 and 1.5 until ROI.bot's chat exists).
+  // Each part's number goes to its first screen.
+  function renderProgress(st) {
+    var P = Q.progress, all = S.steps(state), here = partOf(st), first = {}, last = {};
+    all.forEach(function (s, i) {
+      var key = partOf(s).join();
+      if (!(key in first)) first[key] = i;
+      last[key] = i;
+    });
+    function status(si, pi) {
+      var key = si + "," + pi;
+      return key === here.join() ? "current" : last[key] < state.step ? "done" : "todo";
+    }
+    $("progress").setAttribute("data-step", here[0]);
+    $("stepsTabs").innerHTML = P.steps.map(function (s, si) {
+      var done = s.parts.every(function (x, pi) { return status(si, pi) === "done"; });
+      var cls = si === here[0] ? "current" : done ? "done" : "todo";
+      return '<li class="' + cls + '"' + (cls === "current" ? ' aria-current="step"' : "") + '>' +
+        '<span class="num" aria-hidden="true">' + (cls === "done" ? "✓" : esc(s.n)) + '</span>' +
+        '<span><span class="sr">' + esc(P.stepLabel.replace(/\{n\}/g, s.n)) + ' </span>' + esc(s.name) +
+        (cls === "done" ? '<span class="sr"> (' + esc(P.done) + ')</span>' : "") + '</span></li>';
+    }).join("");
+    var step = P.steps[here[0]];
+    $("parts").innerHTML = step.parts.map(function (name, pi) {
+      var cls = status(here[0], pi), n = step.n + "." + (pi + 1), to = first[here[0] + "," + pi];
+      var prev = pi > 0 && status(here[0], pi - 1) === "done";
+      return '<li class="' + cls + (prev ? " after-done" : "") + '"' + (cls === "current" ? ' aria-current="step"' : "") + '>' +
+        '<button type="button" class="dot" data-act="part" data-step="' + to + '" aria-label="' + esc(n + " " + name + (cls === "current" ? ", " + P.current : cls === "done" ? ", " + P.done : "")) + '">' + esc(n) + '</button>' +
+        '<span class="part-label">' + esc(name) + '</span></li>';
+    }).join("");
   }
 
   // Shows the follow-up while an answer is missing or vague, or the flag once
@@ -955,6 +1013,14 @@
     S.clear(); state = S.blank(Q); docText = ""; suggestions = []; go(0);
   });
 
+  // A part's number in the progress bar goes to that part's first screen.
+  $("progress").addEventListener("click", function (e) {
+    var b = e.target.closest("button[data-act=part]");
+    if (b) go(+b.getAttribute("data-step"));
+  });
+
+  $("brand").textContent = Q.brand;
+  $("title").textContent = Q.title;
   $("intro").textContent = Q.intro;
   if ($("howToLink")) $("howToLink").textContent = Q.howTo.linkText;
   render();

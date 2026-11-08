@@ -515,7 +515,7 @@ var FACSheet = (function () {
     else if (st.kind === "program") { for (id in state.programs[st.index]) if (state.programs[st.index].hasOwnProperty(id)) out.push("programs." + st.index + "." + id); }
     else if (st.kind === "pain" || st.kind === "benchmarks") for (i = 0; i < state[st.kind].length; i++) out.push(st.kind + "." + i);
     else if (st.kind === "constraints" || st.kind === "why" || st.kind === "wand") for (id in state[st.kind]) { if (state[st.kind].hasOwnProperty(id)) out.push(st.kind + "." + id); }
-    else if (st.kind === "donors") out = donorPaths(state);
+    else if (st.kind === "donors") out = donorPaths(state, st.of);
     else if (st.kind === "story" || st.kind === "funder") out = (STORY_FIELDS[st.of || "funder"] || []).map(function (id) { return "story." + id; });
     return out;
   }
@@ -523,9 +523,10 @@ var FACSheet = (function () {
   // Which of Step 3's own boxes sit on which screen.
   var STORY_FIELDS = { challenge: ["keyFact"], response: [], outcome: ["clientStory", "clientQuote", "secondQuote"], roi: ["investment", "value", "roi", "everyDollar", "ask", "timeframe"], funder: ["investProgram", "investOutcomes", "investDollars"] };
 
-  function donorPaths(state) {
+  // The donor tables' boxes: one table ("regular" or "major"), or both.
+  function donorPaths(state, only) {
     var out = [];
-    ["regular", "major"].forEach(function (t) {
+    (only ? [only] : ["regular", "major"]).forEach(function (t) {
       state.donors[t].forEach(function (row, i) { for (var k in row) if (row.hasOwnProperty(k)) out.push("donors." + t + "." + i + "." + k); });
     });
     return out;
@@ -641,7 +642,8 @@ var FACSheet = (function () {
     out.push({ kind: "rank" }, { kind: "check", of: "programs" }, { kind: "pain" }, { kind: "benchmarks" }, { kind: "check", of: "benchmarks" },
       { kind: "constraints" }, { kind: "check", of: "constraints" }, { kind: "end", stage: 1 },
       // Step 2, then the review screen again with Step 2 in the prompt.
-      { kind: "why" }, { kind: "donors" }, { kind: "wand" }, { kind: "end", stage: 2 },
+      // 2.2 Donate Now and 2.3 Major Donors are the two donor tables, one screen each.
+      { kind: "why" }, { kind: "donors", of: "regular" }, { kind: "donors", of: "major" }, { kind: "wand" }, { kind: "end", stage: 2 },
       // Step 3, the member's next steps and self-assessment, then the package.
       { kind: "story", of: "challenge" }, { kind: "story", of: "response" }, { kind: "story", of: "outcome" }, { kind: "story", of: "roi" },
       { kind: "funder" }, { kind: "actions" }, { kind: "assess" }, { kind: "package" });
@@ -652,10 +654,11 @@ var FACSheet = (function () {
     if (p[0] === "org") return 0;
     if (p[0] === "programs") return 1 + (+p[1]);
     if (p[0] === "story") {
-      var at = { challenge: 13, response: 14, outcome: 15, roi: 16, funder: 17 };
+      var at = { challenge: 14, response: 15, outcome: 16, roi: 17, funder: 18 };
       for (var k in STORY_FIELDS) if (STORY_FIELDS[k].indexOf(p[1]) > -1) return n + at[k];
     }
-    return n + ({ rank: 1, pain: 3, benchmarks: 4, constraints: 6, why: 9, donors: 10, wand: 11 })[p[0]];
+    if (p[0] === "donors") return n + (p[1] === "major" ? 11 : 10);
+    return n + ({ rank: 1, pain: 3, benchmarks: 4, constraints: 6, why: 9, wand: 12 })[p[0]];
   }
 
   // ---------- Step 2 ----------

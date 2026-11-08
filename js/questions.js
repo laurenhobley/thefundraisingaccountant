@@ -17,7 +17,23 @@
   that is marked "draft for Steve".
 */
 var FAC_QUESTIONS = {
-  intro: "Use this form to enter your organization’s information. Once you are complete, copy + paste this information into ROI.bot to generate outputs, outcomes, and donor-ready impact statements.",
+  // The bar across the top, the page title and the progress bar, from FAC's
+  // "ROI.bot Agent — Version 2 Build Plan" and its mockups, word for word.
+  // Step and part names match the United Way workbook.
+  brand: "FUNDRAISING ACCOUNTANT COMMUNITY — ROI.BOT",
+  title: "Tell Your Story with Numbers",
+  progress: {
+    steps: [
+      { n: "1", name: "Measure Your ROI", parts: ["Your Organization", "Your Programs", "Outputs to Outcomes", "Add Context", "Add Constraints"] },
+      { n: "2", name: "Get the Right #s", parts: ["Pain Statements", "Donate Now", "Major Donors", "Magic Wand", "Build the Prompt"] },
+      { n: "3", name: "Tell Your Story", parts: ["Challenge", "Response", "Outcome", "ROI", "Funder Story"] }
+    ],
+    // For screen readers. Draft for Steve.
+    stepLabel: "Step {n}",
+    done: "done",
+    current: "you are here"
+  },
+  intro:"Use this form to enter your organization’s information. Once you are complete, copy + paste this information into ROI.bot to generate outputs, outcomes, and donor-ready impact statements.",
 
   // From FAC's prompt sheet. Shown beside Download. Steve to add the folder's link (url).
   saveCopy: { before: "Save a copy in your ", linkText: "FA community google folder", after: " and watch your story evolve.", url: "" },
@@ -100,7 +116,7 @@ var FAC_QUESTIONS = {
       questions: [
         { id: "name", label: "Name", kind: "text", required: true, help: "Your organization's name, as donors know it." },
         // Only the ZIP code, no city and state (Lauren, 2026-11-07). Help: draft for Steve.
-        { id: "zip", label: "Location: ZIP code", kind: "zip", required: true, help: "Where you do most of your work. ROI.bot uses your ZIP code to find local and state figures." },
+        { id: "zip", label: "Location: ZIP code", kind: "zip", required: true, placeholder: "5-digit ZIP", help: "Where you do most of your work. ROI.bot uses your ZIP code to find local and state figures." },
         // The place shown under the ZIP box comes from GeoNames' ZIP list (zipPlace, below).
         { id: "website", label: "Web Site", kind: "url", required: true, help: "Your main web address." },
         { id: "mission", label: "Mission Statement", kind: "long", required: true, help: "Your mission statement, as you share it with donors." },
@@ -193,6 +209,8 @@ var FAC_QUESTIONS = {
   // Last screen: review, then Copy or Download. Draft for Steve.
   review: {
     title: "Review your prompt",
+    // The Step 2 review is the workbook's 2.5 Build the Prompt.
+    title2: "Build the Prompt",
     text: "Check the list and the finished prompt below. When it looks right, tick the box to unlock Copy and Download, then paste the prompt into ROI.bot.",
     allClear: "Every answer and figure is settled.",
     previewTitle: "Your finished prompt",
@@ -217,7 +235,9 @@ var FAC_QUESTIONS = {
   flow: {
     // Flowchart step numbers shown on each screen. Local Context/Data isn't in
     // the flowchart's Step 1 (it's in Step 2), so it has no number yet.
-    numbers: { org: "1.1", program: "1.2", pain: "", benchmarks: "1.3", constraints: "1.4", review: "1.5", check: "◆" },
+    // The workbook's parts (Version 2 plan): 1.3 Outputs to Outcomes is the review screen, where the
+    // prompt goes to ROI.bot; 1.4 Add Context is Local Context/Data and Benchmarks; 1.5 Add Constraints.
+    numbers: { org: "1.1", program: "1.2", pain: "1.4", benchmarks: "1.4", constraints: "1.5", review: "1.3", review2: "2.5", check: "◆" },
     nextButton: "Next",
     continueStep2: "Continue to Step 2",
     continueStep3: "Continue to Step 3",
@@ -256,15 +276,15 @@ var FAC_QUESTIONS = {
     intro: "Donors want to know exactly what their gift produces. Tangible results link dollar amounts to real program outcomes.",
     tableIntro: "Start with the gift amount, then connect it to something specific and tangible. What does a gift fund? What are the outcomes (tangible results) that occur? Then change that into an emotional story.",
     example: "Example from the Fort Bend Women's Center: $500 provides 2 weeks of support; $250, 25 crisis calls; $125, 1 night of safety; $50, 1 day of meals.",
-    regular: { title: "Regular Donor Table", levelsHint: "FAC's suggested levels: $500, $250, $125, $50. Type your own amounts." },
-    major: { title: "Major Donor Table", intro: "For major donors, you do the same thing with larger program opportunities.", levelsHint: "FAC's suggested levels: $5,000, $10,000, $25,000, $50,000. Type your own amounts." },
+    regular: { number: "2.2", screenTitle: "Donate Now", title: "Regular Donor Table", levelsHint: "FAC's suggested levels: $500, $250, $125, $50. Type your own amounts." },
+    major: { number: "2.3", screenTitle: "Major Donors", title: "Major Donor Table", intro: "For major donors, you do the same thing with larger program opportunities.", levelsHint: "FAC's suggested levels: $5,000, $10,000, $25,000, $50,000. Type your own amounts." },
     columns: { amount: "Investment ($)", funds: "What It Funds", result: "Tangible Result", words: "Donor Friendly Language" },
     rowLabel: "Row",
     addRow: "Add a row",
     draftNote: "(draft)"
   },
   wand: {
-    number: "2.3",
+    number: "2.4",
     title: "Wave a magic wand",
     intro: "If you could make a wish, what would you want your donors to invest in?",
     program: "Program",
