@@ -6,6 +6,8 @@
   var Q = FAC_QUESTIONS, S = FACSheet;
   var $ = function (id) { return document.getElementById(id); };
   var state = S.load(Q);
+  // What the member typed on Screen 1 (index.html) fills the blank boxes.
+  S.importScreen1(Q, state, S.loadScreen1());
   var screen = $("screen");
 
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }

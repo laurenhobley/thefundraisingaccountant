@@ -28,7 +28,7 @@ T.runAsync("ZIP code to location (zip-place.js)", function (check, done) {
       var box = $("f-org-zip");
       function type(t) { box.value = t; box.dispatchEvent(new Event("input", { bubbles: true })); }
       type("77001");
-      check("under the builder's ZIP box: 📍 Houston, TX", $("f-org-zip-place").textContent === Q.zipPlace.found.replace("{place}", "Houston, TX"));
+      check("under the builder's ZIP box: Houston, TX — does this look right?", $("f-org-zip-place").textContent === Q.zipPlace.found.replace("{place}", "Houston, TX"));
       type("99999");
       check("an unknown ZIP says so", $("f-org-zip-place").textContent === Q.zipPlace.unknown);
       type("7700");

@@ -670,6 +670,23 @@ var FACSheet = (function () {
     else state.donors[table][0] = donorRow();
   }
 
+  // Screen 1 (index.html) saves the organization's name, website and ZIP
+  // under this key. The builder takes them into its boxes that are still
+  // blank, so nothing is typed twice. Returns how many it filled.
+  var SCREEN1 = "roi-screen1-v1";
+  function importScreen1(Q, state, s1) {
+    if (!s1) return 0;
+    var map = { name: "org", website: "website", zip: "zip" }, n = 0;
+    for (var id in map) {
+      var v = trim(s1[map[id]]);
+      if (v && !trim(state.org[id].text)) { setText(Q, state, "org." + id, v); n++; }
+    }
+    return n;
+  }
+  function loadScreen1(storage) {
+    try { return JSON.parse((storage || window.localStorage).getItem(SCREEN1) || "null"); } catch (e) { return null; }
+  }
+
   // Brings in answers from the live pain statement form's saved draft (same
   // questions), only into boxes that are still blank. Returns how many it filled.
   function importLive(Q, state, live) {
@@ -810,7 +827,7 @@ var FACSheet = (function () {
     calculations: calculations, mathProblem: mathProblem,
     paths: paths, steps: steps, stepOf: stepOf, problems: problems, addVersion: addVersion,
     RANK_COLUMNS: RANK_COLUMNS, rankCheck: rankCheck, sortByScore: sortByScore, suggestLine: suggestLine, dollarOff: dollarOff, included: included,
-    addDonorRow: addDonorRow, removeDonorRow: removeDonorRow, importLive: importLive,
+    addDonorRow: addDonorRow, removeDonorRow: removeDonorRow, importLive: importLive, importScreen1: importScreen1, loadScreen1: loadScreen1, SCREEN1: SCREEN1,
     addRound: addRound, latest: latest, STORY_PARTS: STORY_PARTS,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear

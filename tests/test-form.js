@@ -1,11 +1,11 @@
 /*
-  index.html: the live pain statement form. Rule 2: every number in the
+  pain-statement.html: the pain statement form (version 1, not linked). Rule 2: every number in the
   prompt is one the member typed, exactly as typed.
 
   The form is loaded in a hidden frame. Browsers don't let a page opened
   from a drive look inside a frame, so these run only on the live site.
 */
-T.runAsync("Live form numbers (index.html)", function (check, done) {
+T.runAsync("Pain statement form numbers (pain-statement.html)", function (check, done) {
   if (location.protocol === "file:") {
     check.note("These run only on the live site: https://laurenhobley.github.io/thefundraisingaccountant/tests/tests.html");
     done();
@@ -83,7 +83,7 @@ T.runAsync("Live form numbers (index.html)", function (check, done) {
         clearTimeout(waitZip);
         try {
           type($("zip"), "77001");
-          check("ZIP 77001: Houston, TX shows under the box and goes into the prompt", $("zipPlace").textContent === "📍 Houston, TX" &&
+          check("ZIP 77001: Houston, TX shows under the box and goes into the prompt", $("zipPlace").textContent === "Houston, TX — does this look right?" &&
             prompt().indexOf("Location: 77001 (Houston, TX)\n") > -1);
           type($("zip"), "99999");
           check("an unknown ZIP says so, and the prompt has the ZIP alone", /couldn't find this ZIP/.test($("zipPlace").textContent) && prompt().indexOf("Location: 99999\n") > -1);
@@ -97,6 +97,6 @@ T.runAsync("Live form numbers (index.html)", function (check, done) {
     } catch (e) { check("Stopped with an error: " + e.message, false); }
     done();
   };
-  frame.src = "../index.html";
+  frame.src = "../pain-statement.html";
   document.body.appendChild(frame);
 });

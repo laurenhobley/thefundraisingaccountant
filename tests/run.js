@@ -7,7 +7,7 @@
   then puts them back when every test has finished.
 */
 var T = (function () {
-  var DRAFTS = ["impact-prompt-draft-v1", "fac-prompt-sheet-draft-v1"];
+  var DRAFTS = ["impact-prompt-draft-v1", "fac-prompt-sheet-draft-v1", "roi-screen1-v1"];
   var kept = {}, pass = 0, fail = 0, waiting = 0, ended = false;
   try {
     DRAFTS.forEach(function (k) { kept[k] = localStorage.getItem(k); localStorage.removeItem(k); });

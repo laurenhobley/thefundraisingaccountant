@@ -38,10 +38,26 @@ var FAC_QUESTIONS = {
   // From FAC's prompt sheet. Shown beside Download. Steve to add the folder's link (url).
   saveCopy: { before: "Save a copy in your ", linkText: "FA community google folder", after: " and watch your story evolve.", url: "" },
 
+  // Screen 1 (index.html), from FAC's Version 2 build plan: one short form,
+  // then Continue. The button stays off until all three are filled. Until
+  // ROI.bot's chat exists, Continue goes to the builder with these filled in.
+  // nextLine is draft for Steve (the plan's line promises reading the website).
+  screen1: {
+    intro: "To get started, just enter your basic organizational information.",
+    org: "Organization name",
+    orgPlaceholder: "e.g. Northeast Houston Food Pantry",
+    website: "Website",
+    websitePlaceholder: "https://",
+    zip: "ZIP code",
+    zipPlaceholder: "5-digit ZIP",
+    continueButton: "Continue",
+    nextLine: "Next: tell us about your programs."
+  },
+
   // Under the ZIP box: the place for that ZIP, from GeoNames' free ZIP list
   // (lib/zip-places.js). {place} is e.g. "Houston, TX". Draft for Steve.
   zipPlace: {
-    found: "📍 {place}",
+    found: "{place} — does this look right?",
     unknown: "We couldn't find this ZIP code. Check it, or leave it as is."
   },
 

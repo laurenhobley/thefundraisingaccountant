@@ -413,6 +413,14 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   var n2 = S.importLive(Q, s2, { lossAmount: "80,000", unserved: "40", servedCount: "999", servedPeriod: "per year", types: ["grant", "bogus"] });
   check("bringing in the live form's answers fills only the blank boxes", n2 === 3 && s2.why.lost.text === "95,000" && s2.why.unserved.text === "40" &&
     s2.why.served.text === "260" && s2.why.period.text === "per year" && s2.whyTypes.join() === "grant");
+
+  // Screen 1's name, website and ZIP fill the builder's blank boxes only.
+  var s1 = S.blank(Q);
+  S.setText(Q, s1, "org.website", "https://mine.example.org");
+  var n1 = S.importScreen1(Q, s1, { org: " Riverbend Food Bank ", website: "https://example.org", zip: "77001" });
+  check("Screen 1 fills the builder's blank Name and ZIP, and leaves a typed Web Site alone", n1 === 2 && s1.org.name.text === "Riverbend Food Bank" &&
+    s1.org.zip.text === "77001" && s1.org.website.text === "https://mine.example.org");
+  check("nothing from Screen 1: nothing changes", S.importScreen1(Q, S.blank(Q), null) === 0 && S.SCREEN1 === "roi-screen1-v1");
   check("no live form draft: nothing brought in", S.importLive(Q, s2, null) === 0);
   var r3 = S.repair(Q, { why: { lost: { text: "5,000" } }, whyTypes: ["donation", "x"], donors: { regular: [{ amount: { text: "50" }, result: { text: "1 day of meals" } }] }, wand: { amount: { text: "10,000" } } });
   check("old draft: Step 2 answers kept, bad loss types dropped", r3.why.lost.text === "5,000" && r3.whyTypes.join() === "donation" &&
