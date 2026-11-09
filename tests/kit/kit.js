@@ -17,7 +17,8 @@ var FAC_TEST_KIT = [
     ],
     answers: {
       org: { name: "Maple Street Youth Center", zip: "", website: "https://example.org/maple",
-        mission: "We give young people a safe place to learn and grow after school.", keywords: "youth, after-school, mentoring" },
+        mission: "We give young people a safe place to learn and grow after school.",
+        kwIssue: "youth, after-school", kwPeople: "middle schoolers, teens", kwServices: "homework help, mentoring, sports", kwLocation: "Maple Falls" },
       programs: [
         { name: "After-School Club", description: "Homework help and snacks for middle schoolers", outputs: "260 students served in 2024", impact: "" },
         { name: "After-School Club", description: "Weekend sports for teens", outputs: "140 teens took part in 2024", impact: "" }
@@ -35,7 +36,8 @@ var FAC_TEST_KIT = [
     ],
     answers: {
       org: { name: "Harbor Light Shelter", zip: "04999", website: "https://example.org/harbor",
-        mission: "Safe shelter and a warm meal for anyone without a home.", keywords: "shelter, homelessness, meals" },
+        mission: "Safe shelter and a warm meal for anyone without a home.",
+        kwIssue: "homelessness", kwPeople: "adults without a home", kwServices: "shelter, meals", kwLocation: "Port Jensen" },
       programs: [
         { name: "Emergency Beds", description: "Overnight beds for adults", outputs: "620 guests sheltered in 2024", impact: "" },
         { name: "Hot Meals", description: "Two hot meals a day for shelter guests", outputs: "620 guests received meals in 2024", impact: "" }
@@ -54,7 +56,8 @@ var FAC_TEST_KIT = [
     ],
     answers: {
       org: { name: "Prairie Health Clinic", zip: "67999", website: "https://example.org/prairie",
-        mission: "TBD", keywords: "health care, rural, free clinic" },
+        mission: "TBD",
+        kwIssue: "health care, rural", kwPeople: "rural families", kwServices: "free clinic, checkups", kwLocation: "Dune City" },
       programs: [
         { name: "Mobile Clinic", description: "Free checkups in small rural towns", outputs: "1,150 checkups", impact: "Fewer emergency room visits" }
       ],

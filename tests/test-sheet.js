@@ -6,7 +6,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   var s = S.blank(Q);
   check("blank sheet starts with 1 program", s.programs.length === 1);
-  check("blank sheet has every Organization Info question", ["name", "zip", "website", "mission", "keywords"].every(function (id) { return !!s.org[id]; }) && !s.org.city);
+  check("blank sheet has every Organization Info question", ["name", "zip", "website", "mission", "kwIssue", "kwPeople", "kwServices", "kwLocation"].every(function (id) { return !!s.org[id]; }) && !s.org.city && !s.org.keywords);
   check("blank sheet has no numbers in it", S.problems(s).length === 0);
   check("screens: Organization, 1 program, stack rank, check, Pain Statements, Benchmarks, check, Constraints, check, review", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,rank,check:programs,pain,benchmarks,check:benchmarks,constraints,check:constraints,end,why,donors:regular,donors:major,wand,end,story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
 
@@ -57,7 +57,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   // Missing answers: follow-ups, then skip.
   var m = S.blank(Q);
-  check("blank Organization Info: all 5 required answers missing", S.missing(Q, m, 0).join() === "org.name,org.zip,org.website,org.mission,org.keywords");
+  check("blank Organization Info: all 8 required answers missing", S.missing(Q, m, 0).join() === "org.name,org.zip,org.website,org.mission,org.kwIssue,org.kwPeople,org.kwServices,org.kwLocation");
   check("blank program: Program Name, Description, Outputs missing (not Current Impact Statement)",
     S.missing(Q, m, 1).join() === "programs.0.name,programs.0.description,programs.0.outputs");
   check("Pain Statements and Benchmarks never block Next", S.missing(Q, m, S.stepOf(m, "pain.0")).length === 0 && S.missing(Q, m, S.stepOf(m, "benchmarks.0")).length === 0);
@@ -79,7 +79,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   S.skip(m, "org.website");
   check("skipped answer no longer blocks Next", web.skipped && S.missing(Q, m, 0).indexOf("org.website") === -1);
   check("end screen list shows it as skipped", S.problems(m, Q).some(function (p) { return p.path === "org.website" && p.status === "skipped"; }));
-  check("and other missing answers as still blank", S.problems(m, Q).some(function (p) { return p.path === "org.keywords" && p.status === "blank"; }));
+  check("and other missing answers as still blank", S.problems(m, Q).some(function (p) { return p.path === "org.kwPeople" && p.status === "blank"; }));
   S.setText(Q, m,"org.website", " ");
   check("typing only a space keeps the skip", web.skipped);
   S.setText(Q, m,"org.website", "https://example.org");
@@ -87,6 +87,17 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   var r2 = S.repair(Q, { org: { website: { text: "", asks: 2, skipped: true }, city: { text: "Old Town, MN" }, name: { asks: "lots", skipped: "yes" } } });
   check("old draft: follow-ups and skips kept", r2.org.website.asks === 2 && r2.org.website.skipped === true);
   check("old draft with a city: the city is left out (ZIP only now)", !r2.org.city && FACExport.build(Q, r2).indexOf("Old Town") === -1);
+
+  // Key Words in four groups.
+  var kwOld = S.repair(Q, { org: { keywords: { text: " shelter, meals " } } });
+  check("an old draft's single Key Words list moves into Issue, for sorting", kwOld.org.kwIssue.text === "shelter, meals" && !kwOld.org.keywords);
+  check("keywords split at commas, blanks dropped; the total counts every group", S.keywordList("a, b,, c ,").join("|") === "a|b|c" &&
+    (S.setText(Q, kwOld, "org.kwServices", "pantry, meals"), S.keywordCount(kwOld) === 4));
+  check("keywords never need a figure label (\"24/7 shelter\")", !S.needsLabel("org.kwServices"));
+  var kwE = S.blank(Q);
+  S.get(kwE, "org.kwLocation").asks = 2; S.skip(kwE, "org.kwLocation");
+  check("a keyword group kept empty isn't listed as a problem; an untouched one is", !S.problems(kwE, Q).some(function (p) { return p.path === "org.kwLocation"; }) &&
+    S.problems(kwE, Q).some(function (p) { return p.path === "org.kwIssue" && p.status === "blank"; }));
   check("old draft: bad follow-up values dropped", r2.org.name.asks === 0 && r2.org.name.skipped === false);
 
   // Filler words: found as whole words, in any capitals.

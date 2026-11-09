@@ -63,6 +63,24 @@ var FAC_QUESTIONS = {
     nextLine: "Next: tell us about your programs."
   },
 
+  // Key Words in four groups (Steve's Step 1.1 instructions: 10–15 in the
+  // organization's own words; a group never goes empty without asking).
+  // The groups are the kwIssue, kwPeople, kwServices and kwLocation
+  // questions in Organization Info. Draft for Steve, apart from the title.
+  keywords: {
+    title: "Key Words",
+    intro: "10–15 keywords in your organization's own words, separated by commas, in four groups.",
+    count: "{n} keywords",
+    countHint: "(10–15 works best)",
+    // {group} is the group's name, e.g. "Issue".
+    missing: [
+      "Add at least one {group} keyword.",
+      "Still no {group} keyword. If you have none, you can keep it empty."
+    ],
+    keepButton: "Keep it empty",
+    kept: "Kept empty. Add a keyword any time."
+  },
+
   // Under the ZIP box: the place for that ZIP, from GeoNames' free ZIP list
   // (lib/zip-places.js). {place} is e.g. "Houston, TX". Draft for Steve.
   zipPlace: {
@@ -145,7 +163,12 @@ var FAC_QUESTIONS = {
         // The place shown under the ZIP box comes from GeoNames' ZIP list (zipPlace, below).
         { id: "website", label: "Web Site", kind: "url", required: true, help: "Your main web address." },
         { id: "mission", label: "Mission Statement", kind: "long", required: true, help: "Your mission statement, as you share it with donors." },
-        { id: "keywords", label: "Key Words", kind: "text", required: true, help: "A few words about your work, separated by commas." }
+        // Key Words in four groups (Steve's Step 1.1 instructions): each a
+        // comma-separated list, shown as chips. Wording in keywords, below.
+        { id: "kwIssue", label: "Issue", kind: "keywords", required: true, help: "The problem you work on, for example family homelessness." },
+        { id: "kwPeople", label: "People served", kind: "keywords", required: true, help: "Who you serve, in your words, for example homeless children and families." },
+        { id: "kwServices", label: "Services", kind: "keywords", required: true, help: "What you do, for example emergency shelter, case management." },
+        { id: "kwLocation", label: "Location", kind: "keywords", required: true, help: "Your city, area and counties served." }
       ]
     },
     {

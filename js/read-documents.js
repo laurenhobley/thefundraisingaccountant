@@ -18,8 +18,15 @@ var FACRead = (function () {
     { path: "org.zip", re: /^location\b[^:]*:\s*/i, zip: true },
     { path: "org.website", re: /^web\s?site\s*:\s*/i },
     { path: "org.mission", re: /^mission(\s+statement)?\s*:\s*/i, long: true },
-    { path: "org.keywords", re: /^key\s?words\s*:\s*/i, long: true }
+    // Key Words in four groups. A plain "Key Words:" list doesn't say which
+    // group, so it goes to Issue for the member to sort. "Location:" right
+    // after a keyword group is that group, not the ZIP's line (below).
+    { path: "org.kwIssue", re: /^key\s?words\s*:\s*/i, long: true, kw: true },
+    { path: "org.kwIssue", re: /^issues?\s*:\s*/i, long: true, kw: true },
+    { path: "org.kwPeople", re: /^people\s+served\s*:\s*/i, long: true, kw: true },
+    { path: "org.kwServices", re: /^services\s*:\s*/i, long: true, kw: true }
   ];
+  var KW_LOCATION = /^location\s*:\s*/i;
   var PROGRAM = [
     { id: "name", re: /^program\s+name\s*:\s*/i },
     { id: "description", re: /^description\s*:\s*/i, long: true },
@@ -54,7 +61,7 @@ var FACRead = (function () {
 
   function suggest(text) {
     var lines = String(text || "").replace(/\r\n?/g, "\n").split("\n"), out = [], seen = {};
-    var program = -1, list = "", items = { pain: -1, benchmarks: -1 }, item = null;
+    var program = -1, list = "", items = { pain: -1, benchmarks: -1 }, item = null, afterKw = false;
     function add(path, value, quote) {
       value = trim(value);
       if (!value || seen[path]) return;
@@ -74,9 +81,10 @@ var FACRead = (function () {
       var line = lines[i];
       if (!trim(line)) { item = null; continue; }
       var h = heading(line);
-      if (h) { list = h.list; item = null; continue; }
+      if (h) { list = h.list; item = null; afterKw = false; continue; }
       var l = label(line);
       if (l && l.program) {
+        afterKw = false;
         list = ""; item = null;
         if (l.program.id === "name") program++;
         var t = take(i, l.program.re, l.program.long);
@@ -87,6 +95,13 @@ var FACRead = (function () {
       }
       if (l && l.org) {
         list = ""; item = null;
+        if (l.org.zip && afterKw && KW_LOCATION.test(bare(line))) {
+          var kl = take(i, KW_LOCATION, true);
+          add("org.kwLocation", kl.value, kl.quote);
+          i = kl.next - 1;
+          continue;
+        }
+        afterKw = !!l.org.kw;
         var o = take(i, l.org.re, l.org.long);
         if (l.org.zip) {
           var z = ZIP.exec(o.value);

@@ -239,3 +239,11 @@ button.link { font: inherit; font-weight: 600; color: var(--accent); background:
 .next-line { margin: 0; text-align: center; font-size: 16px; }
 /* "Once you are happy with your …, press Next to continue." above the buttons. */
 .happy-line { margin: 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: 16px; }
+
+/* Key Words in four groups: each group's keywords as chips, and the total. */
+.kw-group { border: 1px solid var(--line); border-radius: 10px; padding: 16px; margin: 0; display: grid; gap: 16px; min-width: 0; }
+.kw-group legend { padding: 0 8px; margin-left: -8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips:empty { display: none; }
+.chip { background: var(--slip); border: 1px solid var(--line); border-radius: 999px; padding: 2px 12px; font-size: 15px; color: var(--heading); }
+.kw-count { font-weight: 700; color: var(--heading); }

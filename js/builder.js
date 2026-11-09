@@ -51,8 +51,16 @@
       '<label for="' + id + '">' + esc(q.label) + (q.note ? ' <span class="opt">' + esc(q.note) + '</span>' : "") + (q.required ? '<span class="req">*</span>' : "") + '</label>' +
       (q.help ? '<p class="hint">' + esc(q.help) + '</p>' : "") +
       input + (q.kind === "zip" ? '<p class="hint zip-place" id="' + id + '-place" aria-live="polite"></p>' : "") +
+      (q.kind === "keywords" ? '<div class="chips" id="' + id + '-chips" aria-hidden="true"></div>' : "") +
       followUpBox(path) + (S.needsLabel(path) ? labelBox(path) : "") +
       '</div>';
+  }
+
+  // Key Words: each group's keywords as chips under its box, and the total.
+  function refreshKeywords(path) {
+    var chips = $(idOf(path) + "-chips"), count = $("kw-count");
+    if (chips) chips.innerHTML = S.keywordList(S.get(state, path).text).map(function (k) { return '<span class="chip">' + esc(k) + '</span>'; }).join("");
+    if (count) count.textContent = Q.keywords.count.replace(/\{n\}/g, S.keywordCount(state)) + " " + Q.keywords.countHint;
   }
 
   // The place for the ZIP code ("Houston, TX"), from our own copy of
@@ -74,9 +82,16 @@
 
   var N = Q.flow.numbers;
 
+  // 1.1 Organization Info. The four keyword groups sit together under "Key
+  // Words", with the total under them.
   function orgScreen() {
-    var sec = S.section(Q, "org");
-    return heading(N.org, sec.title) + docPanel() + sec.questions.map(function (q) { return field(q, "org." + q.id); }).join("");
+    var sec = S.section(Q, "org"), K = Q.keywords;
+    var plain = sec.questions.filter(function (q) { return q.kind !== "keywords"; });
+    var groups = sec.questions.filter(function (q) { return q.kind === "keywords"; });
+    return heading(N.org, sec.title) + docPanel() + plain.map(function (q) { return field(q, "org." + q.id); }).join("") +
+      '<fieldset class="kw-group"><legend class="lbl">' + esc(K.title) + '</legend><p class="hint">' + esc(K.intro) + '</p>' +
+      groups.map(function (q) { return field(q, "org." + q.id); }).join("") +
+      '<p class="hint kw-count" id="kw-count" aria-live="polite"></p></fieldset>';
   }
 
   // ---------- Fill from a document ----------
@@ -464,7 +479,7 @@
         ' <button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, path) + '" data-focus="' + idOf(path) + '">' + esc(F.editLink) + '</button></li>');
     }
     if (of === "programs") {
-      row(S.section(Q, "org").questions.filter(function (q) { return q.id === "keywords"; })[0].label, state.org.keywords.text, "org.keywords");
+      row(Q.keywords.title, FACExport.keywordsText(Q, state), "org.kwIssue");
       state.programs.forEach(function (p, i) {
         row(programName(i), [p.name.text, p.outputs.text].filter(function (t) { return S.trim(t); }).join(" — ") +
           (i >= S.included(state) ? " (" + Q.rank.belowLine + ")" : ""), "programs." + i + ".name");
@@ -817,9 +832,11 @@
     // The flag under the answer: kept as is (Unsupported), or a noted same group.
     var flag = $(id + "-skipped"), base = S.baseIssue(Q, path, a, state), shared = S.sharedCount(state, path);
     var noted = a.overlap === "same" && !!shared;
+    // A keyword group kept empty is the member's choice: a quiet note, not Unsupported.
+    var keptEmpty = a.skipped && base === "missing" && S.isKeywords(path);
     flag.hidden = !((a.skipped && base) || noted);
-    flag.classList.toggle("noted", noted && !(a.skipped && base));
-    flag.textContent = a.skipped && base ? (base === "vague" ? F.keptVague : base === "output" ? F.keptOutput : base === "math" ? F.keptMath : base === "dollar" ? F.keptDollar : F.skipped)
+    flag.classList.toggle("noted", (noted && !(a.skipped && base)) || keptEmpty);
+    flag.textContent = keptEmpty ? Q.keywords.kept : a.skipped && base ? (base === "vague" ? F.keptVague : base === "output" ? F.keptOutput : base === "math" ? F.keptMath : base === "dollar" ? F.keptDollar : F.skipped)
       : noted ? F.overlapSameNote.replace(/\{program\}/g, programName(shared.other)) : "";
 
     $(id).classList.toggle("invalid", open);
@@ -840,9 +857,12 @@
       btn.textContent = F.separateButton;
       btn.hidden = !S.canConfirmSeparate(a);
     } else {
-      var lines = kind === "vague" ? (S.notNeeded(Q, path, a) ? F.notNeeded : F.vague) : kind === "output" ? F[S.outputGap(a.text)] : kind === "math" ? F.mathWrong : kind === "dollar" ? F.dollarWrong : path === "org.zip" ? F.missingZip : F.missing;
-      text = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text)).replace(/\{calc\}/g, function () { return S.mathProblem(a.text); });
-      btn.textContent = kind === "missing" ? F.skipButton : F.keepButton;
+      var group = kind === "missing" && S.isKeywords(path);
+      var lines = kind === "vague" ? (S.notNeeded(Q, path, a) ? F.notNeeded : F.vague) : kind === "output" ? F[S.outputGap(a.text)] : kind === "math" ? F.mathWrong : kind === "dollar" ? F.dollarWrong :
+        path === "org.zip" ? F.missingZip : group ? Q.keywords.missing : F.missing;
+      text = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text)).replace(/\{calc\}/g, function () { return S.mathProblem(a.text); })
+        .replace(/\{group\}/g, function () { return nameOf(path); });
+      btn.textContent = group ? Q.keywords.keepButton : kind === "missing" ? F.skipButton : F.keepButton;
       btn.hidden = !S.canSkip(a);
     }
     fu.querySelector(".fu-q").textContent = text;
@@ -852,6 +872,7 @@
   function refresh(path) {
     refreshFollowUp(path);
     if (path === "org.zip") { refreshZipPlace(); needZipList(); }
+    if (S.isKeywords(path)) refreshKeywords(path);
     var box = $(idOf(path) + "-lab");
     if (!box) return;
     var a = S.get(state, path), st = S.status(a);

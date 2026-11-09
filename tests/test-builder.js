@@ -30,14 +30,15 @@ T.run("Builder screens (builder.html)", function (check) {
 
   $("next").click();
   check("Next with blanks stays on Step 1", $("counter").textContent === "Step 1 of 23");
-  check("first Next: a follow-up under each of the 5 required answers", shown(".fu") === 5);
-  check("first follow-up wording", fu("f-org-name") === F.missing[0] && fu("f-org-zip") === F.missingZip[0]);
+  check("first Next: a follow-up under each of the 8 required answers (4 of them keyword groups)", shown(".fu") === 8);
+  check("first follow-up wording, and the keyword group's own", fu("f-org-name") === F.missing[0] && fu("f-org-zip") === F.missingZip[0] &&
+    fu("f-org-kwPeople") === FAC_QUESTIONS.keywords.missing[0].replace("{group}", "People served"));
   check("no Skip buttons after one follow-up", shown(".fu-skip") === 0);
   check("cursor goes to the first missing answer", document.activeElement.id === "f-org-name");
 
   $("next").click();
   check("second Next: second follow-up wording", fu("f-org-name") === F.missing[1] && fu("f-org-zip") === F.missingZip[1]);
-  check("second Next: a Skip button for each", shown(".fu-skip") === 5);
+  check("second Next: a Skip button for each, \"Keep it empty\" for keyword groups", shown(".fu-skip") === 8 && $("f-org-kwIssue-fu").querySelector(".fu-skip").textContent === FAC_QUESTIONS.keywords.keepButton);
 
   type("f-org-name", "Test Org");
   check("answering hides its follow-up", fu("f-org-name") === "");
@@ -54,8 +55,12 @@ T.run("Builder screens (builder.html)", function (check) {
   skip("f-org-website");
   check("Skip marks it skipped and Unsupported", !$("f-org-website-skipped").hidden && fu("f-org-website") === "" && saved().org.website.skipped === true);
   $("next").click();
-  check("Next still blocked by Key Words", $("counter").textContent === "Step 1 of 23" && shown(".fu") === 1);
-  type("f-org-keywords", "shelter, safety");
+  check("Next still blocked by the four keyword groups", $("counter").textContent === "Step 1 of 23" && shown(".fu") === 4);
+  type("f-org-kwIssue", "homelessness, safety"); type("f-org-kwPeople", "families"); type("f-org-kwServices", "shelter");
+  check("keywords show as chips, with the total under the groups", document.querySelectorAll("#f-org-kwIssue-chips .chip").length === 2 &&
+    $("kw-count").textContent === FAC_QUESTIONS.keywords.count.replace("{n}", "4") + " " + FAC_QUESTIONS.keywords.countHint);
+  skip("f-org-kwLocation");
+  check("a group kept empty gets a quiet note, not Unsupported", $("f-org-kwLocation-skipped").textContent === FAC_QUESTIONS.keywords.kept && $("f-org-kwLocation-skipped").classList.contains("noted"));
   $("next").click();
   check("all answered or skipped: Next goes to Program 1 of 1", $("counter").textContent === "Step 2 of 23" && /Program 1 of 1/.test(title()));
   check("on a program: 1.1 done (teal line to 1.2), 1.2 current", parts() === "1.1:done 1.2:current 1.3:todo 1.4:todo 1.5:todo" && document.querySelectorAll("#parts li")[1].classList.contains("after-done"));
@@ -190,7 +195,7 @@ T.run("Builder screens (builder.html)", function (check) {
   check("after the last program: the programs-and-keywords check", $("counter").textContent === "Step 5 of 24" && title().indexOf(FL.checkpoints.programs.title) > -1);
   check("its button says Next, like every forward button", $("next").textContent === FL.nextButton);
   var rows = Array.prototype.map.call(document.querySelectorAll("#screen .checklist li"), function (li) { return li.textContent; });
-  check("it lists the key words and both programs, each with Edit", rows.length === 3 && rows[0].indexOf("shelter, safety") > -1 &&
+  check("it lists the key words (by group) and both programs, each with Edit", rows.length === 3 && rows[0].indexOf("Issue: homelessness, safety; People served: families; Services: shelter") > -1 &&
     rows[1].indexOf("Emergency shelter") > -1 && rows.every(function (r) { return r.indexOf(FL.editLink) > -1; }));
   document.querySelectorAll('#screen .checklist button[data-act="goto"]')[2].click();
   check("Edit jumps to that program", /Program 2 of 2/.test(title()) && document.activeElement.id === "f-programs-1-name");

@@ -121,6 +121,10 @@ var FACSheet = (function () {
     var s = blank(Q), i;
     if (!data) return s;
     copyGroup(s.org, data.org);
+    // A draft from before the four keyword groups: its one list goes into
+    // Issue, for the member to sort into the other groups.
+    var oldKw = data.org && data.org.keywords && typeof data.org.keywords.text === "string" ? trim(data.org.keywords.text) : "";
+    if (oldKw && !trim(s.org.kwIssue.text)) s.org.kwIssue.text = oldKw;
     if (data.programs && data.programs.length) {
       s.programs = [];
       for (i = 0; i < data.programs.length; i++) s.programs.push(copyGroup(group(section(Q, "programs").questions), data.programs[i]));
@@ -225,13 +229,24 @@ var FACSheet = (function () {
     return "ok";
   }
 
+  // ---------- Key Words, in four groups ----------
+
+  var KEYWORD_GROUPS = ["kwIssue", "kwPeople", "kwServices", "kwLocation"];
+  function isKeywords(path) { return /^org\.kw/.test(path); }
+  // A group's keywords: its text split at commas, blanks dropped.
+  function keywordList(text) { return String(text || "").split(",").map(trim).filter(function (k) { return k; }); }
+  function keywordCount(state) {
+    return KEYWORD_GROUPS.reduce(function (n, id) { return n + keywordList(state.org[id].text).length; }, 0);
+  }
+
   // The ZIP code is a location, not a figure, so it never needs a label.
   // Nor are constraints ("about 300 words" is an instruction, not a figure).
   // In the donor tables, only the Tangible Result is a claim that needs a
   // source; investment amounts are the member's own ask levels. The same
   // goes for the magic wand's program and amount.
   function needsLabel(path) {
-    if (path === "org.zip" || path.indexOf("constraints.") === 0 || path === "wand.program" || path === "wand.amount") return false;
+    // Keywords are words, not figures ("24/7 shelter" needs no source).
+    if (path === "org.zip" || path.indexOf("org.kw") === 0 || path.indexOf("constraints.") === 0 || path === "wand.program" || path === "wand.amount") return false;
     if (path.indexOf("donors.") === 0) return /\.result$/.test(path);
     // Step 3: only the figures that are claims (the key fact, the value
     // created and the dollars saved) need a source.
@@ -769,6 +784,8 @@ var FACSheet = (function () {
     }
     for (i = 0; i < all.length; i++) {
       var a = get(state, all[i]);
+      // A keyword group kept empty is the member's choice, not a problem.
+      if (req[all[i]] && isMissing(all[i], a) && a.skipped && isKeywords(all[i])) continue;
       if (req[all[i]] && isMissing(all[i], a)) { out.push({ path: all[i], status: a.skipped ? "skipped" : "blank" }); continue; }
       var base = Q ? baseIssue(Q, all[i], a, state) : "";
       if (base === "vague") out.push({ path: all[i], status: a.skipped ? "keptVague" : "vague" });
@@ -818,6 +835,7 @@ var FACSheet = (function () {
   return {
     section: section, blank: blank, repair: repair, get: get, trim: trim,
     hasNumber: hasNumber, zipOk: zipOk, status: status, needsLabel: needsLabel,
+    KEYWORD_GROUPS: KEYWORD_GROUPS, isKeywords: isKeywords, keywordList: keywordList, keywordCount: keywordCount,
     isMissing: isMissing, requiredOn: requiredOn, missing: missing, ask: ask, canSkip: canSkip, skip: skip, setText: setText,
     vagueWord: vagueWord, notNeeded: notNeeded, isRequired: isRequired, issueOf: issueOf, answersOn: answersOn, issues: issues,
     hasYear: hasYear, hasCount: hasCount, outputGap: outputGap,

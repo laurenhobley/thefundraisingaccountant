@@ -41,7 +41,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 **The screens** follow FAC's flowchart and workshop workbook, three steps in order:
 
 **Step 1, Measure your ROI**
-1. **1.1** Organization Info, with an optional "Fill from a document" panel: the member pastes text or chooses a Word, PDF or .txt file, and each suggested answer shows the exact lines it came from, with Accept, Edit or Skip. Nothing is filled in until they accept it, and the document is never saved or sent.
+1. **1.1** Organization Info, with Key Words in four groups (Issue, People served, Services, Location; shown as chips with a running count), and an optional "Fill from a document" panel: the member pastes text or chooses a Word, PDF or .txt file, and each suggested answer shows the exact lines it came from, with Accept, Edit or Skip. Nothing is filled in until they accept it, and the document is never saved or sent.
 2. **1.2** one screen per program, then an optional stack rank from FAC's template (three drivers the member names, plus Money, each scored 1–3; the member types the Stack Rank, the tool checks it equals the four multiplied and sorts by it, then suggests where the Stack Ranks jump most; the member draws the red line, and programs below it are left out of the prompt), then a "Happy with your programs and keywords?" check
 3. Local Context/Data, from FAC's sheet
 4. **1.3** Benchmarks (with source, program and how it connects), then its check

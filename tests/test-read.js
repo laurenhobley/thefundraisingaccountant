@@ -27,7 +27,8 @@ T.run("Fill from a document (read-documents.js)", function (check) {
   function sheetText(org) {
     var A = org.answers, L = ["Organization Info", "Name: " + A.org.name,
       "Location (include zip): " + A.org.zip,
-      "Web Site: " + A.org.website, "Mission Statement: " + A.org.mission, "Key Words: " + A.org.keywords, "", "Programs (in order of priority)"];
+      "Web Site: " + A.org.website, "Mission Statement: " + A.org.mission, "Key Words:",
+      "Issue: " + A.org.kwIssue, "People served: " + A.org.kwPeople, "Services: " + A.org.kwServices, "Location: " + A.org.kwLocation, "", "Programs (in order of priority)"];
     A.programs.forEach(function (p, i) {
       L.push((i + 1) + ". Program Name: " + p.name, "   * Description: " + p.description, "   * Outputs: " + p.outputs, "   * Current Impact Statement (if any): " + p.impact);
     });
@@ -98,6 +99,12 @@ T.run("Fill from a document (read-documents.js)", function (check) {
   check("free text: only the web address and a ZIP after a state's letters", plain.length === 2 && find(plain, "org.website").text === "https://example.org/report" &&
     find(plain, "org.zip").text === "55999-1234");
   check("a count like 12345 is never taken for a ZIP", !R.suggest("We served 12345 meals in 2024.").length);
+  // Key Words in four groups.
+  var kw = R.suggest("Location (include zip): Lake Ruth, MN 55999\nKey Words: shelter, meals\nPeople served: families\nServices: food pantry\nLocation: Lake Ruth, Harris County");
+  check("a single Key Words list goes to Issue, for the member to sort", find(kw, "org.kwIssue").text === "shelter, meals");
+  check("People served, Services, and Location right after them, go to their groups", find(kw, "org.kwPeople").text === "families" && find(kw, "org.kwServices").text === "food pantry" &&
+    find(kw, "org.kwLocation").text === "Lake Ruth, Harris County");
+  check("the ZIP still comes from the Location (include zip) line", find(kw, "org.zip").text === "55999" && find(kw, "org.zip").quote.indexOf("include zip") > -1);
   check("nothing found in blank text", R.suggest("").length === 0 && R.suggest("   \n  ").length === 0);
   check("the same box is suggested once (the first one found)", R.suggest("Name: First Org\nName: Second Org").filter(function (g) { return g.path === "org.name"; }).length === 1);
 });
