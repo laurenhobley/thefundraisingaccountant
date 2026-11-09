@@ -13,7 +13,10 @@ var FAC_TEST_KIT = [
     file: "maple-street-youth-center.txt",
     flaws: [
       { path: "org.zip", issue: "missing", what: "No ZIP code" },
-      { path: "programs.1.name", issue: "duplicate", what: "Two programs named \"After-School Club\"" }
+      { path: "programs.1.name", issue: "duplicate", what: "Two programs named \"After-School Club\"" },
+      // Outcomes (the Current Impact Statement) is required since Steve's Step 1 flowchart (Nov 9).
+      { path: "programs.0.impact", issue: "missing", what: "Program 1 has no Outcomes" },
+      { path: "programs.1.impact", issue: "missing", what: "Program 2 has no Outcomes" }
     ],
     answers: {
       org: { name: "Maple Street Youth Center", zip: "", website: "https://example.org/maple",
@@ -32,7 +35,9 @@ var FAC_TEST_KIT = [
     file: "harbor-light-shelter.txt",
     flaws: [
       { path: "programs.1.outputs", issue: "overlap", what: "620 guests counted in both programs" },
-      { path: "pain.0", issue: "math", what: "620 × 30 × $45 written as $830,000" }
+      { path: "pain.0", issue: "math", what: "620 × 30 × $45 written as $830,000" },
+      { path: "programs.0.impact", issue: "missing", what: "Program 1 has no Outcomes" },
+      { path: "programs.1.impact", issue: "missing", what: "Program 2 has no Outcomes" }
     ],
     answers: {
       org: { name: "Harbor Light Shelter", zip: "04999", website: "https://example.org/harbor",

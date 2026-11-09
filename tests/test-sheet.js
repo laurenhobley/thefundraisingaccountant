@@ -8,7 +8,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("blank sheet starts with 1 program", s.programs.length === 1);
   check("blank sheet has every Organization Info question", ["name", "zip", "website", "mission", "kwIssue", "kwPeople", "kwServices", "kwLocation"].every(function (id) { return !!s.org[id]; }) && !s.org.city && !s.org.keywords);
   check("blank sheet has no numbers in it", S.problems(s).length === 0);
-  check("screens: Organization, 1 program, stack rank, check, 1.3 Outputs to Outcomes, Local Context, Benchmarks, check, Constraints, check, then Step 2 (no Step 1 review)", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,rank,check:programs,outcomes,pain,benchmarks,check:benchmarks,constraints,check:constraints,why,donors:regular,donors:major,wand,end,story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
+  check("screens follow Steve's flowchart: each Step 1 section, then its Happy? check, then Step 2 (no Step 1 review)", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,check:org,program,rank,check:programs,outcomes,check:outcomes,pain,benchmarks,check:benchmarks,constraints,check:constraints,why,donors:regular,donors:major,wand,end,story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
 
   var out = S.get(s, "programs.0.outputs");
   out.text = "Served 414 families in 2024";
@@ -30,23 +30,34 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   var n = S.addProgram(Q, s);
   check("Add program gives program 2", n === 1 && s.programs.length === 2);
-  check("24 screens with 2 programs", S.steps(s).length === 24);
-  check("program 2 is on screen 3", S.stepOf(s, "programs.1.name") === 2);
-  check("with 2 programs: stack rank on screen 4, check on 5, 1.3 on 6, Local Context on 7, Benchmarks on 8, Constraints on 10", S.steps(s)[3].kind === "rank" && S.steps(s)[4].of === "programs" && S.steps(s)[5].kind === "outcomes" && S.stepOf(s, "pain.0") === 6 && S.stepOf(s, "benchmarks.0") === 7 && S.stepOf(s, "constraints.tone") === 9);
-  // 1.3 Outputs to Outcomes, then go deeper or skip to 2.1.
-  check("1.3 checks each program's Outputs and Outcomes (its impact statement)", S.answersOn(s, 5).join() === "programs.0.outputs,programs.0.impact,programs.1.outputs,programs.1.impact");
+  check("26 screens with 2 programs", S.steps(s).length === 26);
+  check("program 2 is on screen 4 (after 1.1 and its check)", S.stepOf(s, "programs.1.name") === 3);
+  check("with 2 programs: stack rank on screen 5, its check on 6, 1.3 on 7, its check on 8, Local Context on 9, Benchmarks on 10, Constraints on 12",
+    S.steps(s)[4].kind === "rank" && S.steps(s)[5].of === "programs" && S.steps(s)[6].kind === "outcomes" && S.steps(s)[7].of === "outcomes" &&
+    S.stepOf(s, "pain.0") === 8 && S.stepOf(s, "benchmarks.0") === 9 && S.stepOf(s, "constraints.tone") === 11);
+  check("Outputs and Outcomes are on 1.3, not the program's own screen", S.stepOf(s, "programs.1.outputs") === 6 && S.stepOf(s, "programs.1.impact") === 6 &&
+    S.answersOn(s, 3).join() === "programs.1.name,programs.1.description");
+  // 1.3 Outputs to Outcomes, then its check: go deeper or skip to 2.1.
+  check("1.3 checks each program's Outputs and Outcomes (its impact statement)", S.answersOn(s, 6).join() === "programs.0.outputs,programs.0.impact,programs.1.outputs,programs.1.impact");
+  check("1.3 requires both, for every program", S.requiredOn(Q, s, 6).join() === "programs.0.outputs,programs.0.impact,programs.1.outputs,programs.1.impact");
   s.rank.use = "yes"; s.rank.line = 1;
-  check("only programs above the red line are on 1.3", S.answersOn(s, 5).join() === "programs.0.outputs,programs.0.impact");
+  check("only programs above the red line are on 1.3", S.answersOn(s, 6).join() === "programs.0.outputs,programs.0.impact" && S.requiredOn(Q, s, 6).length === 2);
   s.rank.use = ""; s.rank.line = null;
   var why = S.stepOf(s, "why.lost");
-  check("go deeper: Next from 1.3 goes to 1.4 Local Context", (s.depth = "deeper", S.nextStep(s, 5) === 6 && S.prevStep(s, why) === why - 1));
-  check("skip: Next from 1.3 goes straight to 2.1, and Previous from 2.1 back to 1.3", (s.depth = "skip", S.nextStep(s, 5) === why && S.prevStep(s, why) === 5));
+  check("go deeper: Next from the 1.3 check goes to 1.4 Local Context", (s.depth = "deeper", S.nextStep(s, 7) === 8 && S.prevStep(s, why) === why - 1));
+  check("skip: Next from the 1.3 check goes straight to 2.1, and Previous from 2.1 back to that check", (s.depth = "skip", S.nextStep(s, 7) === why && S.prevStep(s, why) === 7));
+  check("the choice is asked on the check, so Next from 1.3 itself goes to the check", S.nextStep(s, 6) === 7);
+  check("1.5's Skip to Step 2 goes to 2.1", S.step2(s) === why && S.steps(s)[why].kind === "why");
   s.depth = "";
   var oldStep = S.repair(Q, { programs: [{ name: { text: "A" } }], step: 9 });
   var oldPain = S.repair(Q, { programs: [{ name: { text: "A" } }], step: 4 });
-  var newDraft = S.repair(Q, { programs: [{ name: { text: "A" } }], step: 9, flow: 2, depth: "skip" });
-  check("a draft on the old Step 1 review opens on 1.3; one on Local Context moves with it; a new draft keeps its place and choice",
-    S.steps(oldStep)[oldStep.step].kind === "outcomes" && S.steps(oldPain)[oldPain.step].kind === "pain" && newDraft.step === 9 && newDraft.depth === "skip");
+  var flow2 = S.repair(Q, { programs: [{ name: { text: "A" } }], step: 9, flow: 2, depth: "skip" });
+  var flow2Prog = S.repair(Q, { programs: [{ name: { text: "A" } }], step: 1, flow: 2 });
+  var newDraft = S.repair(Q, { programs: [{ name: { text: "A" } }], step: 9, flow: 3, depth: "skip" });
+  check("old drafts open on the same screen: old Step 1 review on 1.3, Local Context, a 1.3-order constraints check, a program; a new draft keeps its place and choice",
+    S.steps(oldStep)[oldStep.step].kind === "outcomes" && S.steps(oldPain)[oldPain.step].kind === "pain" &&
+    S.steps(flow2)[flow2.step].of === "constraints" && flow2.depth === "skip" && S.steps(flow2Prog)[flow2Prog.step].kind === "program" &&
+    newDraft.step === 9 && newDraft.depth === "skip");
   S.removeProgram(s, 1); S.removeProgram(s, 0);
   check("the last program can't be removed", s.programs.length === 1);
 
@@ -66,14 +77,15 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("old draft: answers kept", r.org.name.text === "Test Org" && r.programs.length === 2 && r.programs[1].name.text === "Counseling");
   check("old draft: unknown labels dropped", r.org.name.label === "");
   check("old draft: questions that no longer exist dropped", !r.org.oldQuestion);
-  check("old draft: missing parts filled in", r.pain.length === 1 && r.org.zip.text === "" && r.step === 2);
+  check("old draft: missing parts filled in (still on program 2)", r.pain.length === 1 && r.org.zip.text === "" && r.step === 3);
   check("no draft gives a blank sheet", S.repair(Q, null).programs.length === 1);
 
   // Missing answers: follow-ups, then skip.
   var m = S.blank(Q);
-  check("blank Organization Info: all 8 required answers missing", S.missing(Q, m, 0).join() === "org.name,org.zip,org.website,org.mission,org.kwIssue,org.kwPeople,org.kwServices,org.kwLocation");
-  check("blank program: Program Name, Description, Outputs missing (not Current Impact Statement)",
-    S.missing(Q, m, 1).join() === "programs.0.name,programs.0.description,programs.0.outputs");
+  check("blank Organization Info: 7 required answers missing (not the website, which Screen 1 asks)", S.missing(Q, m, 0).join() === "org.name,org.zip,org.mission,org.kwIssue,org.kwPeople,org.kwServices,org.kwLocation");
+  check("blank program: Program Name and Description missing", S.missing(Q, m, 2).join() === "programs.0.name,programs.0.description");
+  check("blank 1.3: Outputs and Outcomes missing", S.missing(Q, m, S.stepOf(m, "programs.0.outputs")).join() === "programs.0.outputs,programs.0.impact");
+  check("the Happy? checks block nothing", S.missing(Q, m, 1).length === 0 && S.missing(Q, m, S.stepOf(m, "programs.0.outputs") + 1).length === 0);
   check("Pain Statements and Benchmarks never block Next", S.missing(Q, m, S.stepOf(m, "pain.0")).length === 0 && S.missing(Q, m, S.stepOf(m, "benchmarks.0")).length === 0);
   S.setText(Q, m,"org.name", "   ");
   check("an answer of only spaces counts as missing", S.missing(Q, m, 0).indexOf("org.name") > -1);
@@ -81,22 +93,22 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("ZIP 7700 counts as missing", S.missing(Q, m, 0).indexOf("org.zip") > -1);
   S.setText(Q, m,"org.zip", "77001");
   check("ZIP 77001 is answered", S.missing(Q, m, 0).indexOf("org.zip") === -1);
-  var web = S.get(m, "org.website");
+  var web = S.get(m, "org.mission");
   S.ask(Q, m, 0);
   check("first Next: 1 follow-up, can't skip yet", web.asks === 1 && !S.canSkip(web));
-  S.skip(m, "org.website");
+  S.skip(m, "org.mission");
   check("skip refused before the second follow-up", web.skipped === false);
   S.ask(Q, m, 0);
   check("second Next: 2 follow-ups, can skip", web.asks === 2 && S.canSkip(web));
   S.ask(Q, m, 0);
   check("follow-ups stop at 2", web.asks === 2);
-  S.skip(m, "org.website");
-  check("skipped answer no longer blocks Next", web.skipped && S.missing(Q, m, 0).indexOf("org.website") === -1);
-  check("end screen list shows it as skipped", S.problems(m, Q).some(function (p) { return p.path === "org.website" && p.status === "skipped"; }));
+  S.skip(m, "org.mission");
+  check("skipped answer no longer blocks Next", web.skipped && S.missing(Q, m, 0).indexOf("org.mission") === -1);
+  check("end screen list shows it as skipped", S.problems(m, Q).some(function (p) { return p.path === "org.mission" && p.status === "skipped"; }));
   check("and other missing answers as still blank", S.problems(m, Q).some(function (p) { return p.path === "org.kwPeople" && p.status === "blank"; }));
-  S.setText(Q, m,"org.website", " ");
+  S.setText(Q, m,"org.mission", " ");
   check("typing only a space keeps the skip", web.skipped);
-  S.setText(Q, m,"org.website", "https://example.org");
+  S.setText(Q, m,"org.mission", "We help families");
   check("a real answer clears the skip and the follow-ups", !web.skipped && web.asks === 0);
   var r2 = S.repair(Q, { org: { website: { text: "", asks: 2, skipped: true }, city: { text: "Old Town, MN" }, name: { asks: "lots", skipped: "yes" } } });
   check("old draft: follow-ups and skips kept", r2.org.website.asks === 2 && r2.org.website.skipped === true);
@@ -141,7 +153,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("optional answers are checked too", S.issues(Q, v, S.stepOf(v, "pain.0")).join() === "pain.0");
   check("blank optional answer needs no follow-up", S.issueOf(Q, "benchmarks.0", S.get(v, "benchmarks.0")) === "");
   check("Next on a program counts vague and missing together",
-    S.issues(Q, v, 1).join() === "programs.0.name,programs.0.description,programs.0.outputs");
+    S.issues(Q, v, 2).join() === "programs.0.name,programs.0.description" && S.issues(Q, v, S.stepOf(v, "programs.0.outputs")).join() === "programs.0.outputs,programs.0.impact");
   var pain = S.get(v, "pain.0");
   S.ask(Q, v, S.stepOf(v, "pain.0")); S.ask(Q, v, S.stepOf(v, "pain.0"));
   check("two follow-ups, then Keep my answer is allowed", pain.asks === 2 && S.canSkip(pain));
@@ -153,7 +165,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   S.setText(Q, v, "pain.0", "State budget cuts");
   check("edited to remove the filler word: flag cleared", !pain.skipped && pain.asks === 0 && S.problems(v, Q).every(function (p) { return p.path !== "pain.0"; }));
   var d = S.get(v, "programs.0.description");
-  S.ask(Q, v, 1);
+  S.ask(Q, v, 2);
   check("blank Description asked once", d.asks === 1);
   S.setText(Q, v, "programs.0.description", "TBD");
   check("blank answer that becomes \"TBD\" starts again at the first follow-up", d.asks === 0 && S.issueOf(Q, "programs.0.description", d) === "vague");
@@ -182,8 +194,8 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   S.setText(Q, o, "programs.0.description", "Meals provided");
   check("only Outputs is checked for a number and year", S.issueOf(Q, "programs.0.description", S.get(o, "programs.0.description")) === "");
   var out2 = S.get(o, op);
-  S.ask(Q, o, 1); S.ask(Q, o, 1); S.skip(o, op);
-  check("kept as is after two follow-ups", out2.skipped && S.issues(Q, o, 1).indexOf(op) === -1);
+  var oc = S.stepOf(o, op); S.ask(Q, o, oc); S.ask(Q, o, oc); S.skip(o, op);
+  check("kept as is after two follow-ups", out2.skipped && S.issues(Q, o, oc).indexOf(op) === -1);
   check("end screen list: no number or year (Unsupported)", S.problems(o, Q).some(function (p) { return p.path === op && p.status === "outputNoNumberOrYearKept"; }));
   S.setText(Q, o, op, "Meals provided in 2024");
   check("adding only the year: still kept, now just no number", out2.skipped && S.outputGap(out2.text) === "outputNoNumber");
@@ -208,10 +220,10 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("Outputs aren't compared", S.duplicateOf(dp, "programs.2.outputs") === -1);
   var dn = S.get(dp, "programs.2.name");
   check("matching name: duplicate follow-up", S.issueOf(Q, "programs.2.name", dn, dp) === "duplicate");
-  S.ask(Q, dp, 3);
+  S.ask(Q, dp, S.stepOf(dp, "programs.2.name"));
   check("one follow-up, then \"These are separate programs\" is allowed", dn.asks === 1 && S.canConfirmSeparate(dn));
   S.confirmSeparate(dp, "programs.2.name");
-  check("confirmed separate: no longer blocks Next, no Unsupported flag", S.issues(Q, dp, 3).indexOf("programs.2.name") === -1 && !dn.skipped);
+  check("confirmed separate: no longer blocks Next, no Unsupported flag", S.issues(Q, dp, S.stepOf(dp, "programs.2.name")).indexOf("programs.2.name") === -1 && !dn.skipped);
   check("end screen still lists the matching description", S.problems(dp, Q).some(function (p) { return p.path === "programs.2.description" && p.status === "duplicate" && p.other === 0; }));
   check("but not the confirmed name", S.problems(dp, Q).every(function (p) { return p.path !== "programs.2.name"; }));
   S.setText(Q, dp, "programs.2.name", "Housing Assistance");
@@ -243,18 +255,18 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("program 2 shares nothing", S.sharedCount(dc, "programs.1.outputs") === null);
   check("the same year in two programs isn't a shared number", S.sharedCount(dc, "programs.1.outputs") === null && S.numbersIn("in 2024").length === 0);
   check("no year comes first: output follow-up", S.issueOf(Q, o3, a3, dc) === "output");
-  S.ask(Q, dc, 3); S.ask(Q, dc, 3); S.skip(dc, o3);
+  S.ask(Q, dc, S.stepOf(dc, o3)); S.ask(Q, dc, S.stepOf(dc, o3)); S.skip(dc, o3);
   check("kept with no year: still asked about the shared 831", S.issueOf(Q, o3, a3, dc) === "overlap" && a3.asks === 0);
   check("end screen lists both: no year, then shares 831", S.problems(dc, Q).filter(function (p) { return p.path === o3; }).map(function (p) { return p.status; }).join().indexOf("outputNoYearKept,overlap") === 0);
   S.resolveOverlap(dc, o3, "same");
   check("can't answer before the follow-up is shown", a3.overlap === "");
-  S.ask(Q, dc, 3);
+  S.ask(Q, dc, S.stepOf(dc, o3));
   S.resolveOverlap(dc, o3, "same");
   check("Same group, both programs: settled, no Unsupported added", a3.overlap === "same" && S.issueOf(Q, o3, a3, dc) === "");
   check("saved for the export: 831 is the same group as program 1", JSON.stringify(S.sameGroups(dc)) === JSON.stringify([{ path: o3, value: "831", other: 0 }]));
   S.setText(Q, dc, o3, "831 children received counseling in 2024");
   check("editing the answer asks again", a3.overlap === "" && S.issueOf(Q, o3, a3, dc) === "overlap");
-  S.ask(Q, dc, 3);
+  S.ask(Q, dc, S.stepOf(dc, o3));
   S.resolveOverlap(dc, o3, "different");
   check("Different groups: settled, not saved for the export", S.issueOf(Q, o3, a3, dc) === "" && S.sameGroups(dc).length === 0);
   S.setText(Q, dc, "programs.0.outputs", "830 youth received housing in 2024");
@@ -454,7 +466,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   var s3 = S.blank(Q);
   check("Step 3 screens come after the Step 2 review", S.steps(s3).slice(-8).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() ===
     "story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
-  check("each Step 3 box sits on its own screen", S.stepOf(s3, "story.keyFact") === 15 && S.stepOf(s3, "story.clientQuote") === 17 && S.stepOf(s3, "story.roi") === 18 && S.stepOf(s3, "story.investDollars") === 19);
+  check("each Step 3 box sits on its own screen", S.stepOf(s3, "story.keyFact") === 17 && S.stepOf(s3, "story.clientQuote") === 19 && S.stepOf(s3, "story.roi") === 20 && S.stepOf(s3, "story.investDollars") === 21);
   check("a pasted ROI.bot answer becomes round 1", S.addRound(s3, "challenge", "First try") && s3.storyOut.challenge.rounds.length === 1 && S.latest(s3, "challenge") === "First try");
   check("the same paste again isn't a new round", S.addRound(s3, "challenge", "First try") === false && s3.storyOut.challenge.rounds.length === 1);
   S.addRound(s3, "challenge", "Second try");

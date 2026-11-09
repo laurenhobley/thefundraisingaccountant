@@ -161,7 +161,9 @@ var FAC_QUESTIONS = {
         // Only the ZIP code, no city and state (Lauren, 2026-11-07). Help: draft for Steve.
         { id: "zip", label: "Location: ZIP code", kind: "zip", required: true, placeholder: "5-digit ZIP", help: "Where you do most of your work. ROI.bot uses your ZIP code to find local and state figures." },
         // The place shown under the ZIP box comes from GeoNames' ZIP list (zipPlace, below).
-        { id: "website", label: "Web Site", kind: "url", required: true, help: "Your main web address." },
+        // Not required here: Screen 1 already asks for it (Steve's Step 1 flowchart,
+        // Nov 8: at 1.1 the member confirms name, location, mission and keywords).
+        { id: "website", label: "Web Site", kind: "url", required: false, help: "Your main web address." },
         { id: "mission", label: "Mission Statement", kind: "long", required: true, help: "Your mission statement, as you share it with donors." },
         // Key Words in four groups (Steve's Step 1.1 instructions): each a
         // comma-separated list, shown as chips. Wording in keywords, below.
@@ -181,8 +183,12 @@ var FAC_QUESTIONS = {
       questions: [
         { id: "name", label: "Program Name", kind: "text", required: true, help: "Start with your most important program. You can add more after this one." },
         { id: "description", label: "Description", kind: "long", required: true, help: "What the program does and who it serves, in a sentence or two." },
-        { id: "outputs", label: "Outputs", kind: "long", required: true, help: "What the program delivered: how many, of what, and in which year." },
-        { id: "impact", label: "Current Impact Statement", note: "(if any)", kind: "long", required: false, help: "A short statement you already use about this program's impact. Leave it blank if you don't have one." }
+        // Outputs and Outcomes are asked on 1.3 Outputs to Outcomes, not on each
+        // program's screen (Steve's Step 1 flowchart, Nov 8): screen: "outcomes".
+        { id: "outputs", label: "Outputs", kind: "long", required: true, screen: "outcomes", help: "What the program delivered: how many, of what, and in which year." },
+        // "(if any)" stays because the prompt keeps FAC's sheet line word for word;
+        // on screen, 1.3 calls it "Outcomes (what changed)".
+        { id: "impact", label: "Current Impact Statement", note: "(if any)", kind: "long", required: true, screen: "outcomes", help: "A short statement you already use about this program's impact." }
       ]
     },
     {
@@ -294,13 +300,21 @@ var FAC_QUESTIONS = {
     startOverConfirm: "Click again to clear everything",
     // Above Next on each part's main screen (Version 2 plan, word for word).
     happyLine: "Once you are happy with your {thing}, press Next to continue.",
+    // 1.5 is optional, so it also offers the flowchart's "Skip to Step 2".
+    skipToStep2: "Skip to Step 2",
     happy: { org: "keywords", rank: "stack ranking", outcomes: "outputs to outcomes", pain: "context", benchmarks: "context", constraints: "constraints",
       why: "pain statements", regular: "Donate Now table", major: "Major Donor Ladder" },
     editLink: "Edit",
     empty: "(blank)",
+    // One "Happy?" check after each section, as in Steve's Step 1 flowchart
+    // (Nov 8): Keywords (1.1), Stack Ranking (1.2), Outputs to Outcomes (1.3,
+    // with the go deeper or skip choice), Context (1.4) and constraints (1.5).
+    // Titles from the flowchart; the rest is draft for Steve.
     checkpoints: {
-      programs: { title: "Happy with your programs and keywords?", text: "Check your key words and programs. Edit anything that isn't right, then continue." },
-      benchmarks: { title: "Happy with your benchmarks?", text: "Check your benchmarks. Edit anything that isn't right, then continue.", none: "No benchmarks added." },
+      org: { title: "Happy with your keywords?", text: "Check your organization info and key words. Edit anything that isn't right, then continue." },
+      programs: { title: "Happy with your stack ranking?", titleUnranked: "Happy with your programs?", text: "Check your programs and their order. Edit anything that isn't right, then continue." },
+      outcomes: { title: "Happy with your outputs to outcomes?", text: "Check what each program did and what changed. Edit anything that isn't right." },
+      benchmarks: { title: "Happy with your context?", text: "Check your local context and benchmarks. Edit anything that isn't right, then continue.", none: "No context or benchmarks added." },
       constraints: { title: "Happy with your constraints?", text: "Check how you want your story written. When you're happy, build your story.", none: "None set. ROI.bot will choose." }
     }
   },
@@ -339,6 +353,8 @@ var FAC_QUESTIONS = {
   wand: {
     number: "2.4",
     title: "Wave a magic wand",
+    // Optional in Steve's Step 1 flowchart (Nov 8): "Magic Wand (optional)".
+    note: "(optional)",
     intro: "If you could make a wish, what would you want your donors to invest in?",
     program: "Program",
     programHelp: "Pick one of your programs or type another.",

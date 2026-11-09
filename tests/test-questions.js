@@ -51,12 +51,18 @@ T.run("Questions (js/questions.js)", function (check) {
     Q.review.versionLabel.indexOf("{n}") > -1 && Q.review.versionLabel.indexOf("{date}") > -1);
   check("Organization Info asks: Name, ZIP code (no city and state), Website, Mission Statement, and Key Words in four groups",
     labels("org") === "Name, Location: ZIP code, Web Site, Mission Statement, Issue, People served, Services, Location" && Q.keywords.title === "Key Words");
-  check("every Organization Info question is required", S.section(Q, "org").questions.every(function (q) { return q.required; }));
+  check("Organization Info: all required but the website, which Screen 1 asks for (Steve's flowchart)",
+    S.section(Q, "org").questions.filter(function (q) { return !q.required; }).map(function (q) { return q.id; }).join() === "website");
   check("Programs ask: Program Name, Description, Outputs, Current Impact Statement",
     labels("programs") === "Program Name, Description, Outputs, Current Impact Statement");
   check("Programs repeat, in order of priority", S.section(Q, "programs").repeat === true && S.section(Q, "programs").note === "(in order of priority)");
-  check("only Current Impact Statement (if any) is optional in a program",
-    S.section(Q, "programs").questions.filter(function (q) { return !q.required; }).map(function (q) { return q.id + q.note; }).join() === "impact(if any)");
+  check("every program question is required; Outputs and Outcomes are asked on 1.3 (Steve's flowchart)",
+    S.section(Q, "programs").questions.every(function (q) { return q.required; }) &&
+    S.section(Q, "programs").questions.filter(function (q) { return q.screen === "outcomes"; }).map(function (q) { return q.id; }).join() === "outputs,impact");
+  check("checks after 1.1, 1.2 and 1.3 have their flowchart titles; 1.5 can skip to Step 2; Magic Wand is optional",
+    Q.flow.checkpoints.org.title === "Happy with your keywords?" && Q.flow.checkpoints.programs.title === "Happy with your stack ranking?" &&
+    Q.flow.checkpoints.outcomes.title === "Happy with your outputs to outcomes?" && Q.flow.checkpoints.benchmarks.title === "Happy with your context?" &&
+    Q.flow.skipToStep2 === "Skip to Step 2" && Q.wand.note === "(optional)");
   check("Local Context/Data and Benchmarks are optional", S.section(Q, "pain").optional && S.section(Q, "benchmarks").optional);
   check("Final Prompt matches FAC's sheet word for word", Q.finalPrompt === FINAL);
   check("guardrail line matches the plan word for word", Q.guardrail === GUARD);

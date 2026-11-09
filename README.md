@@ -39,19 +39,19 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 - **Reasonable estimate:** a note says where it came from.
 - **Unsupported:** stays visibly flagged.
 
-**The screens** follow FAC's flowchart and workshop workbook, three steps in order:
+**The screens** follow FAC's flowchart and workshop workbook, three steps in order. In Step 1, as in Steve's Step 1 flowchart, each section ends with its own "Happy?" check, listing the answers with Edit links.
 
 **Step 1, Pick Your Story**
-1. **1.1** Organization Info, with Key Words in four groups (Issue, People served, Services, Location; shown as chips with a running count), and an optional "Fill from a document" panel: the member pastes text or chooses a Word, PDF or .txt file, and each suggested answer shows the exact lines it came from, with Accept, Edit or Skip. Nothing is filled in until they accept it, and the document is never saved or sent.
-2. **1.2** one screen per program, then an optional stack rank from FAC's template (three drivers the member names, plus Money, each scored 1–3; the member types the Stack Rank, the tool checks it equals the four multiplied and sorts by it, then suggests where the Stack Ranks jump most; the member draws the red line, and programs below it are left out of the prompt), then a "Happy with your programs and keywords?" check
-3. **1.3** Outputs to Outcomes: one row per program above the red line, its Outputs and its Outcomes (the Current Impact Statement) side by side. Then "Go deeper now… or skip to Step 2?"
-4. **1.4** Add Context: Local Context/Data (from FAC's sheet) and Benchmarks (with source, program and how it connects), then its check
-5. **1.5** Add Constraints (tone, length, format, audience), then its check. A member who skips at 1.3 goes straight to 2.1 and can still open 1.4 and 1.5 from the progress bar.
+1. **1.1** Organization Info, with Key Words in four groups (Issue, People served, Services, Location; shown as chips with a running count), and an optional "Fill from a document" panel: the member pastes text or chooses a Word, PDF or .txt file, and each suggested answer shows the exact lines it came from, with Accept, Edit or Skip. Nothing is filled in until they accept it, and the document is never saved or sent. Name, ZIP, mission and key words are required; the website is optional here because Screen 1 asks for it. Then "Happy with your keywords?"
+2. **1.2** one screen per program (name and description, both required), then an optional stack rank from FAC's template (three drivers the member names, plus Money, each scored 1–3; the member types the Stack Rank, the tool checks it equals the four multiplied and sorts by it, then suggests where the Stack Ranks jump most; the member draws the red line, and programs below it are left out of the prompt). Then "Happy with your stack ranking?"
+3. **1.3** Outputs to Outcomes: one row per program above the red line, its Outputs and its Outcomes (the Current Impact Statement) side by side, both required. Then "Happy with your outputs to outcomes?", which asks "Go deeper now… or skip to Step 2?"
+4. **1.4** Add Context: Local Context/Data (from FAC's sheet) and Benchmarks (with source, program and how it connects), both optional. Then "Happy with your context?"
+5. **1.5** Add Constraints (tone, length, format, audience), optional, with a "Skip to Step 2" button. Then "Happy with your constraints?" A member who skips at 1.3 goes straight to 2.1 and can still open 1.4 and 1.5 from the progress bar.
 
 **Step 2, Get the Right Numbers**
 1. **2.1** Pain statements, with a Why Now preview. It can bring in answers from the pain statement form.
 2. **2.2** Donate Now (the Regular donor table) and **2.3** Major Donors (the Major donor table). The member types every amount.
-3. **2.4** Magic wand
+3. **2.4** Magic wand (optional)
 4. **2.5** Build the Prompt: the review screen, where Role, Task and Constraints can be edited, and the prompt is copied or downloaded.
 
 **Step 3, Tell your story**

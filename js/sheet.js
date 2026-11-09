@@ -50,7 +50,8 @@ var FACSheet = (function () {
       // "skip" (straight to 2.1); "" until the member chooses.
       depth: "",
       // 2 = Step 1 in Steve's 1.3 order (Outputs to Outcomes before 1.4 and 1.5).
-      flow: 2,
+      // 3 = Steve's Step 1 flowchart (Nov 8): a "Happy?" check after 1.1 and 1.3 too.
+      flow: 3,
       rankRows: [rankRow()],
       // The member's own wording for the prompt's Role, Task and
       // Constraints, edited on the review screen. null means FAC's wording
@@ -197,10 +198,16 @@ var FACSheet = (function () {
     if (data.depth === "deeper" || data.depth === "skip") s.depth = data.depth;
     // A draft from before Steve's 1.3 order: the old Step 1 review is now 1.3
     // Outputs to Outcomes, and Local Context to Constraints moved one on.
-    if (data.flow !== 2) {
-      var n = s.programs.length;
+    var n = s.programs.length;
+    if (data.flow !== 2 && data.flow !== 3) {
       if (s.step === n + 8) s.step = n + 3;
       else if (s.step >= n + 3 && s.step <= n + 7) s.step += 1;
+    }
+    // A draft from before the flowchart's checks after 1.1 and 1.3: screens
+    // from the first program to 1.3 moved one on, and the rest two on.
+    if (data.flow !== 3) {
+      if (s.step >= 1 && s.step <= n + 3) s.step += 1;
+      else if (s.step >= n + 4) s.step += 2;
     }
     return s;
   }
@@ -540,15 +547,19 @@ var FACSheet = (function () {
     var st = steps(state)[step], out = [], id, i;
     if (!st) return out;
     if (st.kind === "org") for (id in state.org) { if (state.org.hasOwnProperty(id)) out.push("org." + id); }
-    else if (st.kind === "program") { for (id in state.programs[st.index]) if (state.programs[st.index].hasOwnProperty(id)) out.push("programs." + st.index + "." + id); }
+    else if (st.kind === "program") { for (id in state.programs[st.index]) if (state.programs[st.index].hasOwnProperty(id) && ON_OUTCOMES.indexOf(id) < 0) out.push("programs." + st.index + "." + id); }
     else if (st.kind === "pain" || st.kind === "benchmarks") for (i = 0; i < state[st.kind].length; i++) out.push(st.kind + "." + i);
     // 1.3: each program above the red line's Outputs and Outcomes (its Current Impact Statement).
-    else if (st.kind === "outcomes") for (i = 0; i < included(state); i++) out.push("programs." + i + ".outputs", "programs." + i + ".impact");
+    else if (st.kind === "outcomes") for (i = 0; i < included(state); i++) ON_OUTCOMES.forEach(function (k) { out.push("programs." + i + "." + k); });
     else if (st.kind === "constraints" || st.kind === "why" || st.kind === "wand") for (id in state[st.kind]) { if (state[st.kind].hasOwnProperty(id)) out.push(st.kind + "." + id); }
     else if (st.kind === "donors") out = donorPaths(state, st.of);
     else if (st.kind === "story" || st.kind === "funder") out = (STORY_FIELDS[st.of || "funder"] || []).map(function (id) { return "story." + id; });
     return out;
   }
+
+  // The program boxes asked on 1.3 Outputs to Outcomes, not on the program's
+  // own screen (Steve's Step 1 flowchart; screen: "outcomes" in questions.js).
+  var ON_OUTCOMES = ["outputs", "impact"];
 
   // Which of Step 3's own boxes sit on which screen.
   var STORY_FIELDS = { challenge: ["keyFact"], response: [], outcome: ["clientStory", "clientQuote", "secondQuote"], roi: ["investment", "value", "roi", "everyDollar", "ask", "timeframe"], funder: ["investProgram", "investOutcomes", "investDollars"] };
@@ -574,7 +585,13 @@ var FACSheet = (function () {
     var st = steps(state)[step], out = [], qs, prefix;
     if (!st) return out;
     if (st.kind === "org") { qs = section(Q, "org").questions; prefix = "org."; }
-    else if (st.kind === "program") { qs = section(Q, "programs").questions; prefix = "programs." + st.index + "."; }
+    else if (st.kind === "program") {
+      qs = section(Q, "programs").questions.filter(function (q) { return ON_OUTCOMES.indexOf(q.id) < 0; }); prefix = "programs." + st.index + ".";
+    }
+    // 1.3: the required boxes of each program above the red line.
+    else if (st.kind === "outcomes") {
+      return answersOn(state, step).filter(function (p) { return isRequired(Q, p); });
+    }
     else return out;
     for (var i = 0; i < qs.length; i++) if (qs[i].required) out.push(prefix + qs[i].id);
     return out;
@@ -667,12 +684,14 @@ var FACSheet = (function () {
   // 1.4 Constraints and its check, then 1.5 the review screen.
   // After the programs comes the optional stack rank.
   function steps(state) {
-    var out = [{ kind: "org" }];
+    // Steve's Step 1 flowchart (Nov 8): each section, then its "Happy?" check.
+    var out = [{ kind: "org" }, { kind: "check", of: "org" }];
     for (var i = 0; i < state.programs.length; i++) out.push({ kind: "program", index: i });
-    // Steve's Step 1.3 order: 1.3 Outputs to Outcomes after the programs, then
-    // 1.4 Add Context (Local Context, Benchmarks) and 1.5 Add Constraints, which
-    // a member can skip. The prompt is reviewed once, at 2.5.
-    out.push({ kind: "rank" }, { kind: "check", of: "programs" }, { kind: "outcomes" }, { kind: "pain" }, { kind: "benchmarks" }, { kind: "check", of: "benchmarks" },
+    // 1.3 Outputs to Outcomes after the programs and stack ranking; its check
+    // asks go deeper (1.4 Add Context: Local Context, Benchmarks; 1.5 Add
+    // Constraints) or skip to Step 2. The prompt is reviewed once, at 2.5.
+    out.push({ kind: "rank" }, { kind: "check", of: "programs" }, { kind: "outcomes" }, { kind: "check", of: "outcomes" },
+      { kind: "pain" }, { kind: "benchmarks" }, { kind: "check", of: "benchmarks" },
       { kind: "constraints" }, { kind: "check", of: "constraints" },
       // Step 2, then the review screen again with Step 2 in the prompt.
       // 2.2 Donate Now and 2.3 Major Donors are the two donor tables, one screen each.
@@ -683,30 +702,33 @@ var FACSheet = (function () {
     return out;
   }
 
-  // Where Next and ← Previous go. After 1.3, a member who chose to skip goes
-  // straight to 2.1 Pain Statements, and back from 2.1 to 1.3.
-  function indexOfKind(state, kind) {
+  // Where Next and ← Previous go. After the 1.3 check, a member who chose to
+  // skip goes straight to 2.1 Pain Statements, and back from 2.1 to that check.
+  function indexOf(state, kind, of) {
     var all = steps(state);
-    for (var i = 0; i < all.length; i++) if (all[i].kind === kind) return i;
+    for (var i = 0; i < all.length; i++) if (all[i].kind === kind && (of === undefined || all[i].of === of)) return i;
     return -1;
   }
+  function isOutcomesCheck(st) { return st.kind === "check" && st.of === "outcomes"; }
   function nextStep(state, step) {
-    return steps(state)[step].kind === "outcomes" && state.depth === "skip" ? indexOfKind(state, "why") : step + 1;
+    return isOutcomesCheck(steps(state)[step]) && state.depth === "skip" ? indexOf(state, "why") : step + 1;
   }
   function prevStep(state, step) {
-    return steps(state)[step].kind === "why" && state.depth === "skip" ? indexOfKind(state, "outcomes") : step - 1;
+    return steps(state)[step].kind === "why" && state.depth === "skip" ? indexOf(state, "check", "outcomes") : step - 1;
   }
+  // 1.5 is optional: "Skip to Step 2" goes straight to 2.1.
+  function step2(state) { return indexOf(state, "why"); }
 
+  // The screen an answer is on.
   function stepOf(state, path) {
-    var p = path.split("."), n = state.programs.length;
+    var p = path.split(".");
     if (p[0] === "org") return 0;
-    if (p[0] === "programs") return 1 + (+p[1]);
+    if (p[0] === "programs") return p[2] === "outputs" || p[2] === "impact" ? indexOf(state, "outcomes") : 2 + (+p[1]);
     if (p[0] === "story") {
-      var at = { challenge: 14, response: 15, outcome: 16, roi: 17, funder: 18 };
-      for (var k in STORY_FIELDS) if (STORY_FIELDS[k].indexOf(p[1]) > -1) return n + at[k];
+      for (var k in STORY_FIELDS) if (STORY_FIELDS[k].indexOf(p[1]) > -1) return k === "funder" ? indexOf(state, "funder") : indexOf(state, "story", k);
     }
-    if (p[0] === "donors") return n + (p[1] === "major" ? 11 : 10);
-    return n + ({ rank: 1, outcomes: 3, pain: 4, benchmarks: 5, constraints: 7, why: 9, wand: 12 })[p[0]];
+    if (p[0] === "donors") return indexOf(state, "donors", p[1]);
+    return indexOf(state, p[0]);
   }
 
   // ---------- Step 2 ----------
@@ -876,7 +898,7 @@ var FACSheet = (function () {
     baseIssue: baseIssue, numbersIn: numbersIn, sharedCount: sharedCount, sameGroups: sameGroups, resolveOverlap: resolveOverlap,
     isAssumption: isAssumption, assumptionOpen: assumptionOpen, setLabel: setLabel, setNote: setNote,
     calculations: calculations, mathProblem: mathProblem,
-    paths: paths, steps: steps, stepOf: stepOf, nextStep: nextStep, prevStep: prevStep, problems: problems, addVersion: addVersion,
+    paths: paths, steps: steps, stepOf: stepOf, nextStep: nextStep, prevStep: prevStep, step2: step2, problems: problems, addVersion: addVersion,
     RANK_COLUMNS: RANK_COLUMNS, rankCheck: rankCheck, sortByScore: sortByScore, suggestLine: suggestLine, dollarOff: dollarOff, included: included,
     addDonorRow: addDonorRow, removeDonorRow: removeDonorRow, importLive: importLive, importScreen1: importScreen1, loadScreen1: loadScreen1, SCREEN1: SCREEN1,
     addRound: addRound, latest: latest, STORY_PARTS: STORY_PARTS,

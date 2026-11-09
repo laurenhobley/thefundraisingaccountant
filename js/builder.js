@@ -156,9 +156,10 @@
 
   // The suggestions whose path starts with prefix ("" for all), each with
   // its quote and Accept (or Replace my answer), Edit and Skip.
-  function suggestionList(prefix) {
+  // only: the paths on this screen, when the prefix covers more than that.
+  function suggestionList(prefix, only) {
     var D = Q.documents, rows = suggestions.map(function (s, k) {
-      if (s.path.indexOf(prefix) !== 0) return "";
+      if (s.path.indexOf(prefix) !== 0 || (only && only.indexOf(s.path) < 0)) return "";
       var buttons = s.done ? '<span class="sugg-done">' + esc(D[s.done]) + '</span>' :
         alreadyThere(s) ? '<span class="sugg-done">' + esc(D.sameAlready) + '</span>' :
         '<button type="button" class="btn ghost" data-act="suggAccept" data-index="' + k + '">' + esc(currentText(s.path) ? D.replace : D.accept) + '</button>' +
@@ -197,7 +198,9 @@
   // Step 1.4: how the member wants the story written.
   function constraintsScreen() {
     var sec = S.section(Q, "constraints");
-    return heading(N.constraints, sec.title, sec.note) + sec.questions.map(function (q) { return field(q, "constraints." + q.id); }).join("");
+    // 1.5 is optional: the flowchart's "Skip to Step 2" goes straight to 2.1.
+    return heading(N.constraints, sec.title, sec.note) + sec.questions.map(function (q) { return field(q, "constraints." + q.id); }).join("") +
+      '<div class="actions"><button type="button" class="btn ghost" data-act="skipToStep2">' + esc(Q.flow.skipToStep2) + '</button></div>';
   }
 
   // What a stack rank column is called: the member's name for a driver
@@ -270,21 +273,28 @@
 
   // 1.3 Outputs to Outcomes (Steve's Step 1.3 instructions): one row per
   // program above the red line, in rank order, with its Outputs and its
-  // Outcomes (the Current Impact Statement), then go deeper or skip.
+  // Outcomes (the Current Impact Statement), both required (Steve's Step 1
+  // flowchart). Its check asks go deeper or skip.
   function outcomesScreen() {
     var O = Q.outcomes, rows = "";
     for (var i = 0; i < S.included(state); i++) {
-      var name = S.trim(state.programs[i].name.text) || Q.flow.empty;
-      rows += '<div class="oo-row" id="oo-row-' + i + '"><span class="lbl">' + esc(programName(i) + ": " + name) + '</span><div class="oo-cells">' +
-        field({ label: O.outputsLabel, kind: "long", placeholder: O.placeholder }, "programs." + i + ".outputs") +
-        field({ label: O.outcomesLabel, kind: "long", placeholder: O.placeholder }, "programs." + i + ".impact") + '</div></div>';
+      var name = S.trim(state.programs[i].name.text) || Q.flow.empty, at = "programs." + i + ".";
+      rows += '<div class="oo-row" id="oo-row-' + i + '"><span class="lbl">' + esc(programName(i) + ": " + name) + '</span>' +
+        suggestionList(at, [at + "outputs", at + "impact"]) + '<div class="oo-cells">' +
+        field({ label: O.outputsLabel, kind: "long", placeholder: O.placeholder, required: true }, at + "outputs") +
+        field({ label: O.outcomesLabel, kind: "long", placeholder: O.placeholder, required: true }, at + "impact") + '</div></div>';
     }
+    return heading(N.outcomes, O.title) + '<p class="hint">' + esc(O.intro) + '</p>' + rows +
+      '<p class="hint">' + esc(O.later) + '</p>';
+  }
+
+  // The 1.3 check's question: go deeper (1.4, 1.5) or skip to Step 2.
+  function depthChoice() {
+    var O = Q.outcomes;
     function choice(v, label) {
       return '<label><input type="radio" class="depth-choice" name="depth" value="' + v + '"' + (state.depth === v ? " checked" : "") + '> ' + esc(label) + '</label>';
     }
-    return heading(N.outcomes, O.title) + '<p class="hint">' + esc(O.intro) + '</p>' + rows +
-      '<p class="hint">' + esc(O.later) + '</p>' +
-      '<div class="f"><span class="lbl">' + esc(O.choiceAsk) + '</span><div class="choice" role="radiogroup" aria-label="' + esc(O.choiceAsk) + '">' +
+    return '<div class="f"><span class="lbl">' + esc(O.choiceAsk) + '</span><div class="choice" role="radiogroup" aria-label="' + esc(O.choiceAsk) + '">' +
       choice("deeper", O.deeper) + choice("skip", O.skip) + '</div><p class="fu-q" id="depth-msg" aria-live="polite"></p></div>';
   }
 
@@ -335,7 +345,7 @@
   function wandScreen() {
     var W = Q.wand;
     var names = state.programs.map(function (p) { return S.trim(p.name.text); }).filter(function (t) { return t; });
-    return heading(W.number, W.title) + '<p class="hint">' + esc(W.intro) + '</p>' +
+    return heading(W.number, W.title, W.note) + '<p class="hint">' + esc(W.intro) + '</p>' +
       field({ label: W.program, help: W.programHelp, kind: "text" }, "wand.program").replace('id="f-wand-program"', 'id="f-wand-program" list="wand-programs"') +
       '<datalist id="wand-programs">' + names.map(function (t) { return '<option value="' + esc(t) + '">'; }).join("") + '</datalist>' +
       field({ label: W.amount, kind: "text" }, "wand.amount") + field({ label: W.possible, kind: "long" }, "wand.possible");
@@ -503,28 +513,51 @@
       rows.push('<li><span class="lbl">' + esc(label) + ':</span> ' + esc(S.trim(value) || F.empty) +
         ' <button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, path) + '" data-focus="' + idOf(path) + '">' + esc(F.editLink) + '</button></li>');
     }
-    if (of === "programs") {
+    var title = C.title, extra = "";
+    if (of === "org") {
+      // 1.1: what the member confirms (name, location, mission, keywords), and the website.
+      ["name", "zip", "website", "mission"].forEach(function (id) {
+        var q = S.section(Q, "org").questions.filter(function (x) { return x.id === id; })[0];
+        row(q.label, state.org[id].text, "org." + id);
+      });
       row(Q.keywords.title, FACExport.keywordsText(Q, state), "org.kwIssue");
+    } else if (of === "programs") {
+      // 1.2: the programs in their order, with their Stack Rank when ranked.
+      var ranked = state.rank.use === "yes";
+      if (!ranked) title = C.titleUnranked;
       state.programs.forEach(function (p, i) {
-        row(programName(i), [p.name.text, p.outputs.text].filter(function (t) { return S.trim(t); }).join(" — ") +
+        row(programName(i), [p.name.text, p.description.text].filter(function (t) { return S.trim(t); }).join(" — ") +
+          (ranked && S.trim(state.rankRows[i].score) ? " (" + Q.rank.scoreLabel + " " + S.trim(state.rankRows[i].score) + ")" : "") +
           (i >= S.included(state) ? " (" + Q.rank.belowLine + ")" : ""), "programs." + i + ".name");
       });
+    } else if (of === "outcomes") {
+      // 1.3: each program's Outputs and Outcomes, then go deeper or skip.
+      for (var i = 0; i < S.included(state); i++) {
+        var at = "programs." + i + ".", nm = S.trim(state.programs[i].name.text) || programName(i);
+        row(nm + " — " + Q.outcomes.outputsLabel, state.programs[i].outputs.text, at + "outputs");
+        row(nm + " — " + Q.outcomes.outcomesLabel, state.programs[i].impact.text, at + "impact");
+      }
+      extra = depthChoice();
     } else if (of === "benchmarks") {
+      // 1.4 Add Context: Local Context/Data and Benchmarks.
+      state.pain.forEach(function (b, i) { if (S.trim(b.text)) row(nameOf("pain." + i), b.text, "pain." + i); });
       state.benchmarks.forEach(function (b, i) { if (S.trim(b.text)) row(nameOf("benchmarks." + i), b.text, "benchmarks." + i); });
     } else {
       var set = S.section(Q, "constraints").questions.filter(function (q) { return S.trim(state.constraints[q.id].text); });
       set.forEach(function (q) { row(q.label, state.constraints[q.id].text, "constraints." + q.id); });
     }
     var none = !rows.length && C.none
-      ? '<p>' + esc(C.none) + ' <button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, of + (of === "benchmarks" ? ".0" : ".tone")) + '">' + esc(F.editLink) + '</button></p>' : "";
-    return heading(N.check, C.title) + '<p>' + esc(C.text) + '</p>' + (rows.length ? '<ul class="checklist">' + rows.join("") + '</ul>' : none);
+      ? '<p>' + esc(C.none) + ' <button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, of === "benchmarks" ? "pain.0" : "constraints.tone") + '">' + esc(F.editLink) + '</button></p>' : "";
+    return heading(N.check, title) + '<p>' + esc(C.text) + '</p>' + (rows.length ? '<ul class="checklist">' + rows.join("") + '</ul>' : none) + extra;
   }
 
   function programScreen(i) {
     var sec = S.section(Q, "programs"), n = state.programs.length;
+    // Outputs and Outcomes are asked on 1.3, not here (Steve's Step 1 flowchart).
+    var here = sec.questions.filter(function (q) { return q.screen !== "outcomes"; });
     return heading(N.program, sec.itemLabel + " " + (i + 1) + " of " + n, sec.note) +
-      suggestionList("programs." + i + ".") +
-      sec.questions.map(function (q) { return field(q, "programs." + i + "." + q.id); }).join("") +
+      suggestionList("programs." + i + ".", here.map(function (q) { return "programs." + i + "." + q.id; })) +
+      here.map(function (q) { return field(q, "programs." + i + "." + q.id); }).join("") +
       '<div class="actions">' +
       '<button type="button" class="btn ghost" data-act="addProgram">' + esc(sec.addLabel) + '</button>' +
       (n > 1 ? '<button type="button" class="btn quiet" data-act="removeProgram" data-index="' + i + '">Remove this program</button>' : "") +
@@ -800,12 +833,13 @@
   // parts; 3.5 Funder Story and what follows it.
   function partOf(st) {
     var k = st.kind;
-    if (k === "org") return [0, 0];
-    if (k === "program" || k === "rank" || (k === "check" && st.of === "programs")) return [0, 1];
-    if (k === "outcomes") return [0, 2];
+    var of = k === "check" ? st.of : "";
+    if (k === "org" || of === "org") return [0, 0];
+    if (k === "program" || k === "rank" || of === "programs") return [0, 1];
+    if (k === "outcomes" || of === "outcomes") return [0, 2];
     if (k === "end") return [1, 4];
-    if (k === "pain" || k === "benchmarks" || (k === "check" && st.of === "benchmarks")) return [0, 3];
-    if (k === "constraints" || k === "check") return [0, 4];
+    if (k === "pain" || k === "benchmarks" || of === "benchmarks") return [0, 3];
+    if (k === "constraints" || of === "constraints") return [0, 4];
     if (k === "why") return [1, 0];
     if (k === "donors") return st.of === "major" ? [1, 2] : [1, 1];
     if (k === "wand") return [1, 3];
@@ -1029,11 +1063,12 @@
     }
     // Everything else below changes the answers, except going to a listed item.
     if (act !== "goto" && !(act === "removeProgram" && armed !== b)) unreview();
-    if (act === "addProgram") { go(1 + S.addProgram(Q, state)); }
+    if (act === "addProgram") { go(S.stepOf(state, "programs." + S.addProgram(Q, state) + ".name")); }
     else if (act === "removeProgram") {
       if (armed !== b) { armed = b; b.textContent = "Click again to remove this program"; return; }
-      S.removeProgram(state, i); dropProgramSuggestions(); go(Math.min(1 + i, state.programs.length));
+      S.removeProgram(state, i); dropProgramSuggestions(); go(S.stepOf(state, "programs." + Math.min(i, state.programs.length - 1) + ".name"));
     }
+    else if (act === "skipToStep2") { go(S.step2(state)); }
     else if (act === "addItem") { S.addItem(state, list); render(idOf(list + "." + (state[list].length - 1))); }
     else if (act === "removeItem") { S.removeItem(state, list, i); render(); }
     else if (act === "goto") { go(+b.getAttribute("data-step"), b.getAttribute("data-focus")); }
@@ -1066,8 +1101,9 @@
       return;
     }
     var m = S.ask(Q, state, state.step);
-    // 1.3 also needs the choice: go deeper or skip to Step 2.
-    if (!m.length && S.steps(state)[state.step].kind === "outcomes" && !state.depth) {
+    // The 1.3 check also needs the choice: go deeper or skip to Step 2.
+    var here = S.steps(state)[state.step];
+    if (!m.length && here.kind === "check" && here.of === "outcomes" && !state.depth) {
       $("depth-msg").textContent = Q.outcomes.needChoice;
       $("depth-msg").scrollIntoView({ block: "center" });
       return;

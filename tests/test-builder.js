@@ -18,7 +18,7 @@ T.run("Builder screens (builder.html)", function (check) {
   function saved() { return JSON.parse(localStorage.getItem("fac-prompt-sheet-draft-v1")); }
 
   // ---------- Missing answers on Organization Info ----------
-  check("starts on Step 1 of 23", $("counter").textContent === "Step 1 of 23");
+  check("starts on Step 1 of 25", $("counter").textContent === "Step 1 of 25");
   // The progress bar: each part as "number:state", and each step tab's state.
   function parts() { return Array.prototype.map.call(document.querySelectorAll("#parts li"), function (li) { return li.querySelector(".dot").textContent + ":" + li.className.replace(" after-done", ""); }).join(" "); }
   function tabs() { return Array.prototype.map.call(document.querySelectorAll("#stepsTabs li"), function (li) { return li.className; }).join(" "); }
@@ -29,8 +29,10 @@ T.run("Builder screens (builder.html)", function (check) {
   check("no follow-ups before Next is pressed", shown(".fu") === 0);
 
   $("next").click();
-  check("Next with blanks stays on Step 1", $("counter").textContent === "Step 1 of 23");
-  check("first Next: a follow-up under each of the 8 required answers (4 of them keyword groups)", shown(".fu") === 8);
+  check("Next with blanks stays on Step 1", $("counter").textContent === "Step 1 of 25");
+  check("first Next: a follow-up under each of the 7 required answers (4 of them keyword groups)", shown(".fu") === 7);
+  check("the website isn't required here (Screen 1 asks for it): no follow-up, no asterisk", fu("f-org-website") === "" &&
+    !document.querySelector('label[for="f-org-website"] .req') && !!document.querySelector('label[for="f-org-mission"] .req'));
   check("first follow-up wording, and the keyword group's own", fu("f-org-name") === F.missing[0] && fu("f-org-zip") === F.missingZip[0] &&
     fu("f-org-kwPeople") === FAC_QUESTIONS.keywords.missing[0].replace("{group}", "People served"));
   check("no Skip buttons after one follow-up", shown(".fu-skip") === 0);
@@ -38,7 +40,7 @@ T.run("Builder screens (builder.html)", function (check) {
 
   $("next").click();
   check("second Next: second follow-up wording", fu("f-org-name") === F.missing[1] && fu("f-org-zip") === F.missingZip[1]);
-  check("second Next: a Skip button for each, \"Keep it empty\" for keyword groups", shown(".fu-skip") === 8 && $("f-org-kwIssue-fu").querySelector(".fu-skip").textContent === FAC_QUESTIONS.keywords.keepButton);
+  check("second Next: a Skip button for each, \"Keep it empty\" for keyword groups", shown(".fu-skip") === 7 && $("f-org-kwIssue-fu").querySelector(".fu-skip").textContent === FAC_QUESTIONS.keywords.keepButton);
 
   type("f-org-name", "Test Org");
   check("answering hides its follow-up", fu("f-org-name") === "");
@@ -50,43 +52,50 @@ T.run("Builder screens (builder.html)", function (check) {
   check("browsers can tell the ZIP, name and website boxes apart (not a driver's license)",
     $("f-org-zip").name === "postal-code" && $("f-org-zip").getAttribute("autocomplete") === "postal-code" &&
     $("f-org-name").getAttribute("autocomplete") === "organization" && $("f-org-website").getAttribute("autocomplete") === "url");
+  skip("f-org-mission");
+  check("Skip marks it skipped and Unsupported", !$("f-org-mission-skipped").hidden && fu("f-org-mission") === "" && saved().org.mission.skipped === true);
   type("f-org-mission", "We help families");
+  check("typing an answer clears the skipped flag", $("f-org-mission-skipped").hidden && saved().org.mission.skipped === false);
   check("no number: no label box", $("f-org-mission-lab").hidden);
   type("f-org-mission", "We help 400 families");
   check("number typed: label box appears", !$("f-org-mission-lab").hidden);
 
-  skip("f-org-website");
-  check("Skip marks it skipped and Unsupported", !$("f-org-website-skipped").hidden && fu("f-org-website") === "" && saved().org.website.skipped === true);
   $("next").click();
-  check("Next still blocked by the four keyword groups", $("counter").textContent === "Step 1 of 23" && shown(".fu") === 4);
+  check("Next still blocked by the four keyword groups", $("counter").textContent === "Step 1 of 25" && shown(".fu") === 4);
   type("f-org-kwIssue", "homelessness, safety"); type("f-org-kwPeople", "families"); type("f-org-kwServices", "shelter");
   check("keywords show as chips, with the total under the groups", document.querySelectorAll("#f-org-kwIssue-chips .chip").length === 2 &&
     $("kw-count").textContent === FAC_QUESTIONS.keywords.count.replace("{n}", "4") + " " + FAC_QUESTIONS.keywords.countHint);
   skip("f-org-kwLocation");
   check("a group kept empty gets a quiet note, not Unsupported", $("f-org-kwLocation-skipped").textContent === FAC_QUESTIONS.keywords.kept && $("f-org-kwLocation-skipped").classList.contains("noted"));
   $("next").click();
-  check("all answered or skipped: Next goes to Program 1 of 1", $("counter").textContent === "Step 2 of 23" && /Program 1 of 1/.test(title()));
+
+  // ---------- Flowchart check after 1.1: "Happy with your keywords?" ----------
+  var FL = FAC_QUESTIONS.flow;
+  function checkRows() { return Array.prototype.map.call(document.querySelectorAll("#screen .checklist li"), function (li) { return li.textContent; }); }
+  check("all answered or skipped: Next goes to the keywords check (Steve's flowchart)", $("counter").textContent === "Step 2 of 25" && title().indexOf(FL.checkpoints.org.title) > -1);
+  var orgRows = checkRows();
+  check("it lists name, ZIP, website, mission and key words (by group), each with Edit", orgRows.length === 5 && orgRows[0].indexOf("Test Org") > -1 &&
+    orgRows[1].indexOf("77001") > -1 && orgRows[4].indexOf("Issue: homelessness, safety; People served: families; Services: shelter") > -1 &&
+    orgRows.every(function (r) { return r.indexOf(FL.editLink) > -1; }));
+  check("its button says Next, and the progress bar keeps 1.1 current", $("next").textContent === FL.nextButton && parts().indexOf("1.1:current") === 0);
+  $("next").click();
+  check("then Program 1 of 1", $("counter").textContent === "Step 3 of 25" && /Program 1 of 1/.test(title()));
   check("on a program: 1.1 done (teal line to 1.2), 1.2 current", parts() === "1.1:done 1.2:current 1.3:todo 1.4:todo 1.5:todo" && document.querySelectorAll("#parts li")[1].classList.contains("after-done"));
   check("answers saved in the browser", saved().org.mission.text === "We help 400 families");
 
-  // ---------- Programs and labels ----------
+  // ---------- Programs ----------
   check("no Remove button with only one program", !document.querySelector('#screen [data-act="removeProgram"]'));
+  check("a program's screen asks only its name and description; Outputs and Outcomes wait for 1.3", !!$("f-programs-0-name") && !!$("f-programs-0-description") &&
+    !$("f-programs-0-outputs") && !$("f-programs-0-impact"));
   type("f-programs-0-name", "Emergency shelter");
-  type("f-programs-0-outputs", "Served 414 families in 2024");
-  pick("f-programs-0-outputs", "known");
-  check("Known shows the Source box", !$("f-programs-0-outputs-lab").querySelector(".lab-note-wrap").hidden);
-  check("Known with no source is flagged", $("f-programs-0-outputs-lab").getAttribute("data-status") === "needsNote");
-  type("f-programs-0-outputs-note", "2024 annual report");
-  check("source filled in: no longer flagged", $("f-programs-0-outputs-lab").getAttribute("data-status") === "ok");
   $("next").click();
-  check("Next blocked by the one missing answer, Description", $("counter").textContent === "Step 2 of 23" && shown(".fu") === 1 && fu("f-programs-0-description") !== "");
-  check("blank optional Current Impact Statement gets no follow-up", $("f-programs-0-impact-fu").hidden);
+  check("Next blocked by the one missing answer, Description", $("counter").textContent === "Step 3 of 25" && shown(".fu") === 1 && fu("f-programs-0-description") !== "");
 
   // ---------- Filler words ----------
   type("f-programs-0-description", "Various services");
   check("blank answer that becomes vague: follow-up waits for Next", fu("f-programs-0-description") === "");
   $("next").click();
-  check("first Next: vague follow-up names the word", $("counter").textContent === "Step 2 of 23" && fu("f-programs-0-description") === F.vague[0].replace("{word}", "Various"));
+  check("first Next: vague follow-up names the word", $("counter").textContent === "Step 3 of 25" && fu("f-programs-0-description") === F.vague[0].replace("{word}", "Various"));
   check("no Keep button after one follow-up", shown(".fu-skip") === 0);
   $("next").click();
   check("second Next: second vague follow-up", fu("f-programs-0-description") === F.vague[1].replace("{word}", "Various"));
@@ -94,28 +103,11 @@ T.run("Builder screens (builder.html)", function (check) {
   type("f-programs-0-description", "Beds and meals");
   check("removing the filler word hides the follow-up", fu("f-programs-0-description") === "");
 
-  // ---------- Outputs: a number and a year ----------
-  type("f-programs-0-outputs", "37,260 meals provided");
-  $("next").click();
-  check("Outputs with no year: Next blocked with the no-year follow-up", $("counter").textContent === "Step 2 of 23" && fu("f-programs-0-outputs") === F.outputNoYear[0] && shown(".fu") === 1);
-  type("f-programs-0-outputs", "37,260 meals provided in FY24");
-  check("adding a fiscal year hides it", fu("f-programs-0-outputs") === "");
-  type("f-programs-0-outputs", "Served 414 families in 2024");
-
   act("addProgram");
-  check("Add another program goes to Program 2 of 2", $("counter").textContent === "Step 3 of 24" && /Program 2 of 2/.test(title()));
-  type("f-programs-1-outputs", "About 50 people");
-  pick("f-programs-1-outputs", "unsupported");
-  check("Unsupported stays flagged", $("f-programs-1-outputs-lab").getAttribute("data-status") === "unsupported");
-
+  check("Add another program goes to Program 2 of 2", $("counter").textContent === "Step 4 of 26" && /Program 2 of 2/.test(title()));
   $("back").click();
-  check("Back keeps program 1's answers", $("f-programs-0-name").value === "Emergency shelter" && $("f-programs-0-outputs-note").value === "2024 annual report");
-  $("back").click();
-  check("skipped Website still flagged after coming back", !$("f-org-website-skipped").hidden);
-  type("f-org-website", "https://example.org");
-  check("typing an answer clears the skipped flag", $("f-org-website-skipped").hidden && saved().org.website.skipped === false);
-
-  $("next").click(); $("next").click();
+  check("Back keeps program 1's answers", $("f-programs-0-name").value === "Emergency shelter" && $("f-programs-0-description").value === "Beds and meals");
+  $("next").click();
   check("back on Program 2", /Program 2 of 2/.test(title()));
   // ---------- Duplicate programs ----------
   type("f-programs-1-name", "emergency  shelter.");
@@ -125,26 +117,8 @@ T.run("Builder screens (builder.html)", function (check) {
   skip("f-programs-1-name");
   check("confirming hides it, with no Unsupported flag", fu("f-programs-1-name") === "" && $("f-programs-1-name-skipped").hidden && saved().programs[1].name.separate === true);
   type("f-programs-1-name", "");
-
   $("next").click(); $("next").click();
-  check("Program 2 Outputs \"About 50 people\" asks for a year", fu("f-programs-1-outputs") === F.outputNoYear[1]);
-  check("its button says Keep my answer", $("f-programs-1-outputs-fu").querySelector(".fu-skip").textContent === F.keepButton);
-  skip("f-programs-1-name"); skip("f-programs-1-description"); skip("f-programs-1-outputs");
-  check("kept Outputs shows the missing-number-or-year flag", $("f-programs-1-outputs-skipped").textContent === F.keptOutput);
-
-  // ---------- The same count in two programs ----------
-  type("f-programs-1-outputs", "Served 414 families in 2024");
-  check("adding the year clears the kept flag", $("f-programs-1-outputs-skipped").hidden);
-  $("next").click();
-  check("shares 414 with Program 1: Next blocked with the follow-up", /Program 2 of 2/.test(title()) &&
-    fu("f-programs-1-outputs") === F.overlap.replace("{program}", "Program 1").replace("{number}", "414"));
-  var ofu = $("f-programs-1-outputs-fu");
-  check("two buttons: Different groups, Same group", !ofu.querySelector(".fu-skip").hidden && !ofu.querySelector(".fu-alt").hidden &&
-    ofu.querySelector(".fu-skip").textContent === F.overlapDifferent && ofu.querySelector(".fu-alt").textContent === F.overlapSame);
-  ofu.querySelector(".fu-alt").click();
-  check("Same group: follow-up gone, noted line shown", fu("f-programs-1-outputs") === "" &&
-    $("f-programs-1-outputs-skipped").textContent === F.overlapSameNote.replace("{program}", "Program 1") && $("f-programs-1-outputs-skipped").classList.contains("noted"));
-  check("saved for the export", FACSheet.sameGroups(FACSheet.load(FAC_QUESTIONS)).length === 1);
+  skip("f-programs-1-name"); skip("f-programs-1-description");
   $("next").click();
 
   // ---------- Optional stack rank ----------
@@ -152,9 +126,9 @@ T.run("Builder screens (builder.html)", function (check) {
   function rankMsg() { return $("rank-msg").textContent; }
   function pickSel(row, m, v) { var e = document.querySelector('#screen .rank-m[data-row="' + row + '"][data-m="' + m + '"]'); e.value = v; e.dispatchEvent(new Event("change", { bubbles: true })); }
   function score(row, v) { var e = document.querySelector('#screen .rank-score[data-row="' + row + '"]'); e.value = v; e.dispatchEvent(new Event("input", { bubbles: true })); }
-  check("after the last program: the stack rank question", $("counter").textContent === "Step 4 of 24" && title().indexOf(RK.title) > -1);
+  check("after the last program: the stack rank question", $("counter").textContent === "Step 5 of 26" && title().indexOf(RK.title) > -1);
   $("next").click();
-  check("Next without choosing: asks to choose", rankMsg() === RK.needChoice && $("counter").textContent === "Step 4 of 24");
+  check("Next without choosing: asks to choose", rankMsg() === RK.needChoice && $("counter").textContent === "Step 5 of 26");
   document.querySelector('#screen .rank-use[value="yes"]').click();
   var intro = document.querySelector("#screen .rank-intro").textContent;
   check("Yes shows FAC's template instructions and key", intro.indexOf(RK.intro) > -1 && intro.indexOf(RK.instructions[2]) > -1 && intro.indexOf("1 = Most · 2 = OK · 3 = Least") > -1);
@@ -189,42 +163,97 @@ T.run("Builder screens (builder.html)", function (check) {
   check("the suggestion doesn't move the red line", saved().rank.line === null);
   var line = $("rank-line"); line.value = "1"; line.dispatchEvent(new Event("change", { bubbles: true }));
   check("red line after Program 1: Program 2 is below it", saved().rank.line === 1 && $("rank-row-1").textContent.indexOf(RK.belowLine) > -1);
+  $("next").click();
+  check("ranked: the check is \"Happy with your stack ranking?\", with each program's Stack Rank and the red line",
+    title().indexOf(FAC_QUESTIONS.flow.checkpoints.programs.title) > -1 && document.querySelectorAll("#screen .checklist li")[0].textContent.indexOf("(" + RK.scoreLabel + " 1)") > -1 &&
+    document.querySelectorAll("#screen .checklist li")[1].textContent.indexOf(RK.belowLine) > -1);
+  $("back").click();
   document.querySelector('#screen .rank-use[value="no"]').click();
   check("choosing No hides the ranking again", document.querySelectorAll("#screen .rank-m").length === 0);
   $("next").click();
 
-  // ---------- Flowchart check: "Happy with programs and keywords?" ----------
-  var FL = FAC_QUESTIONS.flow;
-  check("after the last program: the programs-and-keywords check", $("counter").textContent === "Step 5 of 24" && title().indexOf(FL.checkpoints.programs.title) > -1);
+  // ---------- Flowchart check after 1.2: "Happy with your stack ranking?" ----------
+  check("after the stack rank: its check, titled for programs when they weren't ranked", $("counter").textContent === "Step 6 of 26" &&
+    title().indexOf(FL.checkpoints.programs.titleUnranked) > -1);
   check("its button says Next, like every forward button", $("next").textContent === FL.nextButton);
-  var rows = Array.prototype.map.call(document.querySelectorAll("#screen .checklist li"), function (li) { return li.textContent; });
-  check("it lists the key words (by group) and both programs, each with Edit", rows.length === 3 && rows[0].indexOf("Issue: homelessness, safety; People served: families; Services: shelter") > -1 &&
-    rows[1].indexOf("Emergency shelter") > -1 && rows.every(function (r) { return r.indexOf(FL.editLink) > -1; }));
-  document.querySelectorAll('#screen .checklist button[data-act="goto"]')[2].click();
+  var rows = checkRows();
+  check("it lists both programs in order, each with Edit (key words moved to the 1.1 check)", rows.length === 2 && rows[0].indexOf("Emergency shelter — Beds and meals") > -1 &&
+    rows.every(function (r) { return r.indexOf(FL.editLink) > -1; }) && rows.join().indexOf("homelessness") === -1);
+  document.querySelectorAll('#screen .checklist button[data-act="goto"]')[1].click();
   check("Edit jumps to that program", /Program 2 of 2/.test(title()) && document.activeElement.id === "f-programs-1-name");
   $("next").click();
   $("next").click();
-  check("Next from there passes the stack rank and comes back to the check", title().indexOf(FL.checkpoints.programs.title) > -1);
+  check("Next from there passes the stack rank and comes back to the check", title().indexOf(FL.checkpoints.programs.titleUnranked) > -1);
   $("next").click();
 
-  // ---------- 1.3 Outputs to Outcomes, then go deeper or skip ----------
+  // ---------- 1.3 Outputs to Outcomes ----------
   var OO = FAC_QUESTIONS.outcomes;
-  check("then 1.3 Outputs to Outcomes: one row per program, outputs and outcomes side by side", title() === FL.numbers.outcomes + OO.title &&
-    document.querySelectorAll("#screen .oo-row").length === 2 && $("f-programs-0-outputs").value === saved().programs[0].outputs.text &&
-    $("f-programs-0-impact").placeholder === OO.placeholder && document.querySelector("#oo-row-0 .lbl").textContent === "Program 1: Emergency shelter");
+  check("then 1.3 Outputs to Outcomes: one row per program, outputs and outcomes side by side, both required", $("counter").textContent === "Step 7 of 26" &&
+    title() === FL.numbers.outcomes + OO.title && document.querySelectorAll("#screen .oo-row").length === 2 && $("f-programs-0-outputs").value === "" &&
+    $("f-programs-0-impact").placeholder === OO.placeholder && document.querySelector("#oo-row-0 .lbl").textContent === "Program 1: Emergency shelter" &&
+    document.querySelectorAll("#screen .oo-row .req").length === 4);
   check("progress bar: 1.1 and 1.2 done, 1.3 current", parts() === "1.1:done 1.2:done 1.3:current 1.4:todo 1.5:todo");
-  check("it ends with \"Once you are happy with your outputs to outcomes…\" and the go deeper or skip question",
-    document.querySelector("#screen .happy-line").textContent === FL.happyLine.replace("{thing}", "outputs to outcomes") && document.querySelectorAll("#screen .depth-choice").length === 2);
+  check("it ends with \"Once you are happy with your outputs to outcomes…\"; the go deeper or skip question waits for its check",
+    document.querySelector("#screen .happy-line").textContent === FL.happyLine.replace("{thing}", "outputs to outcomes") && document.querySelectorAll("#screen .depth-choice").length === 0);
+  $("next").click();
+  check("Next with blanks: a follow-up for each program's Outputs and Outcomes", $("counter").textContent === "Step 7 of 26" && shown(".fu") === 4 &&
+    fu("f-programs-0-impact") === F.missing[0]);
+
+  // ---------- Labels ----------
+  type("f-programs-0-outputs", "Served 414 families in 2024");
+  pick("f-programs-0-outputs", "known");
+  check("Known shows the Source box", !$("f-programs-0-outputs-lab").querySelector(".lab-note-wrap").hidden);
+  check("Known with no source is flagged", $("f-programs-0-outputs-lab").getAttribute("data-status") === "needsNote");
+  type("f-programs-0-outputs-note", "2024 annual report");
+  check("source filled in: no longer flagged", $("f-programs-0-outputs-lab").getAttribute("data-status") === "ok");
   type("f-programs-0-impact", "Families are safe at night");
   check("an outcome typed here is the program's impact statement", saved().programs[0].impact.text === "Families are safe at night");
+
+  // ---------- Outputs: a number and a year ----------
+  type("f-programs-0-outputs", "37,260 meals provided");
   $("next").click();
-  check("Next without choosing: asks to choose", /Outputs to Outcomes/.test(title()) && $("depth-msg").textContent === OO.needChoice);
+  check("Outputs with no year: Next blocked with the no-year follow-up", $("counter").textContent === "Step 7 of 26" && fu("f-programs-0-outputs") === F.outputNoYear[0]);
+  type("f-programs-0-outputs", "37,260 meals provided in FY24");
+  check("adding a fiscal year hides it", fu("f-programs-0-outputs") === "");
+  type("f-programs-0-outputs", "Served 414 families in 2024");
+  type("f-programs-1-outputs", "About 50 people");
+  pick("f-programs-1-outputs", "unsupported");
+  check("Unsupported stays flagged", $("f-programs-1-outputs-lab").getAttribute("data-status") === "unsupported");
+  $("next").click(); $("next").click();
+  check("Program 2 Outputs \"About 50 people\" asks for a year", fu("f-programs-1-outputs") === F.outputNoYear[1]);
+  check("its button says Keep my answer", $("f-programs-1-outputs-fu").querySelector(".fu-skip").textContent === F.keepButton);
+  skip("f-programs-1-outputs"); skip("f-programs-1-impact");
+  check("kept Outputs shows the missing-number-or-year flag", $("f-programs-1-outputs-skipped").textContent === F.keptOutput);
+
+  // ---------- The same count in two programs ----------
+  type("f-programs-1-outputs", "Served 414 families in 2024");
+  check("adding the year clears the kept flag", $("f-programs-1-outputs-skipped").hidden);
+  $("next").click();
+  check("shares 414 with Program 1: Next blocked with the follow-up", /Outputs to Outcomes/.test(title()) &&
+    fu("f-programs-1-outputs") === F.overlap.replace("{program}", "Program 1").replace("{number}", "414"));
+  var ofu = $("f-programs-1-outputs-fu");
+  check("two buttons: Different groups, Same group", !ofu.querySelector(".fu-skip").hidden && !ofu.querySelector(".fu-alt").hidden &&
+    ofu.querySelector(".fu-skip").textContent === F.overlapDifferent && ofu.querySelector(".fu-alt").textContent === F.overlapSame);
+  ofu.querySelector(".fu-alt").click();
+  check("Same group: follow-up gone, noted line shown", fu("f-programs-1-outputs") === "" &&
+    $("f-programs-1-outputs-skipped").textContent === F.overlapSameNote.replace("{program}", "Program 1") && $("f-programs-1-outputs-skipped").classList.contains("noted"));
+  check("saved for the export", FACSheet.sameGroups(FACSheet.load(FAC_QUESTIONS)).length === 1);
+  $("next").click();
+
+  // ---------- Flowchart check after 1.3, then go deeper or skip ----------
+  var ooRows = checkRows();
+  check("then its check: each program's Outputs and Outcomes, each with Edit", $("counter").textContent === "Step 8 of 26" &&
+    title().indexOf(FL.checkpoints.outcomes.title) > -1 && ooRows.length === 4 && ooRows[1].indexOf("Families are safe at night") > -1 &&
+    parts().indexOf("1.3:current") > -1);
+  check("the check asks: go deeper or skip to Step 2", document.querySelectorAll("#screen .depth-choice").length === 2);
+  $("next").click();
+  check("Next without choosing: asks to choose", title().indexOf(FL.checkpoints.outcomes.title) > -1 && $("depth-msg").textContent === OO.needChoice);
   document.querySelector('#screen .depth-choice[value="skip"]').click();
   $("next").click();
   check("Skip to Step 2: Next goes straight to 2.1, and Step 1 isn't ticked off (1.4 and 1.5 still to come)", title().indexOf(FAC_QUESTIONS.why.number) === 0 &&
     tabs() === "todo current todo");
   $("back").click();
-  check("← Previous from 2.1 goes back to 1.3", /Outputs to Outcomes/.test(title()));
+  check("← Previous from 2.1 goes back to the 1.3 check", title().indexOf(FL.checkpoints.outcomes.title) > -1);
   document.querySelector('#screen .depth-choice[value="deeper"]').click();
   check("the choice saves", saved().depth === "deeper" && $("depth-msg").textContent === "");
   $("next").click();
@@ -279,30 +308,35 @@ T.run("Builder screens (builder.html)", function (check) {
   $("next").click();
 
   // ---------- Flowchart check, 1.4 Constraints and "Build our story" ----------
-  check("then the benchmarks check, listing the benchmark", title().indexOf(FL.checkpoints.benchmarks.title) > -1 &&
-    document.querySelector("#screen .checklist li").textContent.indexOf("200 units") > -1);
+  check("then the context check, listing the local context and the benchmark", title().indexOf(FL.checkpoints.benchmarks.title) > -1 &&
+    checkRows().length === 3 && checkRows()[1].indexOf("We lost $800,000") > -1 && checkRows()[2].indexOf("200 units") > -1);
   $("next").click();
   check("then 1.4 Constraints: Tone, Length, Format, Audience", /Constraints/.test(title()) && title().indexOf(FL.numbers.constraints) > -1 &&
     ["tone", "length", "format", "audience"].every(function (id) { return !!$("f-constraints-" + id); }));
   type("f-constraints-tone", "Warm and hopeful");
   type("f-constraints-length", "About 300 words");
   check("a number in a constraint gets no label box", !$("f-constraints-length-lab"));
+  check("1.5 is optional, with the flowchart's Skip to Step 2", title().indexOf("(optional)") > -1 &&
+    document.querySelector('#screen button[data-act="skipToStep2"]').textContent === FL.skipToStep2);
   $("next").click();
   check("blank constraints don't block Next: the constraints check", title().indexOf(FL.checkpoints.constraints.title) > -1 &&
     document.querySelectorAll("#screen .checklist li").length === 2);
   check("after Constraints, the button still says Next", $("next").textContent === FL.nextButton && !document.querySelector("#screen .happy-line"));
   $("next").click();
 
-  check("no Step 1 review any more: after Constraints comes 2.1", $("counter").textContent === "Step 12 of 24" && title().indexOf(FAC_QUESTIONS.why.number) === 0 &&
+  check("no Step 1 review any more: after Constraints comes 2.1", $("counter").textContent === "Step 14 of 26" && title().indexOf(FAC_QUESTIONS.why.number) === 0 &&
     tabs() === "done current todo");
+  $("back").click(); $("back").click();
+  act("skipToStep2");
+  check("Skip to Step 2 on 1.5 goes straight to 2.1", $("counter").textContent === "Step 14 of 26" && title().indexOf(FAC_QUESTIONS.why.number) === 0);
   document.querySelectorAll("#parts .dot")[4].click();
-  check("the prompt is reviewed at 2.5 Build the Prompt", $("counter").textContent === "Step 16 of 24" && title() === FL.numbers.review2 + FAC_QUESTIONS.review.title2 &&
+  check("the prompt is reviewed at 2.5 Build the Prompt", $("counter").textContent === "Step 18 of 26" && title() === FL.numbers.review2 + FAC_QUESTIONS.review.title2 &&
     !document.querySelector("#screen .happy-line"));
   var todo = Array.prototype.map.call(document.querySelectorAll("#screen .todo li"), function (li) { return li.textContent; });
   check("end screen lists everything still needing attention, in sheet order", todo.join(" | ") ===
     "Mission Statement needs a label | " +
     "Program 2: Program Name was skipped (Unsupported) | Program 2: Description was skipped (Unsupported) | " +
-    "Program 2: Outputs is marked Unsupported | " +
+    "Program 2: Outputs is marked Unsupported | Program 2: Current Impact Statement was skipped (Unsupported) | " +
     "Local context 1 is vague (Unsupported) | Local context 2 needs a label");
 
   // ---------- Review and export ----------
@@ -332,23 +366,23 @@ T.run("Builder screens (builder.html)", function (check) {
   $("reviewed").click();
 
   document.querySelector('#screen .todo button[data-act="goto"]').click();
-  check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 24" && document.activeElement.id === "f-org-mission");
+  check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 26" && document.activeElement.id === "f-org-mission");
   check("jumping there doesn't clear the tick", saved().reviewed === true);
   type("f-org-mission", "We help 450 families");
   check("changing an answer clears the tick", saved().reviewed === false);
 
-  $("next").click(); $("next").click();
+  $("next").click(); $("next").click(); $("next").click();
   act("removeProgram");
   check("Remove this program asks for a second click", saved().programs.length === 2);
   act("removeProgram");
   check("second click removes program 2", saved().programs.length === 1);
-  for (var k = 0; k < 9; k++) $("next").click();
+  for (var k = 0; k < 10; k++) $("next").click();
 
   // ---------- Step 2: Get the Right Numbers ----------
   var W2 = FAC_QUESTIONS.why;
-  check("Next all the way through Step 1 (1.3, then 1.4 and 1.5) reaches 2.1 pain statements", $("counter").textContent === "Step 11 of 23" && title().indexOf(W2.number) > -1);
+  check("Next all the way through Step 1 (1.3, then 1.4 and 1.5) reaches 2.1 pain statements", $("counter").textContent === "Step 13 of 25" && title().indexOf(W2.number) > -1);
   document.querySelectorAll("#parts .dot")[4].click();
-  check("back on the review screen (2.5): still unticked and locked", $("counter").textContent === "Step 15 of 23" && !$("reviewed").checked && $("copyPrompt").disabled);
+  check("back on the review screen (2.5): still unticked and locked", $("counter").textContent === "Step 17 of 25" && !$("reviewed").checked && $("copyPrompt").disabled);
   check("the preview now shows the new mission, and the location is the ZIP (with its place once the ZIP list has loaded)", $("exportPreview").textContent.indexOf("Mission Statement: We help 450 families") > -1 &&
     /Location \(include zip\): 77001( \(Houston, TX\))?\n/.test($("exportPreview").textContent));
   document.querySelectorAll("#parts .dot")[0].click();
@@ -385,7 +419,7 @@ T.run("Builder screens (builder.html)", function (check) {
   check("2.4 magic wand, offering the member's programs", title().indexOf(FAC_QUESTIONS.wand.number) > -1 && document.querySelectorAll("#wand-programs option").length === 1);
   type("f-wand-program", "Emergency shelter"); type("f-wand-amount", "25,000"); type("f-wand-possible", "A second shelter");
   $("next").click();
-  check("the review screen again (2.5), with Next and no happy line", !$("next").hidden && $("next").textContent === "Next" && !document.querySelector("#screen .happy-line") && $("counter").textContent === "Step 15 of 23");
+  check("the review screen again (2.5), with Next and no happy line", !$("next").hidden && $("next").textContent === "Next" && !document.querySelector("#screen .happy-line") && $("counter").textContent === "Step 17 of 25");
   var pv = $("exportPreview").textContent;
   check("the prompt now has the pain statement, donor table and magic wand", pv.indexOf(W2.exportTitle) > -1 && pv.indexOf("Regular Donor Table (draft)") > -1 && pv.indexOf("Magic Wand\n* Program: Emergency shelter") > -1);
 
@@ -393,7 +427,7 @@ T.run("Builder screens (builder.html)", function (check) {
   var S3 = FAC_QUESTIONS.story;
   function paste(text) { var o = $("story-out"); o.value = text; o.dispatchEvent(new Event("input", { bubbles: true })); o.dispatchEvent(new Event("change", { bubbles: true })); }
   $("next").click();
-  check("Continue to Step 3: 3.1 the challenge, with its prompt built from 2.1", $("counter").textContent === "Step 16 of 23" && title().indexOf(S3.challenge.number) > -1 &&
+  check("Continue to Step 3: 3.1 the challenge, with its prompt built from 2.1", $("counter").textContent === "Step 18 of 25" && title().indexOf(S3.challenge.number) > -1 &&
     $("step-prompt").textContent.indexOf(S3.challenge.prompt + "\n\nFunding lost ($ and type): $95,000") === 0);
   type("f-story-keyFact", "Rents rose sharply");
   check("the step's prompt updates as the member types, and ends with the guardrail line", $("step-prompt").textContent.indexOf("Key fact: Rents rose sharply") > -1 &&
@@ -456,7 +490,7 @@ T.run("Builder screens (builder.html)", function (check) {
   document.querySelector('#screen .rate[data-row="1"][value="4"]').click();
   check("a rating saves", saved().assess.ratings[1] === "4");
   $("next").click();
-  check("the package: last screen, locked until reviewed", $("next").hidden && $("counter").textContent === "Step 23 of 23" && $("copyPkg").disabled && $("downloadPkg").disabled && $("downloadPkgMd").disabled);
+  check("the package: last screen, locked until reviewed", $("next").hidden && $("counter").textContent === "Step 25 of 25" && $("copyPkg").disabled && $("downloadPkg").disabled && $("downloadPkgMd").disabled);
   var pk = $("pkgPreview").textContent;
   check("the package holds the prompt, the story and the next steps", pk.indexOf(FACExport.build(FAC_QUESTIONS, FACSheet.load(FAC_QUESTIONS))) > -1 &&
     pk.indexOf(S3.fromRoibot) > -1 && pk.indexOf("Title: Share the package") > -1);
@@ -468,7 +502,7 @@ T.run("Builder screens (builder.html)", function (check) {
   // ---------- Fill from a document (made-up text) ----------
   var DOC = FAC_QUESTIONS.documents;
   $("clear").click(); $("clear").click();
-  check("Start over: back on Organization Info, with the document panel closed", $("counter").textContent === "Step 1 of 23" && !$("doc-panel").open);
+  check("Start over: back on Organization Info, with the document panel closed", $("counter").textContent === "Step 1 of 25" && !$("doc-panel").open);
   function sugg(path) {
     return Array.prototype.filter.call(document.querySelectorAll("#screen .sugg"), function (d) { return d.querySelector(".lbl").textContent === path; })[0];
   }
@@ -493,7 +527,9 @@ T.run("Builder screens (builder.html)", function (check) {
   press("Program 2: Program Name", "suggEdit");
   check("Edit accepts it and goes to that box, adding Program 2", title().indexOf("Program 2 of 2") > -1 && $("f-programs-1-name").value === "Rent Help" &&
     document.activeElement === $("f-programs-1-name"));
-  check("a program's screen shows only its own suggestions", document.querySelectorAll("#screen .sugg").length === 2 && !!sugg("Program 2: Outputs") && !!sugg("Program 2: Program Name"));
+  check("a program's screen shows only its own suggestions; Outputs wait for 1.3", document.querySelectorAll("#screen .sugg").length === 1 && !!sugg("Program 2: Program Name"));
+  document.querySelectorAll("#parts .dot")[2].click();
+  check("on 1.3, each program's row shows its Outputs suggestion", /Outputs to Outcomes/.test(title()) && !!$("oo-row-1").querySelector(".sugg") && !!sugg("Program 2: Outputs"));
   press("Program 2: Outputs", "suggAccept");
   check("an accepted figure still needs a label, like a typed one", $("f-programs-1-outputs").value === "75 households in 2024" && !$("f-programs-1-outputs-lab").hidden);
 });
