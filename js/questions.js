@@ -281,11 +281,11 @@ var FAC_QUESTIONS = {
   // The screens follow Step 1 of FAC's flowchart (Draft v3, Oct 25, 2026),
   // which Steve approved. Draft wording for Steve.
   flow: {
-    // Flowchart step numbers shown on each screen. Local Context/Data isn't in
-    // the flowchart's Step 1 (it's in Step 2), so it has no number yet.
-    // The workbook's parts (Version 2 plan): 1.3 Outputs to Outcomes is the review screen, where the
-    // prompt goes to ROI.bot; 1.4 Add Context is Local Context/Data and Benchmarks; 1.5 Add Constraints.
-    numbers: { org: "1.1", program: "1.2", pain: "1.4", benchmarks: "1.4", constraints: "1.5", review: "1.3", review2: "2.5", check: "◆" },
+    // Step numbers shown on each screen, from the workbook's parts (Version 2
+    // plan and Steve's Step 1.3 instructions): 1.3 Outputs to Outcomes; 1.4 Add
+    // Context is Local Context/Data and Benchmarks; 1.5 Add Constraints; 2.5
+    // Build the Prompt is the review screen.
+    numbers: { org: "1.1", program: "1.2", pain: "1.4", benchmarks: "1.4", constraints: "1.5", outcomes: "1.3", review2: "2.5", check: "◆" },
     // Version 2 plan: every screen ends with "← Previous" (left) and "Next"
     // (right); every forward button says Next.
     nextButton: "Next",
@@ -294,7 +294,7 @@ var FAC_QUESTIONS = {
     startOverConfirm: "Click again to clear everything",
     // Above Next on each part's main screen (Version 2 plan, word for word).
     happyLine: "Once you are happy with your {thing}, press Next to continue.",
-    happy: { org: "keywords", rank: "stack ranking", review: "outputs to outcomes", pain: "context", benchmarks: "context", constraints: "constraints",
+    happy: { org: "keywords", rank: "stack ranking", outcomes: "outputs to outcomes", pain: "context", benchmarks: "context", constraints: "constraints",
       why: "pain statements", regular: "Donate Now table", major: "Major Donor Ladder" },
     editLink: "Edit",
     empty: "(blank)",
@@ -515,6 +515,23 @@ var FAC_QUESTIONS = {
     lineLabel: "Draw the red line after",
     lineHelp: "Programs below the red line are left out of the prompt. They stay saved, so you can move the line later.",
     belowLine: "below the red line"
+  },
+
+  // 1.3 Outputs to Outcomes (Steve's Step 1.3 instructions): one row per
+  // program above the red line, in rank order. Outcomes is each program's
+  // Current Impact Statement. Then go deeper (1.4, 1.5) or skip to 2.1.
+  // Draft for Steve, apart from the title, "later" and choiceAsk.
+  outcomes: {
+    title: "Outputs to Outcomes",
+    intro: "One row per program, in your ranked order. Check what each program did and what changed.",
+    outputsLabel: "Outputs (what you did)",
+    outcomesLabel: "Outcomes (what changed)",
+    placeholder: "Click to change",
+    later: "Gray tags can be filled in later.",
+    choiceAsk: "Go deeper now with your files and research (1.4 Add Context), or skip to Step 2?",
+    deeper: "Go deeper (1.4 Add Context)",
+    skip: "Skip to Step 2",
+    needChoice: "Please choose whether to go deeper or skip to Step 2."
   },
 
   // Extra fields for each benchmark (FAC's process guide, form 2.3). Draft for Steve.

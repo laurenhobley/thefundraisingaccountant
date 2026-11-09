@@ -44,7 +44,7 @@
   function field(q, path) {
     var id = idOf(path);
     var input = q.kind === "long"
-      ? '<textarea class="ans" id="' + id + '" data-path="' + path + '"></textarea>'
+      ? '<textarea class="ans" id="' + id + '" data-path="' + path + '"' + (q.placeholder ? ' placeholder="' + esc(q.placeholder) + '"' : "") + '></textarea>'
       : '<input class="ans" id="' + id + '" data-path="' + path + '" type="' + (q.kind === "url" ? "url" : "text") + '"' +
         (q.kind === "zip" ? ' inputmode="numeric" maxlength="10" autocomplete="postal-code"' : "") + (q.placeholder ? ' placeholder="' + esc(q.placeholder) + '"' : "") + '>';
     return '<div class="f' + (q.kind === "zip" ? " f-zip" : "") + '">' +
@@ -262,6 +262,26 @@
 
   var LIVE_FORM = "impact-prompt-draft-v1";
   function liveDraft() { try { return JSON.parse(localStorage.getItem(LIVE_FORM) || "null"); } catch (e) { return null; } }
+
+  // 1.3 Outputs to Outcomes (Steve's Step 1.3 instructions): one row per
+  // program above the red line, in rank order, with its Outputs and its
+  // Outcomes (the Current Impact Statement), then go deeper or skip.
+  function outcomesScreen() {
+    var O = Q.outcomes, rows = "";
+    for (var i = 0; i < S.included(state); i++) {
+      var name = S.trim(state.programs[i].name.text) || Q.flow.empty;
+      rows += '<div class="oo-row" id="oo-row-' + i + '"><span class="lbl">' + esc(programName(i) + ": " + name) + '</span><div class="oo-cells">' +
+        field({ label: O.outputsLabel, kind: "long", placeholder: O.placeholder }, "programs." + i + ".outputs") +
+        field({ label: O.outcomesLabel, kind: "long", placeholder: O.placeholder }, "programs." + i + ".impact") + '</div></div>';
+    }
+    function choice(v, label) {
+      return '<label><input type="radio" class="depth-choice" name="depth" value="' + v + '"' + (state.depth === v ? " checked" : "") + '> ' + esc(label) + '</label>';
+    }
+    return heading(N.outcomes, O.title) + '<p class="hint">' + esc(O.intro) + '</p>' + rows +
+      '<p class="hint">' + esc(O.later) + '</p>' +
+      '<div class="f"><span class="lbl">' + esc(O.choiceAsk) + '</span><div class="choice" role="radiogroup" aria-label="' + esc(O.choiceAsk) + '">' +
+      choice("deeper", O.deeper) + choice("skip", O.skip) + '</div><p class="fu-q" id="depth-msg" aria-live="polite"></p></div>';
+  }
 
   // 2.1 The pain statement questions, the types of loss, and the Why Now preview.
   function whyScreen() {
@@ -719,6 +739,7 @@
       st.kind === "program" ? programScreen(st.index) :
       st.kind === "check" ? checkpointScreen(st.of) :
       st.kind === "rank" ? rankScreen() :
+      st.kind === "outcomes" ? outcomesScreen() :
       st.kind === "pain" ? listScreen("pain", N.pain) :
       st.kind === "benchmarks" ? listScreen("benchmarks", N.benchmarks) :
       st.kind === "constraints" ? constraintsScreen() :
@@ -761,7 +782,7 @@
   function happyOf(st) {
     var H = Q.flow.happy, k = st.kind;
     if (k === "donors") return H[st.of];
-    if (k === "end") return st.stage === 1 ? H.review : "";
+    if (k === "end") return "";
     return H[k] || "";
   }
 
@@ -776,7 +797,8 @@
     var k = st.kind;
     if (k === "org") return [0, 0];
     if (k === "program" || k === "rank" || (k === "check" && st.of === "programs")) return [0, 1];
-    if (k === "end") return st.stage === 2 ? [1, 4] : [0, 2];
+    if (k === "outcomes") return [0, 2];
+    if (k === "end") return [1, 4];
     if (k === "pain" || k === "benchmarks" || (k === "check" && st.of === "benchmarks")) return [0, 3];
     if (k === "constraints" || k === "check") return [0, 4];
     if (k === "why") return [1, 0];
@@ -799,6 +821,8 @@
     });
     function status(si, pi) {
       var key = si + "," + pi;
+      // Skipped 1.4 and 1.5 stay "to come", so they can still be opened.
+      if (state.depth === "skip" && si === 0 && pi > 2 && key !== here.join()) return "todo";
       return key === here.join() ? "current" : last[key] < state.step ? "done" : "todo";
     }
     $("progress").setAttribute("data-step", here[0]);
@@ -911,6 +935,7 @@
     if (el.id === "doc-text") { docText = el.value; return; }
     if (el.id === "doc-file") { if (e.type === "change" && el.files && el.files[0]) readChosenFile(el.files[0]); return; }
     if (onRankEdit(e)) return;
+    if (el.classList.contains("depth-choice")) { if (e.type === "change") { state.depth = el.value; $("depth-msg").textContent = ""; unreview(); save(); } return; }
     if (onStoryEdit(e)) return;
     if (el.classList.contains("why-type")) {
       if (e.type !== "change") return;
@@ -1026,7 +1051,7 @@
 
   $("back").addEventListener("click", function () {
     var to = $("back").getAttribute("data-to");
-    if (to) location.href = to; else go(state.step - 1);
+    if (to) location.href = to; else go(S.prevStep(state, state.step));
   });
   // Next asks a follow-up for each missing or vague answer instead of moving on.
   $("next").addEventListener("click", function () {
@@ -1036,7 +1061,13 @@
       return;
     }
     var m = S.ask(Q, state, state.step);
-    if (!m.length) { go(state.step + 1); return; }
+    // 1.3 also needs the choice: go deeper or skip to Step 2.
+    if (!m.length && S.steps(state)[state.step].kind === "outcomes" && !state.depth) {
+      $("depth-msg").textContent = Q.outcomes.needChoice;
+      $("depth-msg").scrollIntoView({ block: "center" });
+      return;
+    }
+    if (!m.length) { go(S.nextStep(state, state.step)); return; }
     m.forEach(refresh);
     save();
     $(idOf(m[0])).focus();

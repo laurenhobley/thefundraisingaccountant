@@ -247,3 +247,8 @@ button.link { font: inherit; font-weight: 600; color: var(--accent); background:
 .chips:empty { display: none; }
 .chip { background: var(--slip); border: 1px solid var(--line); border-radius: 999px; padding: 2px 12px; font-size: 15px; color: var(--heading); }
 .kw-count { font-weight: 700; color: var(--heading); }
+
+/* 1.3 Outputs to Outcomes: one row per program, outputs and outcomes side by side. */
+.oo-row { border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; }
+.oo-cells { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: start; }
+.oo-cells textarea:placeholder-shown { background: #eeeeec; }

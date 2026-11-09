@@ -26,8 +26,8 @@ T.run("Questions (js/questions.js)", function (check) {
     ["amount", "funds", "result", "words"].every(function (k) { return !!Q.donors.columns[k]; }) && !!Q.wand.possible && !!Q.flow.nextButton);
   check("Constraints asks: Tone, Length, Format, Audience, all optional",
     labels("constraints") === "Tone, Length, Format, Audience" && S.section(Q, "constraints").questions.every(function (q) { return !q.required; }));
-  check("step numbers follow the workbook (Version 2 plan): 1.1 org, 1.2 programs, 1.3 review, 1.4 context, 1.5 constraints, 2.5 Step 2 review",
-    [Q.flow.numbers.org, Q.flow.numbers.program, Q.flow.numbers.review, Q.flow.numbers.pain, Q.flow.numbers.benchmarks, Q.flow.numbers.constraints, Q.flow.numbers.review2].join() === "1.1,1.2,1.3,1.4,1.4,1.5,2.5");
+  check("step numbers follow the workbook: 1.1 org, 1.2 programs, 1.3 outputs to outcomes, 1.4 context, 1.5 constraints, 2.5 Step 2 review",
+    [Q.flow.numbers.org, Q.flow.numbers.program, Q.flow.numbers.outcomes, Q.flow.numbers.pain, Q.flow.numbers.benchmarks, Q.flow.numbers.constraints, Q.flow.numbers.review2].join() === "1.1,1.2,1.3,1.4,1.4,1.5,2.5");
   check("the three \"Happy with…?\" checks have their wording", ["programs", "benchmarks", "constraints"].every(function (k) { return !!Q.flow.checkpoints[k].title && !!Q.flow.checkpoints[k].text; }));
   check("Version 2 buttons: \"← Previous\" and \"Next\", and the happy line for each part", Q.flow.previousButton === "← Previous" && Q.flow.nextButton === "Next" &&
     Q.flow.happyLine === "Once you are happy with your {thing}, press Next to continue." && ["keywords", "stack ranking", "outputs to outcomes", "context", "constraints", "pain statements", "Donate Now table", "Major Donor Ladder"].every(function (t) { for (var k in Q.flow.happy) if (Q.flow.happy[k] === t) return true; return false; }));

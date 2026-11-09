@@ -8,7 +8,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("blank sheet starts with 1 program", s.programs.length === 1);
   check("blank sheet has every Organization Info question", ["name", "zip", "website", "mission", "kwIssue", "kwPeople", "kwServices", "kwLocation"].every(function (id) { return !!s.org[id]; }) && !s.org.city && !s.org.keywords);
   check("blank sheet has no numbers in it", S.problems(s).length === 0);
-  check("screens: Organization, 1 program, stack rank, check, Pain Statements, Benchmarks, check, Constraints, check, review", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,rank,check:programs,pain,benchmarks,check:benchmarks,constraints,check:constraints,end,why,donors:regular,donors:major,wand,end,story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
+  check("screens: Organization, 1 program, stack rank, check, 1.3 Outputs to Outcomes, Local Context, Benchmarks, check, Constraints, check, then Step 2 (no Step 1 review)", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,program,rank,check:programs,outcomes,pain,benchmarks,check:benchmarks,constraints,check:constraints,why,donors:regular,donors:major,wand,end,story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
 
   var out = S.get(s, "programs.0.outputs");
   out.text = "Served 414 families in 2024";
@@ -32,7 +32,21 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("Add program gives program 2", n === 1 && s.programs.length === 2);
   check("24 screens with 2 programs", S.steps(s).length === 24);
   check("program 2 is on screen 3", S.stepOf(s, "programs.1.name") === 2);
-  check("with 2 programs: stack rank on screen 4, check on 5, Pain on 6, Benchmarks on 7, Constraints on 9", S.steps(s)[3].kind === "rank" && S.steps(s)[4].of === "programs" && S.stepOf(s, "pain.0") === 5 && S.stepOf(s, "benchmarks.0") === 6 && S.stepOf(s, "constraints.tone") === 8);
+  check("with 2 programs: stack rank on screen 4, check on 5, 1.3 on 6, Local Context on 7, Benchmarks on 8, Constraints on 10", S.steps(s)[3].kind === "rank" && S.steps(s)[4].of === "programs" && S.steps(s)[5].kind === "outcomes" && S.stepOf(s, "pain.0") === 6 && S.stepOf(s, "benchmarks.0") === 7 && S.stepOf(s, "constraints.tone") === 9);
+  // 1.3 Outputs to Outcomes, then go deeper or skip to 2.1.
+  check("1.3 checks each program's Outputs and Outcomes (its impact statement)", S.answersOn(s, 5).join() === "programs.0.outputs,programs.0.impact,programs.1.outputs,programs.1.impact");
+  s.rank.use = "yes"; s.rank.line = 1;
+  check("only programs above the red line are on 1.3", S.answersOn(s, 5).join() === "programs.0.outputs,programs.0.impact");
+  s.rank.use = ""; s.rank.line = null;
+  var why = S.stepOf(s, "why.lost");
+  check("go deeper: Next from 1.3 goes to 1.4 Local Context", (s.depth = "deeper", S.nextStep(s, 5) === 6 && S.prevStep(s, why) === why - 1));
+  check("skip: Next from 1.3 goes straight to 2.1, and Previous from 2.1 back to 1.3", (s.depth = "skip", S.nextStep(s, 5) === why && S.prevStep(s, why) === 5));
+  s.depth = "";
+  var oldStep = S.repair(Q, { programs: [{ name: { text: "A" } }], step: 9 });
+  var oldPain = S.repair(Q, { programs: [{ name: { text: "A" } }], step: 4 });
+  var newDraft = S.repair(Q, { programs: [{ name: { text: "A" } }], step: 9, flow: 2, depth: "skip" });
+  check("a draft on the old Step 1 review opens on 1.3; one on Local Context moves with it; a new draft keeps its place and choice",
+    S.steps(oldStep)[oldStep.step].kind === "outcomes" && S.steps(oldPain)[oldPain.step].kind === "pain" && newDraft.step === 9 && newDraft.depth === "skip");
   S.removeProgram(s, 1); S.removeProgram(s, 0);
   check("the last program can't be removed", s.programs.length === 1);
 
@@ -406,7 +420,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   // Step 2: pain statement questions, donor tables, magic wand.
   var s2 = S.blank(Q);
-  check("Step 2 screens come after the 1.5 review, then the review again", S.steps(s2).slice(-14, -8).map(function (x) { return x.kind + (x.stage || "") + (x.of ? ":" + x.of : ""); }).join() === "end1,why,donors:regular,donors:major,wand,end2");
+  check("Step 2 comes after Constraints, then the review (2.5)", S.steps(s2).slice(-14, -8).map(function (x) { return x.kind + (x.stage || "") + (x.of ? ":" + x.of : ""); }).join() === "check:constraints,why,donors:regular,donors:major,wand,end2");
   check("2.2 and 2.3 each check only their own table", S.answersOn(s2, S.stepOf(s2, "donors.regular.0.result")).every(function (p) { return /^donors.regular./.test(p); }) &&
     S.answersOn(s2, S.stepOf(s2, "donors.major.0.result")).every(function (p) { return /^donors.major./.test(p); }) && S.stepOf(s2, "donors.major.0.amount") === S.stepOf(s2, "donors.regular.0.amount") + 1);
   check("each donor table starts with four rows", s2.donors.regular.length === 4 && s2.donors.major.length === 4);

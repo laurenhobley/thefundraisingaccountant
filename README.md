@@ -40,19 +40,18 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 
 **The screens** follow FAC's flowchart and workshop workbook, three steps in order:
 
-**Step 1, Measure your ROI**
+**Step 1, Pick Your Story**
 1. **1.1** Organization Info, with Key Words in four groups (Issue, People served, Services, Location; shown as chips with a running count), and an optional "Fill from a document" panel: the member pastes text or chooses a Word, PDF or .txt file, and each suggested answer shows the exact lines it came from, with Accept, Edit or Skip. Nothing is filled in until they accept it, and the document is never saved or sent.
 2. **1.2** one screen per program, then an optional stack rank from FAC's template (three drivers the member names, plus Money, each scored 1–3; the member types the Stack Rank, the tool checks it equals the four multiplied and sorts by it, then suggests where the Stack Ranks jump most; the member draws the red line, and programs below it are left out of the prompt), then a "Happy with your programs and keywords?" check
-3. Local Context/Data, from FAC's sheet
-4. **1.3** Benchmarks (with source, program and how it connects), then its check
-5. **1.4** Constraints (tone, length, format, audience), then its check
-6. **"Build our story"**, which leads to **1.5**, the review screen, where Role, Task and Constraints can be edited
+3. **1.3** Outputs to Outcomes: one row per program above the red line, its Outputs and its Outcomes (the Current Impact Statement) side by side. Then "Go deeper now… or skip to Step 2?"
+4. **1.4** Add Context: Local Context/Data (from FAC's sheet) and Benchmarks (with source, program and how it connects), then its check
+5. **1.5** Add Constraints (tone, length, format, audience), then its check. A member who skips at 1.3 goes straight to 2.1 and can still open 1.4 and 1.5 from the progress bar.
 
 **Step 2, Get the Right Numbers**
 1. **2.1** Pain statements, with a Why Now preview. It can bring in answers from the pain statement form.
-2. **2.2** Regular and Major donor tables. The member types every amount.
-3. **2.3** Magic wand
-4. Then the review screen again.
+2. **2.2** Donate Now (the Regular donor table) and **2.3** Major Donors (the Major donor table). The member types every amount.
+3. **2.4** Magic wand
+4. **2.5** Build the Prompt: the review screen, where Role, Task and Constraints can be edited, and the prompt is copied or downloaded.
 
 **Step 3, Tell your story**
 1. **3.1–3.4** Challenge, Response, Outcome and ROI. Each step has FAC's prompt, a Copy button and a box for ROI.bot's answer, with rounds kept, then Keep or Revise (Revise asks one question and links to the screen that feeds it). 3.4 also has the member's own "For every $1" line, checked against their investment and value, and a timeframe for the ask.

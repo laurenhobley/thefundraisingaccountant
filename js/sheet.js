@@ -46,6 +46,11 @@ var FACSheet = (function () {
       // (null means all of them). rankRows[i] goes with programs[i]:
       // { m: { d1, d2, d3, money: "1".."3" }, score: "the Stack Rank the member typed" }.
       rank: { use: "", names: driverNames(), line: null },
+      // After 1.3: "deeper" (1.4 Add Context and 1.5 Add Constraints next) or
+      // "skip" (straight to 2.1); "" until the member chooses.
+      depth: "",
+      // 2 = Step 1 in Steve's 1.3 order (Outputs to Outcomes before 1.4 and 1.5).
+      flow: 2,
       rankRows: [rankRow()],
       // The member's own wording for the prompt's Role, Task and
       // Constraints, edited on the review screen. null means FAC's wording
@@ -188,6 +193,14 @@ var FACSheet = (function () {
     if (data.versions && data.versions.length) for (i = 0; i < data.versions.length; i++) {
       var v = data.versions[i];
       if (v && typeof v.n === "number" && typeof v.at === "string" && typeof v.text === "string") s.versions.push({ n: v.n, at: v.at, text: v.text });
+    }
+    if (data.depth === "deeper" || data.depth === "skip") s.depth = data.depth;
+    // A draft from before Steve's 1.3 order: the old Step 1 review is now 1.3
+    // Outputs to Outcomes, and Local Context to Constraints moved one on.
+    if (data.flow !== 2) {
+      var n = s.programs.length;
+      if (s.step === n + 8) s.step = n + 3;
+      else if (s.step >= n + 3 && s.step <= n + 7) s.step += 1;
     }
     return s;
   }
@@ -529,6 +542,8 @@ var FACSheet = (function () {
     if (st.kind === "org") for (id in state.org) { if (state.org.hasOwnProperty(id)) out.push("org." + id); }
     else if (st.kind === "program") { for (id in state.programs[st.index]) if (state.programs[st.index].hasOwnProperty(id)) out.push("programs." + st.index + "." + id); }
     else if (st.kind === "pain" || st.kind === "benchmarks") for (i = 0; i < state[st.kind].length; i++) out.push(st.kind + "." + i);
+    // 1.3: each program above the red line's Outputs and Outcomes (its Current Impact Statement).
+    else if (st.kind === "outcomes") for (i = 0; i < included(state); i++) out.push("programs." + i + ".outputs", "programs." + i + ".impact");
     else if (st.kind === "constraints" || st.kind === "why" || st.kind === "wand") for (id in state[st.kind]) { if (state[st.kind].hasOwnProperty(id)) out.push(st.kind + "." + id); }
     else if (st.kind === "donors") out = donorPaths(state, st.of);
     else if (st.kind === "story" || st.kind === "funder") out = (STORY_FIELDS[st.of || "funder"] || []).map(function (id) { return "story." + id; });
@@ -654,8 +669,11 @@ var FACSheet = (function () {
   function steps(state) {
     var out = [{ kind: "org" }];
     for (var i = 0; i < state.programs.length; i++) out.push({ kind: "program", index: i });
-    out.push({ kind: "rank" }, { kind: "check", of: "programs" }, { kind: "pain" }, { kind: "benchmarks" }, { kind: "check", of: "benchmarks" },
-      { kind: "constraints" }, { kind: "check", of: "constraints" }, { kind: "end", stage: 1 },
+    // Steve's Step 1.3 order: 1.3 Outputs to Outcomes after the programs, then
+    // 1.4 Add Context (Local Context, Benchmarks) and 1.5 Add Constraints, which
+    // a member can skip. The prompt is reviewed once, at 2.5.
+    out.push({ kind: "rank" }, { kind: "check", of: "programs" }, { kind: "outcomes" }, { kind: "pain" }, { kind: "benchmarks" }, { kind: "check", of: "benchmarks" },
+      { kind: "constraints" }, { kind: "check", of: "constraints" },
       // Step 2, then the review screen again with Step 2 in the prompt.
       // 2.2 Donate Now and 2.3 Major Donors are the two donor tables, one screen each.
       { kind: "why" }, { kind: "donors", of: "regular" }, { kind: "donors", of: "major" }, { kind: "wand" }, { kind: "end", stage: 2 },
@@ -664,6 +682,21 @@ var FACSheet = (function () {
       { kind: "funder" }, { kind: "actions" }, { kind: "assess" }, { kind: "package" });
     return out;
   }
+
+  // Where Next and ← Previous go. After 1.3, a member who chose to skip goes
+  // straight to 2.1 Pain Statements, and back from 2.1 to 1.3.
+  function indexOfKind(state, kind) {
+    var all = steps(state);
+    for (var i = 0; i < all.length; i++) if (all[i].kind === kind) return i;
+    return -1;
+  }
+  function nextStep(state, step) {
+    return steps(state)[step].kind === "outcomes" && state.depth === "skip" ? indexOfKind(state, "why") : step + 1;
+  }
+  function prevStep(state, step) {
+    return steps(state)[step].kind === "why" && state.depth === "skip" ? indexOfKind(state, "outcomes") : step - 1;
+  }
+
   function stepOf(state, path) {
     var p = path.split("."), n = state.programs.length;
     if (p[0] === "org") return 0;
@@ -673,7 +706,7 @@ var FACSheet = (function () {
       for (var k in STORY_FIELDS) if (STORY_FIELDS[k].indexOf(p[1]) > -1) return n + at[k];
     }
     if (p[0] === "donors") return n + (p[1] === "major" ? 11 : 10);
-    return n + ({ rank: 1, pain: 3, benchmarks: 4, constraints: 6, why: 9, wand: 12 })[p[0]];
+    return n + ({ rank: 1, outcomes: 3, pain: 4, benchmarks: 5, constraints: 7, why: 9, wand: 12 })[p[0]];
   }
 
   // ---------- Step 2 ----------
@@ -843,7 +876,7 @@ var FACSheet = (function () {
     baseIssue: baseIssue, numbersIn: numbersIn, sharedCount: sharedCount, sameGroups: sameGroups, resolveOverlap: resolveOverlap,
     isAssumption: isAssumption, assumptionOpen: assumptionOpen, setLabel: setLabel, setNote: setNote,
     calculations: calculations, mathProblem: mathProblem,
-    paths: paths, steps: steps, stepOf: stepOf, problems: problems, addVersion: addVersion,
+    paths: paths, steps: steps, stepOf: stepOf, nextStep: nextStep, prevStep: prevStep, problems: problems, addVersion: addVersion,
     RANK_COLUMNS: RANK_COLUMNS, rankCheck: rankCheck, sortByScore: sortByScore, suggestLine: suggestLine, dollarOff: dollarOff, included: included,
     addDonorRow: addDonorRow, removeDonorRow: removeDonorRow, importLive: importLive, importScreen1: importScreen1, loadScreen1: loadScreen1, SCREEN1: SCREEN1,
     addRound: addRound, latest: latest, STORY_PARTS: STORY_PARTS,

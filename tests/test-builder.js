@@ -204,6 +204,28 @@ T.run("Builder screens (builder.html)", function (check) {
   check("Next from there passes the stack rank and comes back to the check", title().indexOf(FL.checkpoints.programs.title) > -1);
   $("next").click();
 
+  // ---------- 1.3 Outputs to Outcomes, then go deeper or skip ----------
+  var OO = FAC_QUESTIONS.outcomes;
+  check("then 1.3 Outputs to Outcomes: one row per program, outputs and outcomes side by side", title() === FL.numbers.outcomes + OO.title &&
+    document.querySelectorAll("#screen .oo-row").length === 2 && $("f-programs-0-outputs").value === saved().programs[0].outputs.text &&
+    $("f-programs-0-impact").placeholder === OO.placeholder && document.querySelector("#oo-row-0 .lbl").textContent === "Program 1: Emergency shelter");
+  check("progress bar: 1.1 and 1.2 done, 1.3 current", parts() === "1.1:done 1.2:done 1.3:current 1.4:todo 1.5:todo");
+  check("it ends with \"Once you are happy with your outputs to outcomes…\" and the go deeper or skip question",
+    document.querySelector("#screen .happy-line").textContent === FL.happyLine.replace("{thing}", "outputs to outcomes") && document.querySelectorAll("#screen .depth-choice").length === 2);
+  type("f-programs-0-impact", "Families are safe at night");
+  check("an outcome typed here is the program's impact statement", saved().programs[0].impact.text === "Families are safe at night");
+  $("next").click();
+  check("Next without choosing: asks to choose", /Outputs to Outcomes/.test(title()) && $("depth-msg").textContent === OO.needChoice);
+  document.querySelector('#screen .depth-choice[value="skip"]').click();
+  $("next").click();
+  check("Skip to Step 2: Next goes straight to 2.1, and Step 1 isn't ticked off (1.4 and 1.5 still to come)", title().indexOf(FAC_QUESTIONS.why.number) === 0 &&
+    tabs() === "todo current todo");
+  $("back").click();
+  check("← Previous from 2.1 goes back to 1.3", /Outputs to Outcomes/.test(title()));
+  document.querySelector('#screen .depth-choice[value="deeper"]').click();
+  check("the choice saves", saved().depth === "deeper" && $("depth-msg").textContent === "");
+  $("next").click();
+
   // ---------- Optional sections and the end screen ----------
   check("then Local Context/Data", /Local Context\/Data/.test(title()));
   check("FAC's examples shown as hint text", document.querySelectorAll("#screen .examples li").length === 2);
@@ -268,8 +290,11 @@ T.run("Builder screens (builder.html)", function (check) {
   check("after Constraints, the button still says Next", $("next").textContent === FL.nextButton && !document.querySelector("#screen .happy-line"));
   $("next").click();
 
-  check("Step 1 review (1.3): Next, under \"Once you are happy with your outputs to outcomes…\"", !$("next").hidden && $("next").textContent === "Next" && document.querySelector("#screen .happy-line").textContent.indexOf("outputs to outcomes") > -1 && $("counter").textContent === "Step 11 of 24");
-  check("the Step 1 review is 1.3 Outputs to Outcomes: 1.4 and 1.5, already passed, show done", parts() === "1.1:done 1.2:done 1.3:current 1.4:done 1.5:done" && title().indexOf("1.3") === 0);
+  check("no Step 1 review any more: after Constraints comes 2.1", $("counter").textContent === "Step 12 of 24" && title().indexOf(FAC_QUESTIONS.why.number) === 0 &&
+    tabs() === "done current todo");
+  document.querySelectorAll("#parts .dot")[4].click();
+  check("the prompt is reviewed at 2.5 Build the Prompt", $("counter").textContent === "Step 16 of 24" && title() === FL.numbers.review2 + FAC_QUESTIONS.review.title2 &&
+    !document.querySelector("#screen .happy-line"));
   var todo = Array.prototype.map.call(document.querySelectorAll("#screen .todo li"), function (li) { return li.textContent; });
   check("end screen lists everything still needing attention, in sheet order", todo.join(" | ") ===
     "Mission Statement needs a label | " +
@@ -314,15 +339,16 @@ T.run("Builder screens (builder.html)", function (check) {
   check("Remove this program asks for a second click", saved().programs.length === 2);
   act("removeProgram");
   check("second click removes program 2", saved().programs.length === 1);
-  for (var k = 0; k < 8; k++) $("next").click();
-  check("back on the review screen: still unticked and locked", $("counter").textContent === "Step 10 of 23" && !$("reviewed").checked && $("copyPrompt").disabled);
-  check("the preview now shows the new mission, and the location is the ZIP (with its place once the ZIP list has loaded)", $("exportPreview").textContent.indexOf("Mission Statement: We help 450 families") > -1 &&
-    /Location \(include zip\): 77001( \(Houston, TX\))?\n/.test($("exportPreview").textContent));
+  for (var k = 0; k < 9; k++) $("next").click();
 
   // ---------- Step 2: Get the Right Numbers ----------
   var W2 = FAC_QUESTIONS.why;
-  $("next").click();
-  check("Continue to Step 2: 2.1 pain statements", $("counter").textContent === "Step 11 of 23" && title().indexOf(W2.number) > -1);
+  check("Next all the way through Step 1 (1.3, then 1.4 and 1.5) reaches 2.1 pain statements", $("counter").textContent === "Step 11 of 23" && title().indexOf(W2.number) > -1);
+  document.querySelectorAll("#parts .dot")[4].click();
+  check("back on the review screen (2.5): still unticked and locked", $("counter").textContent === "Step 15 of 23" && !$("reviewed").checked && $("copyPrompt").disabled);
+  check("the preview now shows the new mission, and the location is the ZIP (with its place once the ZIP list has loaded)", $("exportPreview").textContent.indexOf("Mission Statement: We help 450 families") > -1 &&
+    /Location \(include zip\): 77001( \(Houston, TX\))?\n/.test($("exportPreview").textContent));
+  document.querySelectorAll("#parts .dot")[0].click();
   check("Step 2: Step 1 tab done with a check, Step 2 current, parts 2.1 to 2.5", tabs() === "done current todo" && document.querySelector("#stepsTabs .done .num").textContent === "✓" &&
     parts() === "2.1:current 2.2:todo 2.3:todo 2.4:todo 2.5:todo" && document.querySelectorAll("#parts .part-label")[2].textContent === "Major Donors");
   check("no pain statement form saved in this browser: no import button", !document.querySelector('#screen [data-act="importLive"]'));
