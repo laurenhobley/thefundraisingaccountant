@@ -47,6 +47,9 @@ T.run("Builder screens (builder.html)", function (check) {
   type("f-org-zip", "77001");
   check("ZIP 77001 hides it", fu("f-org-zip") === "");
   check("ZIP code has no label box", !$("f-org-zip-lab"));
+  check("browsers can tell the ZIP, name and website boxes apart (not a driver's license)",
+    $("f-org-zip").name === "postal-code" && $("f-org-zip").getAttribute("autocomplete") === "postal-code" &&
+    $("f-org-name").getAttribute("autocomplete") === "organization" && $("f-org-website").getAttribute("autocomplete") === "url");
   type("f-org-mission", "We help families");
   check("no number: no label box", $("f-org-mission-lab").hidden);
   type("f-org-mission", "We help 400 families");

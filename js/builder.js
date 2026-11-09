@@ -41,12 +41,17 @@
       '<p class="skipped" id="' + id + '-skipped" hidden></p>';
   }
 
+  // What a box is, in the browser's own autofill words, so Edge and Chrome
+  // offer the right saved details (a ZIP code, not a driver's license).
+  var AUTOFILL = { "org.name": "organization", "org.zip": "postal-code", "org.website": "url" };
+
   function field(q, path) {
     var id = idOf(path);
+    var fill = AUTOFILL[path] ? ' name="' + AUTOFILL[path] + '" autocomplete="' + AUTOFILL[path] + '"' : "";
     var input = q.kind === "long"
       ? '<textarea class="ans" id="' + id + '" data-path="' + path + '"' + (q.placeholder ? ' placeholder="' + esc(q.placeholder) + '"' : "") + '></textarea>'
-      : '<input class="ans" id="' + id + '" data-path="' + path + '" type="' + (q.kind === "url" ? "url" : "text") + '"' +
-        (q.kind === "zip" ? ' inputmode="numeric" maxlength="10" autocomplete="postal-code"' : "") + (q.placeholder ? ' placeholder="' + esc(q.placeholder) + '"' : "") + '>';
+      : '<input class="ans" id="' + id + '" data-path="' + path + '" type="' + (q.kind === "url" ? "url" : "text") + '"' + fill +
+        (q.kind === "zip" ? ' inputmode="numeric" maxlength="10"' : "") + (q.placeholder ? ' placeholder="' + esc(q.placeholder) + '"' : "") + '>';
     return '<div class="f' + (q.kind === "zip" ? " f-zip" : "") + '">' +
       '<label for="' + id + '">' + esc(q.label) + (q.note ? ' <span class="opt">' + esc(q.note) + '</span>' : "") + (q.required ? '<span class="req">*</span>' : "") + '</label>' +
       (q.help ? '<p class="hint">' + esc(q.help) + '</p>' : "") +
