@@ -248,6 +248,27 @@ button.link { font: inherit; font-weight: 600; color: var(--accent); background:
 .chip { background: var(--slip); border: 1px solid var(--line); border-radius: 999px; padding: 2px 12px; font-size: 15px; color: var(--heading); }
 .kw-count { font-weight: 700; color: var(--heading); }
 
+/* The 1.1 check, laid out like Steve's Step 1.1 mockup: the organization in a
+   teal box at the top right, a Field / Your answer table, the key words by group. */
+.org-card { justify-self: end; max-width: 520px; background: var(--heading); color: var(--accent-ink); font-size: 18px; padding: 16px 24px;
+  border-radius: 18px 18px 4px 18px; display: grid; gap: 2px; overflow-wrap: anywhere; }
+.org-card-name { font-weight: 700; }
+.chk-table-wrap { min-width: 0; }
+.chk-table { border-collapse: collapse; width: 100%; font-size: 16px; }
+.chk-table thead th { font-size: 15px; font-weight: 700; color: var(--heading); text-align: left; padding: 8px 8px 8px 0; border-bottom: 2px solid var(--heading); }
+.chk-table tbody th { font-weight: 700; color: var(--heading); text-align: left; width: 30%; }
+.chk-table tbody th, .chk-table td { padding: 14px 8px 14px 0; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
+.chk-table .chk-edit { width: 1%; white-space: nowrap; text-align: right; padding-right: 0; }
+.chk-kw { display: grid; gap: 8px; }
+.chk-kw-title { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.chk-kw-row { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 8px; align-items: start; }
+.chk-kw-row .lbl { padding-top: 3px; }
+@media (max-width: 560px) {
+  .chk-kw-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .chk-table { font-size: 15px; }
+  .org-card { font-size: 16px; padding: 12px 16px; }
+}
+
 /* 1.3 Outputs to Outcomes: one row per program, outputs and outcomes side by side. */
 .oo-row { border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; }
 .oo-cells { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; align-items: start; }

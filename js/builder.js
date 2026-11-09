@@ -77,8 +77,40 @@
     var zip = S.get(state, "org.zip").text, where = FACZip.place(zip);
     el.textContent = where ? Q.zipPlace.found.replace(/\{place\}/g, where) : where === "" && S.zipOk(zip) ? Q.zipPlace.unknown : "";
   }
+  // The ZIP with its place ("77001 (Houston, TX)"), as on the 1.1 check.
+  function zipWithPlace() {
+    var zip = S.trim(S.get(state, "org.zip").text), where = zip && FACZip.place(zip);
+    return where ? zip + " (" + where + ")" : zip;
+  }
+  function refreshCheckZip() { var el = $("chk-zip"); if (el) el.textContent = zipWithPlace() || Q.flow.empty; }
   function needZipList() {
-    if (FACZip.place(S.get(state, "org.zip").text) === null) FACZip.load(function () { refreshZipPlace(); refreshReview(); refreshPackage(); });
+    if (FACZip.place(S.get(state, "org.zip").text) === null) FACZip.load(function () { refreshZipPlace(); refreshCheckZip(); refreshReview(); refreshPackage(); });
+  }
+
+  // The 1.1 check, laid out like Steve's Step 1.1 mockup: the organization
+  // at the top, a Field / Your answer table, and the key words as chips in
+  // their four groups with the count. Only the member's own answers.
+  function orgCheck(C) {
+    var F = Q.flow, org = state.org, K = Q.keywords;
+    function edit(path) {
+      return '<button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, path) + '" data-focus="' + idOf(path) + '">' + esc(F.editLink) + '</button>';
+    }
+    var head = [S.trim(org.website.text), S.trim(org.zip.text)].filter(function (t) { return t; }).join(" · ");
+    var rows = ["name", "zip", "website", "mission"].map(function (id) {
+      var q = S.section(Q, "org").questions.filter(function (x) { return x.id === id; })[0];
+      var value = id === "zip" ? '<span id="chk-zip">' + esc(zipWithPlace() || F.empty) + '</span>' : esc(S.trim(org[id].text) || F.empty);
+      return '<tr><th scope="row">' + esc(q.label) + '</th><td>' + value + '</td><td class="chk-edit">' + edit("org." + id) + '</td></tr>';
+    }).join("");
+    var groups = S.KEYWORD_GROUPS.map(function (g) {
+      var q = S.section(Q, "org").questions.filter(function (x) { return x.id === g; })[0], list = S.keywordList(org[g].text);
+      return '<div class="chk-kw-row"><span class="lbl">' + esc(q.label) + ':</span><div class="chips">' +
+        (list.length ? list.map(function (k) { return '<span class="chip">' + esc(k) + '</span>'; }).join("") : '<span class="hint">' + esc(F.empty) + '</span>') + '</div></div>';
+    }).join("");
+    return '<div class="org-card"><span class="org-card-name">' + esc(S.trim(org.name.text) || F.empty) + '</span>' + (head ? '<span>' + esc(head) + '</span>' : "") + '</div>' +
+      '<p>' + esc(C.text) + '</p>' +
+      '<div class="chk-table-wrap"><table class="chk-table"><thead><tr><th scope="col">' + esc(C.fieldHead) + '</th><th scope="col">' + esc(C.answerHead) + '</th><th scope="col"><span class="sr">' + esc(F.editLink) + '</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      '<div class="chk-kw"><div class="chk-kw-title"><span class="lbl">' + esc(K.title) + '</span> ' + edit("org.kwIssue") + '</div>' + groups +
+      '<p class="hint" id="chk-kw-count">' + esc(K.count.replace(/\{n\}/g, S.keywordCount(state)) + " " + K.countHint) + '</p></div>';
   }
 
   function heading(num, title, note) {
@@ -514,14 +546,9 @@
         ' <button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, path) + '" data-focus="' + idOf(path) + '">' + esc(F.editLink) + '</button></li>');
     }
     var title = C.title, extra = "";
-    if (of === "org") {
-      // 1.1: what the member confirms (name, location, mission, keywords), and the website.
-      ["name", "zip", "website", "mission"].forEach(function (id) {
-        var q = S.section(Q, "org").questions.filter(function (x) { return x.id === id; })[0];
-        row(q.label, state.org[id].text, "org." + id);
-      });
-      row(Q.keywords.title, FACExport.keywordsText(Q, state), "org.kwIssue");
-    } else if (of === "programs") {
+    // 1.1: what the member confirms (name, location, mission, keywords), and the website.
+    if (of === "org") return heading(N.check, title) + orgCheck(C);
+    if (of === "programs") {
       // 1.2: the programs in their order, with their Stack Rank when ranked.
       var ranked = state.rank.use === "yes";
       if (!ranked) title = C.titleUnranked;
@@ -821,6 +848,8 @@
     var H = Q.flow.happy, k = st.kind;
     if (k === "donors") return H[st.of];
     if (k === "end") return "";
+    // Steve's Step 1.1 mockup ends its check with the keywords line too.
+    if (k === "check" && st.of === "org") return H.org;
     return H[k] || "";
   }
 

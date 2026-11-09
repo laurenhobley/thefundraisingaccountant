@@ -73,10 +73,21 @@ T.run("Builder screens (builder.html)", function (check) {
   var FL = FAC_QUESTIONS.flow;
   function checkRows() { return Array.prototype.map.call(document.querySelectorAll("#screen .checklist li"), function (li) { return li.textContent; }); }
   check("all answered or skipped: Next goes to the keywords check (Steve's flowchart)", $("counter").textContent === "Step 2 of 25" && title().indexOf(FL.checkpoints.org.title) > -1);
-  var orgRows = checkRows();
-  check("it lists name, ZIP, website, mission and key words (by group), each with Edit", orgRows.length === 5 && orgRows[0].indexOf("Test Org") > -1 &&
-    orgRows[1].indexOf("77001") > -1 && orgRows[4].indexOf("Issue: homelessness, safety; People served: families; Services: shelter") > -1 &&
-    orgRows.every(function (r) { return r.indexOf(FL.editLink) > -1; }));
+  // Laid out like Steve's Step 1.1 mockup: the organization at the top, a Field / Your answer table, key words as chips by group.
+  var orgRows = Array.prototype.map.call(document.querySelectorAll("#screen .chk-table tbody tr"), function (tr) { return tr.textContent; });
+  check("the organization's name and ZIP sit in the box at the top (no website yet)", document.querySelector("#screen .org-card").textContent === "Test Org77001");
+  check("a Field / Your answer table: name, ZIP, website, mission, each with Edit", orgRows.length === 4 && orgRows[0].indexOf("Test Org") > -1 &&
+    orgRows[1].indexOf("77001") > -1 && orgRows[2].indexOf(FL.empty) > -1 && orgRows[3].indexOf("We help 400 families") > -1 &&
+    orgRows.every(function (r) { return r.indexOf(FL.editLink) > -1; }) &&
+    Array.prototype.map.call(document.querySelectorAll("#screen .chk-table thead th"), function (th) { return th.textContent; }).slice(0, 2).join() === "Field,Your answer");
+  check("key words as chips in their four groups, with the count; the kept-empty group says (blank)",
+    Array.prototype.map.call(document.querySelectorAll("#screen .chk-kw .chip"), function (c) { return c.textContent; }).join() === "homelessness,safety,families,shelter" &&
+    document.querySelectorAll("#screen .chk-kw-row").length === 4 && document.querySelectorAll("#screen .chk-kw-row")[3].textContent.indexOf(FL.empty) > -1 &&
+    $("chk-kw-count").textContent.indexOf(FAC_QUESTIONS.keywords.count.replace("{n}", "4")) === 0);
+  check("it ends with the keywords happy line, like the mockup", document.querySelector("#screen .happy-line").textContent === FL.happyLine.replace("{thing}", "keywords"));
+  document.querySelector('#screen .chk-kw-title button[data-act="goto"]').click();
+  check("the key words' Edit goes back to Issue", $("counter").textContent === "Step 1 of 25" && document.activeElement.id === "f-org-kwIssue");
+  $("next").click();
   check("its button says Next, and the progress bar keeps 1.1 current", $("next").textContent === FL.nextButton && parts().indexOf("1.1:current") === 0);
   $("next").click();
   check("then Program 1 of 1", $("counter").textContent === "Step 3 of 25" && /Program 1 of 1/.test(title()));

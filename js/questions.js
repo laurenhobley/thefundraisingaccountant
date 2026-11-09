@@ -311,7 +311,10 @@ var FAC_QUESTIONS = {
     // with the go deeper or skip choice), Context (1.4) and constraints (1.5).
     // Titles from the flowchart; the rest is draft for Steve.
     checkpoints: {
-      org: { title: "Happy with your keywords?", text: "Check your organization info and key words. Edit anything that isn't right, then continue." },
+      // Laid out like Steve's Step 1.1 mockup (Nov 9); "Your answer" stands in
+      // for its "What I found" until ROI.bot does the research. Draft for Steve.
+      org: { title: "Happy with your keywords?", text: "Check your organization info and key words. Edit anything that isn't right, then continue.",
+        fieldHead: "Field", answerHead: "Your answer" },
       programs: { title: "Happy with your stack ranking?", titleUnranked: "Happy with your programs?", text: "Check your programs and their order. Edit anything that isn't right, then continue." },
       outcomes: { title: "Happy with your outputs to outcomes?", text: "Check what each program did and what changed. Edit anything that isn't right." },
       benchmarks: { title: "Happy with your context?", text: "Check your local context and benchmarks. Edit anything that isn't right, then continue.", none: "No context or benchmarks added." },
