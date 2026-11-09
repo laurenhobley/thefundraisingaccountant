@@ -31,6 +31,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 | `js/screen1.js` | Screen 1: the progress bar, the three fields, the ZIP's place, and Continue (off until all three are filled). |
 | `js/zip-place.js` | Shows the place (city and state) for the ZIP code a member types, on both pages, and adds it to the prompt: "77001 (Houston, TX)". |
 | `lib/` | Our own saved copies, with their licences: mammoth 1.13.0 (Word, BSD licence) and pdf.js 6.4.299 (PDF, Apache licence, by Mozilla), loaded only when a member chooses a file; and `zip-places.js`, US ZIP codes with their place and state from [GeoNames](https://www.geonames.org/) (CC BY 4.0; their readme is `geonames-readme.txt`), loaded only when a ZIP is typed. Nothing is sent anywhere. |
+| `images/roi-bot-logo.png` | ROI.bot's logo, from FAC, shown top right on every page. |
 | `styles.css` | How the builder and the how-to page look. |
 
 **Every figure is labeled:**
