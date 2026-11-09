@@ -715,6 +715,8 @@
       st.kind === "actions" ? actionsScreen() :
       st.kind === "assess" ? assessScreen() :
       st.kind === "package" ? packageScreen() : reviewScreen();
+    var happy = happyOf(st);
+    if (happy) screen.insertAdjacentHTML("beforeend", '<p class="happy-line">' + esc(Q.flow.happyLine.replace(/\{thing\}/g, happy)) + '</p>');
 
     Array.prototype.forEach.call(screen.querySelectorAll(".ans"), function (el) {
       el.value = S.get(state, el.getAttribute("data-path")).text;
@@ -723,10 +725,9 @@
 
     $("counter").textContent = "Step " + (state.step + 1) + " of " + steps.length;
     renderProgress(st);
-    $("back").disabled = state.step === 0;
+    // On the first screen, ← Previous goes back to Let's Get Started's Screen 2.
+    if (state.step === 0) $("back").setAttribute("data-to", "index.html#you"); else $("back").removeAttribute("data-to");
     $("next").hidden = state.step === steps.length - 1;
-    $("next").textContent = st.kind === "end" ? (st.stage === 2 ? Q.flow.continueStep3 : Q.flow.continueStep2) :
-      st.kind !== "check" ? Q.flow.nextButton : st.of === "constraints" ? Q.flow.buildStory : Q.flow.checkpointYes;
     refreshWhy();
     refreshStory();
     refreshPackage();
@@ -738,6 +739,15 @@
     var target = focusId && $(focusId);
     if (target) target.focus();
     return st;
+  }
+
+  // What "Once you are happy with your …, press Next" names on each part's
+  // main screen (Version 2 plan), or "" for screens without that line.
+  function happyOf(st) {
+    var H = Q.flow.happy, k = st.kind;
+    if (k === "donors") return H[st.of];
+    if (k === "end") return st.stage === 1 ? H.review : "";
+    return H[k] || "";
   }
 
   // The workbook part a screen belongs to, as [step, part] (0-based): 1.1
@@ -993,7 +1003,10 @@
     }
   });
 
-  $("back").addEventListener("click", function () { go(state.step - 1); });
+  $("back").addEventListener("click", function () {
+    var to = $("back").getAttribute("data-to");
+    if (to) location.href = to; else go(state.step - 1);
+  });
   // Next asks a follow-up for each missing or vague answer instead of moving on.
   $("next").addEventListener("click", function () {
     if (S.steps(state)[state.step].kind === "rank") {
@@ -1010,8 +1023,8 @@
 
   var clearArmed = false;
   $("clear").addEventListener("click", function () {
-    if (!clearArmed) { clearArmed = true; $("clear").textContent = "Click again to clear everything"; setTimeout(function () { clearArmed = false; $("clear").textContent = "Start over"; }, 4000); return; }
-    clearArmed = false; $("clear").textContent = "Start over";
+    if (!clearArmed) { clearArmed = true; $("clear").textContent = Q.flow.startOverConfirm; setTimeout(function () { clearArmed = false; $("clear").textContent = Q.flow.startOver; }, 4000); return; }
+    clearArmed = false; $("clear").textContent = Q.flow.startOver;
     S.clear(); state = S.blank(Q); docText = ""; suggestions = []; go(0);
   });
 
@@ -1023,6 +1036,9 @@
 
   $("brand").textContent = Q.brand;
   $("title").textContent = Q.title;
+  $("back").textContent = Q.flow.previousButton;
+  $("next").textContent = Q.flow.nextButton;
+  $("clear").textContent = Q.flow.startOver;
   $("intro").textContent = Q.intro;
   if ($("howToLink")) $("howToLink").textContent = Q.howTo.linkText;
   render();

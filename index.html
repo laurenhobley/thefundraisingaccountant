@@ -27,11 +27,8 @@
     <p id="intro"></p>
   </header>
 
+  <!-- Let's Get Started: two screens, both 1.1. Screen 1 is the organization; Screen 2 is who the member is. -->
   <form class="card" id="s1" novalidate>
-    <div class="f">
-      <label for="s1-name" id="s1-name-label"></label>
-      <input type="text" id="s1-name" autocomplete="name">
-    </div>
     <div class="f">
       <label for="s1-org" id="s1-org-label"></label>
       <input type="text" id="s1-org" autocomplete="organization">
@@ -46,11 +43,30 @@
       <p class="hint zip-place" id="s1-zip-place" aria-live="polite"></p>
     </div>
     <div class="card-actions">
-      <button type="submit" class="btn primary" id="continue" disabled></button>
+      <button type="submit" class="btn next" id="next1" disabled></button>
     </div>
   </form>
 
-  <p class="next-line" id="nextLine"></p>
+  <form class="card" id="s2" novalidate hidden>
+    <div class="f">
+      <label for="s2-name" id="s2-name-label"></label>
+      <input type="text" id="s2-name" autocomplete="name">
+    </div>
+    <div class="f">
+      <label for="s2-title" id="s2-title-label"></label>
+      <input type="text" id="s2-title" autocomplete="organization-title">
+    </div>
+    <div class="f">
+      <label for="s2-phone" id="s2-phone-label"></label>
+      <input type="text" id="s2-phone" inputmode="tel" autocomplete="tel">
+    </div>
+    <div class="card-actions">
+      <button type="button" class="btn ghost" id="prev2"></button>
+      <button type="submit" class="btn next" id="next2" disabled></button>
+    </div>
+  </form>
+
+  <p class="next-line" id="nextLine" hidden></p>
 </div>
 
 <script src="js/questions.js"></script>

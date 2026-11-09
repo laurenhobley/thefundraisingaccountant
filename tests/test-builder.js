@@ -24,7 +24,8 @@ T.run("Builder screens (builder.html)", function (check) {
   function tabs() { return Array.prototype.map.call(document.querySelectorAll("#stepsTabs li"), function (li) { return li.className; }).join(" "); }
   check("progress bar: Step 1 tab current, its five parts, 1.1 current", tabs() === "current todo todo" && parts() === "1.1:current 1.2:todo 1.3:todo 1.4:todo 1.5:todo" &&
     document.querySelector("#parts .current .part-label").textContent === "Your Organization");
-  check("Back is off on step 1", $("back").disabled);
+  check("← Previous on step 1 goes back to Let's Get Started, Screen 2", $("back").getAttribute("data-to") === "index.html#you" && $("back").textContent === FAC_QUESTIONS.flow.previousButton);
+  check("Organization Info ends with \"Once you are happy with your keywords, press Next to continue.\"", document.querySelector("#screen .happy-line").textContent === FAC_QUESTIONS.flow.happyLine.replace("{thing}", "keywords") && $("next").textContent === "Next");
   check("no follow-ups before Next is pressed", shown(".fu") === 0);
 
   $("next").click();
@@ -187,7 +188,7 @@ T.run("Builder screens (builder.html)", function (check) {
   // ---------- Flowchart check: "Happy with programs and keywords?" ----------
   var FL = FAC_QUESTIONS.flow;
   check("after the last program: the programs-and-keywords check", $("counter").textContent === "Step 5 of 24" && title().indexOf(FL.checkpoints.programs.title) > -1);
-  check("its Next button says \"Yes, continue\"", $("next").textContent === FL.checkpointYes);
+  check("its button says Next, like every forward button", $("next").textContent === FL.nextButton);
   var rows = Array.prototype.map.call(document.querySelectorAll("#screen .checklist li"), function (li) { return li.textContent; });
   check("it lists the key words and both programs, each with Edit", rows.length === 3 && rows[0].indexOf("shelter, safety") > -1 &&
     rows[1].indexOf("Emergency shelter") > -1 && rows.every(function (r) { return r.indexOf(FL.editLink) > -1; }));
@@ -259,10 +260,10 @@ T.run("Builder screens (builder.html)", function (check) {
   $("next").click();
   check("blank constraints don't block Next: the constraints check", title().indexOf(FL.checkpoints.constraints.title) > -1 &&
     document.querySelectorAll("#screen .checklist li").length === 2);
-  check("its Next button says \"Build our story\"", $("next").textContent === FL.buildStory);
+  check("after Constraints, the button still says Next", $("next").textContent === FL.nextButton && !document.querySelector("#screen .happy-line"));
   $("next").click();
 
-  check("1.5 review: Next says Continue to Step 2", !$("next").hidden && $("next").textContent === FAC_QUESTIONS.flow.continueStep2 && $("counter").textContent === "Step 11 of 24");
+  check("Step 1 review (1.3): Next, under \"Once you are happy with your outputs to outcomes…\"", !$("next").hidden && $("next").textContent === "Next" && document.querySelector("#screen .happy-line").textContent.indexOf("outputs to outcomes") > -1 && $("counter").textContent === "Step 11 of 24");
   check("the Step 1 review is 1.3 Outputs to Outcomes: 1.4 and 1.5, already passed, show done", parts() === "1.1:done 1.2:done 1.3:current 1.4:done 1.5:done" && title().indexOf("1.3") === 0);
   var todo = Array.prototype.map.call(document.querySelectorAll("#screen .todo li"), function (li) { return li.textContent; });
   check("end screen lists everything still needing attention, in sheet order", todo.join(" | ") ===
@@ -350,7 +351,7 @@ T.run("Builder screens (builder.html)", function (check) {
   check("2.4 magic wand, offering the member's programs", title().indexOf(FAC_QUESTIONS.wand.number) > -1 && document.querySelectorAll("#wand-programs option").length === 1);
   type("f-wand-program", "Emergency shelter"); type("f-wand-amount", "25,000"); type("f-wand-possible", "A second shelter");
   $("next").click();
-  check("the review screen again, with Continue to Step 3", !$("next").hidden && $("next").textContent === FAC_QUESTIONS.flow.continueStep3 && $("counter").textContent === "Step 15 of 23");
+  check("the review screen again (2.5), with Next and no happy line", !$("next").hidden && $("next").textContent === "Next" && !document.querySelector("#screen .happy-line") && $("counter").textContent === "Step 15 of 23");
   var pv = $("exportPreview").textContent;
   check("the prompt now has the pain statement, donor table and magic wand", pv.indexOf(W2.exportTitle) > -1 && pv.indexOf("Regular Donor Table (draft)") > -1 && pv.indexOf("Magic Wand\n* Program: Emergency shelter") > -1);
 

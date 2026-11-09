@@ -30,12 +30,13 @@
   <div class="counter" id="counter" aria-live="polite"></div>
   <form id="screen" novalidate onsubmit="return false"></form>
 
+  <!-- Version 2 plan: ← Previous on the left, Next (the only orange button) on the right. -->
   <div class="nav">
-    <button type="button" class="btn quiet" id="clear">Start over</button>
-    <div class="actions">
-      <button type="button" class="btn ghost" id="back">Back</button>
-      <button type="button" class="btn primary" id="next">Next</button>
-    </div>
+    <button type="button" class="btn ghost" id="back"></button>
+    <button type="button" class="btn next" id="next"></button>
+  </div>
+  <div class="nav-sub">
+    <button type="button" class="btn quiet small" id="clear"></button>
   </div>
 </div>
 

@@ -1,10 +1,11 @@
 /*
-  index.html: Screen 1 of FAC's ROI.bot Version 2 build plan. Loaded in a
-  hidden frame, typed into, then Continue: the builder should open with the
-  name, website and ZIP filled in. Browsers don't let a page opened from a
-  drive look inside a frame, so these run only from a web address.
+  index.html: Let's Get Started, from FAC's ROI.bot Version 2 build plan.
+  Two screens, loaded in a hidden frame and typed into; Next on Screen 2
+  should open the builder with the organization's name, website and ZIP
+  filled in. Browsers don't let a page opened from a drive look inside a
+  frame, so these run only from a web address.
 */
-T.runAsync("Screen 1 (index.html)", function (check, done) {
+T.runAsync("Let's Get Started (index.html)", function (check, done) {
   if (location.protocol === "file:") {
     check.note("These run only on the live site: https://laurenhobley.github.io/thefundraisingaccountant/tests/tests.html");
     done();
@@ -15,7 +16,7 @@ T.runAsync("Screen 1 (index.html)", function (check, done) {
   frame.className = "sandbox";
   frame.setAttribute("aria-hidden", "true");
   var stage = "screen1";
-  var timer = setTimeout(function () { check("Screen 1 loaded (" + stage + ")", false); done(); }, 20000);
+  var timer = setTimeout(function () { check("Let's Get Started loaded (" + stage + ")", false); done(); }, 20000);
 
   frame.onload = function () {
     var d = frame.contentDocument, w = frame.contentWindow;
@@ -23,29 +24,45 @@ T.runAsync("Screen 1 (index.html)", function (check, done) {
     try {
       if (stage === "builder") {
         clearTimeout(timer);
-        check("Continue opens the builder with the name, website and ZIP filled in", /builder\.html$/.test(w.location.pathname) &&
+        check("Next on Screen 2 opens the builder with the name, website and ZIP filled in", /builder\.html$/.test(w.location.pathname) &&
           $("f-org-name").value === "Riverbend Food Bank" && $("f-org-website").value === "https://example.org" && $("f-org-zip").value === "77001");
+        check("the builder's ← Previous on its first screen goes back to Screen 2", $("back").getAttribute("data-to") === "index.html#you");
         done();
         return;
       }
       var type = function (id, text) { var e = $(id); e.value = text; e.dispatchEvent(new w.Event("input", { bubbles: true })); };
-      var text = d.body.textContent;
       check("FAC's header, title and one-line instruction", $("brand").textContent === Q.brand && $("title").textContent === Q.title && $("intro").textContent === T1.intro);
-      check("progress bar: Step 1 current, part 1.1 Your Organization current", d.querySelector("#stepsTabs .current").textContent.indexOf("Measure Your ROI") > -1 &&
+      check("progress bar: Step 1 Pick Your Story current, part 1.1 Your Organization current", d.querySelector("#stepsTabs .current").textContent.indexOf("Pick Your Story") > -1 &&
         d.querySelectorAll("#parts li").length === 5 && d.querySelector("#parts .current .part-label").textContent === "Your Organization");
-      check("only four fields: Your name, Organization name, Website, ZIP code (Step 1.0's inputs)", d.querySelectorAll("#s1 input").length === 4 && $("s1-name-label").textContent === T1.name &&
-        $("s1-org-label").textContent === T1.org && $("s1-website-label").textContent === T1.website && $("s1-zip-label").textContent === T1.zip);
-      check("no prompt, MISSING tags, counters or asterisks for members", !/prompt|MISSING|required|\*/i.test(text));
-      check("Continue is off until the fields are filled", $("continue").disabled);
+      check("Screen 1: Organization name, Website, ZIP code, and Next with no Previous", !$("s1").hidden && $("s2").hidden &&
+        d.querySelectorAll("#s1 input").length === 3 && $("s1-org-label").textContent === T1.org && $("s1-website-label").textContent === T1.website &&
+        $("s1-zip-label").textContent === T1.zip && $("next1").textContent === "Next" && !d.querySelector("#s1 .ghost"));
+      check("Next is orange; nothing else on the page is", w.getComputedStyle($("next1")).backgroundColor === "rgb(199, 97, 40)" &&
+        w.getComputedStyle($("prev2")).backgroundColor !== "rgb(199, 97, 40)");
+      check("no prompt, MISSING tags, counters or asterisks for members", !/prompt|MISSING|required|\*/i.test(d.body.textContent));
+      check("the next-step line waits for Screen 2", $("nextLine").hidden);
+      check("Next is off until Screen 1 is filled", $("next1").disabled);
       type("s1-org", "Riverbend Food Bank"); type("s1-website", "https://example.org");
-      check("still off without a ZIP", $("continue").disabled);
+      check("still off without a ZIP", $("next1").disabled);
       type("s1-zip", "7700");
-      check("still off with a 4-digit ZIP", $("continue").disabled);
+      check("still off with a 4-digit ZIP", $("next1").disabled);
       type("s1-zip", "77001");
-      check("still off without your name", $("continue").disabled);
-      type("s1-name", "Jordan Rivera");
-      check("all four filled: Continue is on", !$("continue").disabled);
-      check("what's typed is kept in this browser, your name too (not sent anywhere)", JSON.parse(w.localStorage.getItem("roi-screen1-v1")).org === "Riverbend Food Bank" && JSON.parse(w.localStorage.getItem("roi-screen1-v1")).name === "Jordan Rivera");
+      check("Screen 1 filled: Next is on", !$("next1").disabled);
+      $("next1").click();
+      check("Next goes to Screen 2: Name, Title, Phone, with ← Previous, the new intro and the next-step line", $("s1").hidden && !$("s2").hidden &&
+        $("s2-name-label").textContent === T1.name && $("s2-title-label").textContent === T1.jobTitle && $("s2-phone-label").textContent === T1.phone &&
+        $("prev2").textContent === Q.flow.previousButton && $("intro").textContent === T1.intro2 && !$("nextLine").hidden && $("nextLine").textContent === T1.nextLine);
+      check("no promise of a texted code until one can be sent", !/text you a code/i.test(d.body.textContent));
+      $("prev2").click();
+      check("← Previous goes back to Screen 1, answers kept", !$("s1").hidden && $("s2").hidden && $("s1-org").value === "Riverbend Food Bank");
+      $("next1").click();
+      check("Next on Screen 2 is off until it's filled", $("next2").disabled);
+      type("s2-name", "Jordan Rivera"); type("s2-title", "Executive Director"); type("s2-phone", "713-555");
+      check("still off with a phone number too short", $("next2").disabled);
+      type("s2-phone", "(713) 555-0100");
+      check("all filled: Next is on", !$("next2").disabled);
+      var kept = JSON.parse(w.localStorage.getItem("roi-screen1-v1"));
+      check("everything is kept in this browser only, for later", kept.org === "Riverbend Food Bank" && kept.name === "Jordan Rivera" && kept.title === "Executive Director" && kept.phone === "(713) 555-0100");
       w.FACZip.load(function () {
         try {
           type("s1-zip", "77001");
@@ -53,7 +70,7 @@ T.runAsync("Screen 1 (index.html)", function (check, done) {
           // A fresh builder (the builder tests above saved one with a name in it).
           w.localStorage.removeItem("fac-prompt-sheet-draft-v1");
           stage = "builder";
-          $("continue").click();
+          $("next2").click();
         } catch (e) { check("Stopped with an error: " + e.message, false); done(); }
       });
     } catch (e) { check("Stopped with an error: " + e.message, false); clearTimeout(timer); done(); }

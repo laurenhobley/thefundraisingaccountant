@@ -143,15 +143,18 @@ button:focus-visible, a:focus-visible, select:focus-visible { outline: 2px solid
 button.btn, a.btn { font: inherit; font-weight: 700; font-size: 17px; border-radius: 10px; padding: 10px 20px; min-height: 48px; cursor: pointer; border: 1px solid var(--accent); }
 a.btn { display: inline-block; text-decoration: none; }
 a.btn[hidden] { display: none; }
-.btn.primary { background: var(--cta); border-color: var(--cta); color: var(--accent-ink); }
-#next { min-height: 52px; padding: 0 32px; font-size: 20px; }
-@media (max-width: 560px) { .nav { flex-direction: column-reverse; align-items: stretch; } .nav .actions { margin-left: 0; } .nav .actions .btn { flex: 1 1 0; } #next { flex-basis: 100%; } }
+/* Version 2 plan: burnt orange only on Next (and Send); other main buttons are dark teal. */
+.btn.primary { background: var(--heading); border-color: var(--heading); color: var(--accent-ink); }
+.btn.next { background: var(--cta); border-color: var(--cta); color: var(--accent-ink); min-height: 52px; padding: 0 32px; font-size: 20px; margin-left: auto; }
+button.btn.next:disabled { opacity: .5; }
+@media (max-width: 560px) { .nav { flex-direction: column-reverse; align-items: stretch; } .nav .btn { width: 100%; margin-left: 0; } }
 .btn.ghost { background: transparent; color: var(--accent); }
 .btn.quiet { background: transparent; color: var(--muted); border-color: var(--input-line); }
 button.btn:disabled { opacity: .45; cursor: default; }
 .actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .nav { display: flex; flex-wrap: wrap; gap: 10px; justify-content: space-between; align-items: center; }
-.nav .actions { margin-left: auto; }
+.nav-sub { display: flex; justify-content: flex-end; margin-top: -8px; }
+.btn.small { min-height: 36px; padding: 4px 12px; font-size: 15px; font-weight: 400; }
 
 /* The how-to page's "Why now" and AI note boxes, and the research examples. */
 .note-box { border: 1px solid var(--line); border-radius: 10px; background: var(--slip); padding: 16px 20px; display: grid; gap: 8px; }
@@ -231,8 +234,8 @@ button.link { font: inherit; font-weight: 600; color: var(--accent); background:
 .wrap.narrow { max-width: 640px; }
 .card { border: 1px solid var(--line); border-radius: 16px; background: var(--field); padding: 32px; display: grid; gap: 24px; min-width: 0; box-shadow: 0 2px 12px rgba(12, 72, 86, .06); }
 @media (max-width: 560px) { .card { padding: 24px 16px; } }
-.card-actions { display: flex; justify-content: flex-end; padding-top: 8px; }
-#continue { min-height: 52px; padding: 0 32px; font-size: 20px; }
-#continue:disabled { opacity: .5; cursor: default; }
-@media (max-width: 560px) { #continue { width: 100%; } }
+.card-actions { display: flex; align-items: center; gap: 16px; padding-top: 8px; }
+@media (max-width: 560px) { .card-actions { flex-direction: column-reverse; align-items: stretch; } .card-actions .btn { width: 100%; margin-left: 0; } }
 .next-line { margin: 0; text-align: center; font-size: 16px; }
+/* "Once you are happy with your …, press Next to continue." above the buttons. */
+.happy-line { margin: 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: 16px; }

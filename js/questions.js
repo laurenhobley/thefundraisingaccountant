@@ -24,7 +24,7 @@ var FAC_QUESTIONS = {
   title: "Tell Your Story with Numbers",
   progress: {
     steps: [
-      { n: "1", name: "Measure Your ROI", parts: ["Your Organization", "Your Programs", "Outputs to Outcomes", "Add Context", "Add Constraints"] },
+      { n: "1", name: "Pick Your Story", parts: ["Your Organization", "Your Programs", "Outputs to Outcomes", "Add Context", "Add Constraints"] },
       { n: "2", name: "Get the Right #s", parts: ["Pain Statements", "Donate Now", "Major Donors", "Magic Wand", "Build the Prompt"] },
       { n: "3", name: "Tell Your Story", parts: ["Challenge", "Response", "Outcome", "ROI", "Funder Story"] }
     ],
@@ -38,22 +38,28 @@ var FAC_QUESTIONS = {
   // From FAC's prompt sheet. Shown beside Download. Steve to add the folder's link (url).
   saveCopy: { before: "Save a copy in your ", linkText: "FA community google folder", after: " and watch your story evolve.", url: "" },
 
-  // Screen 1 (index.html), from FAC's Version 2 build plan: one short form,
-  // then Continue. The button stays off until all four are filled. Until
-  // ROI.bot's chat exists, Continue goes to the builder with these filled in.
-  // nextLine is draft for Steve (the plan's line promises reading the website).
+  // Let's Get Started (index.html), from FAC's Version 2 build plan: two
+  // screens, both 1.1 in the progress bar. Screen 1 is the organization,
+  // Screen 2 who the member is; Next stays off until a screen's fields are
+  // all filled. Until ROI.bot's chat exists, Next on Screen 2 goes to the
+  // builder. Draft for Steve: intro2, the placeholders, and nextLine (the
+  // plan's line promises reading the website, which isn't built yet). The
+  // plan's phone hint ("We'll text you a code…") waits until a code can be sent.
   screen1: {
     intro: "To get started, just enter your basic organizational information.",
-    // "Your name": Step 1.0's inputs (Steve's Step 1.1 instructions). Draft for Steve.
-    name: "Your name",
-    namePlaceholder: "First and last name",
     org: "Organization name",
     orgPlaceholder: "e.g. Northeast Houston Food Pantry",
     website: "Website",
     websitePlaceholder: "https://",
     zip: "ZIP code",
     zipPlaceholder: "5-digit ZIP",
-    continueButton: "Continue",
+    intro2: "Now, a little about you.",
+    name: "Name",
+    namePlaceholder: "First and last name",
+    jobTitle: "Title",
+    jobTitlePlaceholder: "e.g. Executive Director",
+    phone: "Phone",
+    phonePlaceholder: "Cell phone number",
     nextLine: "Next: tell us about your programs."
   },
 
@@ -257,11 +263,16 @@ var FAC_QUESTIONS = {
     // The workbook's parts (Version 2 plan): 1.3 Outputs to Outcomes is the review screen, where the
     // prompt goes to ROI.bot; 1.4 Add Context is Local Context/Data and Benchmarks; 1.5 Add Constraints.
     numbers: { org: "1.1", program: "1.2", pain: "1.4", benchmarks: "1.4", constraints: "1.5", review: "1.3", review2: "2.5", check: "◆" },
+    // Version 2 plan: every screen ends with "← Previous" (left) and "Next"
+    // (right); every forward button says Next.
     nextButton: "Next",
-    continueStep2: "Continue to Step 2",
-    continueStep3: "Continue to Step 3",
-    checkpointYes: "Yes, continue",
-    buildStory: "Build our story",
+    previousButton: "← Previous",
+    startOver: "Start over",
+    startOverConfirm: "Click again to clear everything",
+    // Above Next on each part's main screen (Version 2 plan, word for word).
+    happyLine: "Once you are happy with your {thing}, press Next to continue.",
+    happy: { org: "keywords", rank: "stack ranking", review: "outputs to outcomes", pain: "context", benchmarks: "context", constraints: "constraints",
+      why: "pain statements", regular: "Donate Now table", major: "Major Donor Ladder" },
     editLink: "Edit",
     empty: "(blank)",
     checkpoints: {
