@@ -46,6 +46,8 @@ T.runAsync("Let's Get Started (index.html)", function (check, done) {
         w.getComputedStyle($("prev2")).backgroundColor !== "rgb(199, 97, 40)");
       check("no prompt, MISSING tags, counters or asterisks for members", !/prompt|MISSING|required|\*/i.test(d.body.textContent));
       check("the next-step line waits for Screen 2", $("nextLine").hidden);
+      // Start blank: quick.html's test may have saved answers under the same key.
+      ["s1-org", "s1-website", "s1-zip"].forEach(function (id) { type(id, ""); });
       check("Next is off until Screen 1 is filled", $("next1").disabled);
       type("s1-org", "Riverbend Food Bank"); type("s1-website", "https://example.org");
       check("still off without a ZIP", $("next1").disabled);
