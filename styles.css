@@ -33,7 +33,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--page); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.5; }
 
-/* The bar across the top: FAC's name, and ROI.bot's logo once FAC sends it. */
+/* The bar across the top: FAC's name, and ROI.bot's logo (top right). */
 .topbar { border-bottom: 1px solid var(--line); }
 .topbar-in { max-width: 1120px; margin: 0 auto; padding: 20px max(16px, env(safe-area-inset-left, 0px)); display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; min-height: 56px; }
 .brand { margin: 0; font-size: 15px; font-weight: 700; letter-spacing: .12em; color: var(--heading); }

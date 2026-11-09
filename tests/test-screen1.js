@@ -27,11 +27,16 @@ T.runAsync("Let's Get Started (index.html)", function (check, done) {
         check("Next on Screen 2 opens the builder with the name, website and ZIP filled in", /builder\.html$/.test(w.location.pathname) &&
           $("f-org-name").value === "Riverbend Food Bank" && $("f-org-website").value === "https://example.org" && $("f-org-zip").value === "77001");
         check("the builder's ← Previous on its first screen goes back to Screen 2", $("back").getAttribute("data-to") === "index.html#you");
+        var bl = d.querySelector(".topbar .logo");
+        check("the builder shows ROI.bot's logo top right", !!bl && bl.alt === "ROI.bot" && bl.complete && bl.naturalWidth > 0);
         done();
         return;
       }
       var type = function (id, text) { var e = $(id); e.value = text; e.dispatchEvent(new w.Event("input", { bubbles: true })); };
       check("FAC's header, title and one-line instruction", $("brand").textContent === Q.brand && $("title").textContent === Q.title && $("intro").textContent === T1.intro);
+      var logo = d.querySelector(".topbar .logo"), lr = logo && logo.getBoundingClientRect(), br = $("brand").getBoundingClientRect();
+      check("ROI.bot's logo loads, top right across from FAC's name, 56px tall", !!logo && logo.alt === "ROI.bot" && logo.complete && logo.naturalWidth > 0 &&
+        lr.left > br.right && Math.round(lr.height) === 56);
       check("progress bar: Step 1 Pick Your Story current, part 1.1 Your Organization current", d.querySelector("#stepsTabs .current").textContent.indexOf("Pick Your Story") > -1 &&
         d.querySelectorAll("#parts li").length === 5 && d.querySelector("#parts .current .part-label").textContent === "Your Organization");
       check("Screen 1: Organization name, Website, ZIP code, and Next with no Previous", !$("s1").hidden && $("s2").hidden &&
