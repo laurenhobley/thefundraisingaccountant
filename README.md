@@ -9,6 +9,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 | Page | What it is |
 |---|---|
 | `index.html` | Screen 1, "Tell Your Story with Numbers" (FAC's Version 2 build plan): organization name, website and ZIP code, then Continue. Until ROI.bot's chat is built, Continue opens the builder with those three filled in. |
+| `quick.html` | Only Screen 1's required fields from Steve's Step 1 flowchart (organization name, website, ZIP code), then a short prompt asking ROI.bot to research the organization (draft Task for Steve), with "I reviewed this", Copy, Download and Open ROI.bot. Shares Screen 1's saved answers. |
 | `builder.html` | The prompt sheet builder: Steps 1 to 3 of the workbook, one section per screen, with the two-row progress bar. |
 | `pain-statement.html` | The version 1 pain statement form, kept working but not linked (the builder's 2.1 covers it and can bring in its answers). |
 | `help.html` | A short "how to use" guide for members. |
@@ -28,6 +29,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 | `js/export.js` | Builds the finished prompt in RTCC parts, with the member's answers in FAC's sheet format. |
 | `js/builder.js` | Shows the screens, the follow-ups, the review lock, and the Copy and Download buttons. |
 | `js/read-documents.js` | "Fill from a document": finds suggested answers in the member's own text, Word or PDF file, in the browser. No AI: only lines written the way FAC's sheet writes them, plus a web address and a ZIP code. |
+| `js/quick.js` | quick.html: the three required fields, their follow-ups, and its prompt. |
 | `js/screen1.js` | Screen 1: the progress bar, the three fields, the ZIP's place, and Continue (off until all three are filled). |
 | `js/zip-place.js` | Shows the place (city and state) for the ZIP code a member types, on both pages, and adds it to the prompt: "77001 (Houston, TX)". |
 | `lib/` | Our own saved copies, with their licences: mammoth 1.13.0 (Word, BSD licence) and pdf.js 6.4.299 (PDF, Apache licence, by Mozilla), loaded only when a member chooses a file; and `zip-places.js`, US ZIP codes with their place and state from [GeoNames](https://www.geonames.org/) (CC BY 4.0; their readme is `geonames-readme.txt`), loaded only when a ZIP is typed. Nothing is sent anywhere. |

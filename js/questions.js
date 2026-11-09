@@ -63,6 +63,21 @@ var FAC_QUESTIONS = {
     nextLine: "Next: tell us about your programs."
   },
 
+  // quick.html: only the required fields of Screen 1 in Steve's Step 1
+  // flowchart (Organization, Website, ZIP; Lauren, 2026-11-09), then a short
+  // prompt. The labels are screen1's. The Task is drafted from the flowchart
+  // (1.1: draft basic info, recommend keywords) until Steve sends his
+  // Step 1.1 prompt. Draft for Steve, all of it.
+  quick: {
+    pageTitle: "Get started in three questions",
+    intro: "Answer these three questions and press Next. You'll get a prompt that asks ROI.bot to research your organization.",
+    promptTitle: "Your prompt",
+    promptIntro: "Read it, tick “I reviewed this”, then copy or download it and paste it into ROI.bot.",
+    task: "Read our website and public profiles. Draft our basic info (name, location, area served, mission in our exact words) and recommend 10–15 keywords in four groups: Issue, People served, Services, Location. List your sources.",
+    fileName: "roi-bot-quick-prompt.txt",
+    fullBuilder: "Want to tell the whole story? Use the full prompt builder."
+  },
+
   // Key Words in four groups (Steve's Step 1.1 instructions: 10–15 in the
   // organization's own words; a group never goes empty without asking).
   // The groups are the kwIssue, kwPeople, kwServices and kwLocation

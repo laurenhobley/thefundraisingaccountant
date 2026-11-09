@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Get Started in Three Questions</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Only the required fields of Screen 1 in Steve's Step 1 flowchart (Organization,
+     Website, ZIP), then a short prompt for ROI.bot.
+     The wording comes from js/questions.js (screen1 and quick). -->
+<div class="topbar">
+  <div class="topbar-in">
+    <p class="brand" id="brand"></p>
+    <img class="logo" src="images/roi-bot-logo.png" width="245" height="168" alt="ROI.bot">
+  </div>
+</div>
+
+<div class="wrap narrow">
+  <header>
+    <h1 id="title"></h1>
+    <p id="intro"></p>
+  </header>
+
+  <form class="card" id="quick" novalidate>
+    <div class="f">
+      <label for="q-org"><span id="q-org-label"></span><span class="req">*</span></label>
+      <input type="text" id="q-org" name="organization" autocomplete="organization">
+      <p class="fu-q" id="q-org-fu" aria-live="polite"></p>
+    </div>
+    <div class="f">
+      <label for="q-website"><span id="q-website-label"></span><span class="req">*</span></label>
+      <input type="url" id="q-website" name="url" autocomplete="url">
+      <p class="fu-q" id="q-website-fu" aria-live="polite"></p>
+    </div>
+    <div class="f f-zip">
+      <label for="q-zip"><span id="q-zip-label"></span><span class="req">*</span></label>
+      <input type="text" id="q-zip" name="postal-code" inputmode="numeric" maxlength="10" autocomplete="postal-code">
+      <p class="hint zip-place" id="q-zip-place" aria-live="polite"></p>
+      <p class="fu-q" id="q-zip-fu" aria-live="polite"></p>
+    </div>
+    <div class="card-actions">
+      <button type="submit" class="btn next" id="q-next"></button>
+    </div>
+  </form>
+
+  <section class="card" id="q-result" hidden aria-labelledby="q-result-title">
+    <h2 id="q-result-title" tabindex="-1"></h2>
+    <p id="q-result-intro"></p>
+    <pre class="preview" id="q-preview"></pre>
+    <label class="review-check"><input type="checkbox" id="q-reviewed"> <span id="q-reviewed-label"></span></label>
+    <div class="actions">
+      <button type="button" class="btn primary" id="q-copy" disabled></button>
+      <button type="button" class="btn ghost" id="q-download" disabled></button>
+      <a class="btn ghost" id="q-open" target="_blank" rel="noopener" hidden></a>
+    </div>
+    <p class="hint" id="q-msg" aria-live="polite"></p>
+  </section>
+
+  <p class="next-line"><a id="q-full" href="builder.html"></a></p>
+</div>
+
+<script src="js/questions.js"></script>
+<script src="js/zip-place.js"></script>
+<script src="js/quick.js"></script>
+</body>
+</html>
