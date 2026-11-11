@@ -507,8 +507,13 @@ T.run("Builder screens (builder.html)", function (check) {
 
   // ---------- Fill from a document (made-up text) ----------
   var DOC = FAC_QUESTIONS.documents;
-  $("clear").click(); $("clear").click();
+  localStorage.setItem("roi-screen1-v1", JSON.stringify({ org: "Test Org", website: "https://example.org", zip: "77001", name: "Jordan Rivera", phone: "7135550100" }));
+  $("clear").click();
+  check("Start over's first click clears nothing yet", !!localStorage.getItem("roi-screen1-v1") && !!localStorage.getItem("fac-prompt-sheet-draft-v1"));
+  $("clear").click();
   check("Start over: back on Organization Info, with the document panel closed", $("counter").textContent === "Step 1 of 25" && !$("doc-panel").open);
+  check("Start over also clears Screen 1 and Screen 2's answers, so nothing comes back", localStorage.getItem("roi-screen1-v1") === null &&
+    $("f-org-name").value === "" && $("f-org-zip").value === "" && FACSheet.load(FAC_QUESTIONS).org.name.text === "");
   function sugg(path) {
     return Array.prototype.filter.call(document.querySelectorAll("#screen .sugg"), function (d) { return d.querySelector(".lbl").textContent === path; })[0];
   }

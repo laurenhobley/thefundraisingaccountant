@@ -916,8 +916,13 @@ var FACSheet = (function () {
     try { data = JSON.parse((storage || window.localStorage).getItem(STORE) || "null"); } catch (e) {}
     return repair(Q, data);
   }
+  // Start over: the builder's draft, and Let's Get Started's answers (Screen
+  // 1 and Screen 2: organization, website, ZIP, name, title, email, phone),
+  // so nothing comes back after a reload (Lauren, 2026-11-11).
   function clear(storage) {
-    try { (storage || window.localStorage).removeItem(STORE); } catch (e) {}
+    var st = storage || window.localStorage;
+    try { st.removeItem(STORE); } catch (e) {}
+    try { st.removeItem(SCREEN1); } catch (e) {}
   }
 
   return {

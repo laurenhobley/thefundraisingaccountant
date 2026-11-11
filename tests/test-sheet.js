@@ -481,6 +481,9 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   var store = {}, fake = { setItem: function (k, v) { store[k] = v; }, getItem: function (k) { return store[k] || null; }, removeItem: function (k) { delete store[k]; } };
   S.save(r, fake);
   check("a saved draft loads back the same", S.load(Q, fake).programs[1].name.text === "Counseling");
+  store[S.SCREEN1] = JSON.stringify({ org: "Riverbend Food Bank", website: "https://example.org", zip: "77001", name: "Jordan Rivera", title: "Director", email: "j@example.org", phone: "7135550100" });
+  store["impact-prompt-draft-v1"] = "{}";
   S.clear(fake);
   check("Start over clears the saved draft", S.load(Q, fake).org.name.text === "");
+  check("and Screen 1 and Screen 2's answers too (Nov 11), but not the old pain statement form's", S.loadScreen1(fake) === null && !(S.SCREEN1 in store) && store["impact-prompt-draft-v1"] === "{}");
 });
