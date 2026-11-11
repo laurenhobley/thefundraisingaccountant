@@ -25,6 +25,26 @@ T.run("Screen 1 to builder handoff (sheet.js)", function (check) {
   check("what was taken or kept is saved with the draft", again.screen1.name === "Riverbend Food Bank of Texas" && again.screen1.zip === "77002");
   var old = S.repair(Q, { org: { name: { text: "Old Name" } } });
   check("a draft from before this asks once about a different Screen 1 name", S.screen1Changes(old, { org: "New Name" }).name === "New Name");
+
+  // The other way (Lauren, Nov 11): a change made in the builder updates Screen 1.
+  var mem = { d: {}, getItem: function (k) { return k in this.d ? this.d[k] : null; }, setItem: function (k, v) { this.d[k] = String(v); } };
+  mem.setItem(S.SCREEN1, JSON.stringify({ org: "Old Org", website: "https://old.example.org", zip: "77001", name: "Jordan Rivera", title: "Director", email: "j@example.org", phone: "7135550100" }));
+  var b = S.blank(Q);
+  S.setText(Q, b, "org.name", "  New Org  ");
+  var wrote = S.toScreen1(b, "name", mem), s1now = JSON.parse(mem.getItem(S.SCREEN1));
+  check("a name changed in the builder is saved for Screen 1 (trimmed), and nothing else there changes", wrote && s1now.org === "New Org" &&
+    s1now.website === "https://old.example.org" && s1now.zip === "77001" && s1now.name === "Jordan Rivera" && s1now.email === "j@example.org" && s1now.phone === "7135550100");
+  check("so the builder doesn't then ask about its own change", JSON.stringify(S.screen1Changes(b, s1now)) === "{}" || !("name" in S.screen1Changes(b, s1now)));
+  S.setText(Q, b, "org.website", "https://new.example.org"); S.setText(Q, b, "org.zip", "77002");
+  S.toScreen1(b, "website", mem); S.toScreen1(b, "zip", mem);
+  s1now = JSON.parse(mem.getItem(S.SCREEN1));
+  check("the website and ZIP work the same way", s1now.website === "https://new.example.org" && s1now.zip === "77002" && s1now.org === "New Org");
+  S.setText(Q, b, "org.name", "");
+  check("a blank builder answer never wipes Screen 1's", !S.toScreen1(b, "name", mem) && JSON.parse(mem.getItem(S.SCREEN1)).org === "New Org");
+  var fresh = { d: {}, getItem: mem.getItem, setItem: mem.setItem };
+  S.setText(Q, b, "org.name", "First Org");
+  check("with nothing saved for Screen 1 yet, it starts one", S.toScreen1(b, "name", fresh) && JSON.parse(fresh.getItem(S.SCREEN1)).org === "First Org");
+  check("only Screen 1's three boxes: anything else is refused", !S.toScreen1(b, "mission", mem));
 });
 
 T.run("Screen 1 to builder handoff (builder.html)", function (check) {
@@ -57,6 +77,21 @@ T.run("Screen 1 to builder handoff (builder.html)", function (check) {
     check("Use what I typed on Screen 1: the box, the saved draft and the prompt take it", !note() && $("f-org-name").value === "Harbor Light Shelter of Texas" &&
       saved().org.name.text === "Harbor Light Shelter of Texas" && FACExport.build(Q, FACSheet.load(Q)).indexOf("Harbor Light Shelter of Texas") > -1);
     check("the cursor goes back to the name box", document.activeElement === $("f-org-name"));
+
+    // The other way (Lauren, Nov 11): typing in the builder updates Screen 1.
+    localStorage.setItem(KEY, JSON.stringify({ org: "Harbor Light Shelter of Texas", website: "", zip: "", name: "Jordan Rivera", phone: "7135550100" }));
+    var nm = $("f-org-name"); nm.value = "Harbor Light Shelter of Maine"; nm.dispatchEvent(new Event("input", { bubbles: true }));
+    var s1 = JSON.parse(localStorage.getItem(KEY));
+    check("typing a new name on 1.1 saves it for Screen 1 and quick.html, leaving Screen 2's answers alone", s1.org === "Harbor Light Shelter of Maine" &&
+      s1.name === "Jordan Rivera" && s1.phone === "7135550100");
+    toStep1();
+    check("and 1.1 doesn't ask about its own change", !note());
+    var ws = $("f-org-website"); ws.value = "https://example.org/maine"; ws.dispatchEvent(new Event("input", { bubbles: true }));
+    check("the website goes to Screen 1 the same way", JSON.parse(localStorage.getItem(KEY)).website === "https://example.org/maine");
+    localStorage.setItem(KEY, JSON.stringify({ org: "Someone Else", website: "", zip: "" }));
+    toStep1();
+    note().querySelector('[data-act="s1Keep"]').click();
+    check("Keep this answer also puts the builder's answer back on Screen 1", JSON.parse(localStorage.getItem(KEY)).org === "Harbor Light Shelter of Maine");
   } finally {
     if (before == null) localStorage.removeItem(KEY); else localStorage.setItem(KEY, before);
   }

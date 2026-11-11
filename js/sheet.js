@@ -772,6 +772,22 @@ var FACSheet = (function () {
   // The member's choice: use the Screen 1 answer, or keep the builder's.
   function useScreen1(Q, state, id, v) { setText(Q, state, "org." + id, v); state.screen1[id] = v; }
   function keepScreen1(state, id, v) { state.screen1[id] = v; }
+  // The other way (Lauren, 2026-11-11): a name, website or ZIP changed in the
+  // builder is saved where Screen 1 and quick.html read it, so they show it
+  // next time. Only that one answer is written (Screen 2's are left alone),
+  // only when it isn't blank, and only on the member's own change, never on
+  // load (a newer Screen 1 answer is still asked about on 1.1). Returns
+  // true when Screen 1 was updated.
+  function toScreen1(state, id, storage) {
+    if (!SCREEN1_MAP[id]) return false;
+    var v = trim(state.org[id].text);
+    if (!v) return false;
+    var s1 = loadScreen1(storage) || {};
+    s1[SCREEN1_MAP[id]] = v;
+    try { (storage || window.localStorage).setItem(SCREEN1, JSON.stringify(s1)); } catch (e) { return false; }
+    state.screen1[id] = v;
+    return true;
+  }
   function loadScreen1(storage) {
     try { return JSON.parse((storage || window.localStorage).getItem(SCREEN1) || "null"); } catch (e) { return null; }
   }
@@ -917,7 +933,7 @@ var FACSheet = (function () {
     paths: paths, steps: steps, stepOf: stepOf, nextStep: nextStep, prevStep: prevStep, step2: step2, problems: problems, addVersion: addVersion,
     RANK_COLUMNS: RANK_COLUMNS, rankCheck: rankCheck, sortByScore: sortByScore, suggestLine: suggestLine, dollarOff: dollarOff, included: included,
     addDonorRow: addDonorRow, removeDonorRow: removeDonorRow, importLive: importLive, importScreen1: importScreen1, loadScreen1: loadScreen1, SCREEN1: SCREEN1,
-    screen1Changes: screen1Changes, useScreen1: useScreen1, keepScreen1: keepScreen1,
+    screen1Changes: screen1Changes, useScreen1: useScreen1, keepScreen1: keepScreen1, toScreen1: toScreen1,
     addRound: addRound, latest: latest, STORY_PARTS: STORY_PARTS,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear

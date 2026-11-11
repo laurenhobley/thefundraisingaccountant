@@ -236,6 +236,7 @@
       path = p[0] + "." + at;
     }
     S.setText(Q, state, path, s.text);
+    if (p[0] === "org") S.toScreen1(state, p[1]);
     s.done = "accepted";
     unreview();
     save();
@@ -1025,7 +1026,11 @@
     if (el.classList.contains("rtcc-edit")) { state.rtcc[el.getAttribute("data-part")] = el.value; unreview(); refreshReview(); save(); return; }
     if (!path) return;
     if (el.classList.contains("ext")) { S.get(state, path)[el.getAttribute("data-ext")] = el.value; unreview(); save(); return; }
-    if (el.classList.contains("ans")) S.setText(Q, state, path, el.value);
+    if (el.classList.contains("ans")) {
+      S.setText(Q, state, path, el.value);
+      // A name, website or ZIP changed here updates Screen 1 and quick.html too (Nov 11).
+      if (/^org\./.test(path)) S.toScreen1(state, path.split(".")[1]);
+    }
     else if (el.classList.contains("lab-radio")) S.setLabel(Q, state, path, el.value);
     else if (el.classList.contains("lab-note")) S.setNote(Q, state, path, el.value);
     unreview();
@@ -1093,7 +1098,8 @@
     if (act === "s1Use" || act === "s1Keep") {
       var sid = b.getAttribute("data-id"), sv = S.screen1Changes(state, S.loadScreen1())[sid];
       if (sv && act === "s1Use") { S.useScreen1(Q, state, sid, sv); unreview(); }
-      else if (sv) S.keepScreen1(state, sid, sv);
+      // Keep: the builder's answer stands, so Screen 1 takes it too.
+      else if (sv) { S.keepScreen1(state, sid, sv); S.toScreen1(state, sid); }
       render(idOf("org." + sid));
       return;
     }
