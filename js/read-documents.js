@@ -38,15 +38,19 @@ var FACRead = (function () {
   var HEADINGS = [
     { list: "pain", re: /^(pain\s+statements?|local\s+context)\b/i },
     { list: "benchmarks", re: /^benchmarks?\b/i },
-    { list: "", re: /^(organization\s+info|programs?\b|final\s+prompt|constraints?\b)/i }
+    { list: "", re: /^(organization\s+info|programs?\b|final\s+prompt|constraints?\b)/i },
+    // The other parts of ROI.bot's Step 1.1 and 1.2 report end a list too,
+    // so they're never read as a benchmark (Nov 11).
+    { list: "", re: /^(two\s+things\s+to\s+check|sources?\b|part\s+\d|step\s+\d\.\d)/i }
   ];
   var BULLET = /^\s*([*•●○◦▪‣–-]|\d+[.)])\s+/;
   var ZIP = /\b(\d{5})(-\d{4})?\b/;
   var WEB = /(https?:\/\/[^\s<>"')]+|\bwww\.[^\s<>"')]+)/i;
 
   function trim(s) { return String(s || "").replace(/^\s+|\s+$/g, ""); }
-  // A line without its bullet or list number.
-  function bare(line) { return trim(line.replace(BULLET, "")); }
+  // A line without its bullet or list number, and without the bold marks
+  // and heading signs a chat answer often adds ("**Name:**", "## Benchmarks").
+  function bare(line) { return trim(String(line).replace(/\*\*|__/g, "").replace(BULLET, "").replace(/^#{1,6}\s+/, "")); }
   function label(line) {
     var b = bare(line), i;
     for (i = 0; i < ORG.length; i++) if (ORG[i].re.test(b)) return { org: ORG[i] };

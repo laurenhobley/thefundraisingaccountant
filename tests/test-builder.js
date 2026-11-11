@@ -87,6 +87,21 @@ T.run("Builder screens (builder.html)", function (check) {
     document.querySelectorAll("#story-rounds .version").length === 1);
   check("and goes into the package, under its own heading", FACExport.packageText(FAC_QUESTIONS, FACSheet.load(FAC_QUESTIONS)).indexOf("== " + E11.packageSection + " ==\nName | Test Org | GuideStar\n") > -1);
   check("pasting is optional: no follow-ups on the check", shown(".fu") === 0);
+  // Filling in answers from ROI.bot's report (Nov 11): like "Fill from a document".
+  $("fill11").click();
+  check("a pasted answer with no report sheet in it: says so, suggests nothing", $("s11-fill-msg").textContent === E11.none && !document.querySelector("#screen .sugg"));
+  out11 = $("story-out");
+  out11.value = "## Part 4\n**Organization Info**\n**Web Site:** https://example.org/test-org\n**Mission Statement:** Not asked any more";
+  out11.dispatchEvent(new Event("input", { bubbles: true }));
+  $("fill11").click();
+  check("Fill in my answers: each answer in ROI.bot's report is a suggestion right here, with its quote; nothing filled yet",
+    $("s11-fill-msg").textContent === E11.found.replace("{n}", "1") && document.querySelectorAll("#screen .step11 .sugg").length === 1 &&
+    document.querySelector("#screen .sugg .sugg-quote").textContent === E11.quoteLabel + "**Web Site:** https://example.org/test-org" &&
+    document.querySelector("#screen .step11 .suggs > .lbl").textContent === E11.listTitle && saved().org.website.text === "");
+  check("the report is kept as a new round too", saved().storyOut.org.rounds.length === 2);
+  document.querySelector('#screen .sugg [data-act="suggAccept"]').click();
+  check("Accept fills the box, and the check's table shows it", saved().org.website.text === "https://example.org/test-org" &&
+    Array.prototype.some.call(document.querySelectorAll("#screen .chk-table td"), function (td) { return td.textContent === "https://example.org/test-org"; }));
   $("next").click();
   check("then Program 1 of 1", $("counter").textContent === "Step 3 of 25" && /Program 1 of 1/.test(title()));
   check("on a program: 1.1 done (teal line to 1.2), 1.2 current", parts() === "1.1:done 1.2:current 1.3:todo 1.4:todo 1.5:todo" && document.querySelectorAll("#parts li")[1].classList.contains("after-done"));

@@ -90,19 +90,38 @@ var FAC_QUESTIONS = {
   // / Source; keywords in five groups; "Two things to check"). Used by
   // quick.html and by the builder's 1.1 check, where the member pastes the
   // answer back. Draft for Steve, all of it.
+  // Nov 11 (later): one prompt has ROI.bot read the whole website and fill
+  // the whole report: Part 1 = Steve's Step 1.1 mockup, Part 2 = his Step
+  // 1.2 mockup (programs stack ranked), Part 3 = what to check and sources,
+  // Part 4 = FAC's sheet, written so the builder can offer each answer as a
+  // suggestion (Accept, Edit, Skip). Draft for Steve, all of it.
   step11: {
-    title: "Get your Step 1.1 from ROI.bot",
-    intro: "Copy this prompt into ROI.bot. It reads your website and public profiles and sends back your organization info and keywords, with their sources. Then paste its answer below.",
-    copyButton: "Copy the Step 1.1 prompt",
+    title: "Get your report from ROI.bot",
+    intro: "Copy this prompt into ROI.bot. It reads your whole website and public profiles and sends back your organization info, your programs ranked, local context and benchmarks, each with its source. Then paste its answer below.",
+    copyButton: "Copy the report prompt",
     outputLabel: "Paste ROI.bot's answer here",
-    outputHelp: "Optional. Each new answer you paste is kept as a round, in this browser only, and goes into your package.",
-    task: "Read our website and public profiles (for example GuideStar, local news and social media). Then give us Step 1.1, Your Organization, in this format. " +
-      "First, a table with the columns Field, What I found and Source, and these rows: Name; Website; Location (street address, and whether it matches our ZIP); " +
-      "Area served; Mission (our exact words, 125 characters or fewer); Social media. " +
+    outputHelp: "Each new answer you paste is kept as a round, in this browser only, and goes into your package. Then press the button below to fill in your answers from it.",
+    fillButton: "Fill in my answers from ROI.bot's report",
+    found: "Found {n} answers in ROI.bot's report. Check each one below: Accept, Edit or Skip. Nothing is filled in until you accept it, and a number still needs its label.",
+    none: "No answers found. Check that ROI.bot's answer has Part 4 (\"Organization Info\", \"Programs\", \"Local Context/Data\", \"Benchmarks\"), or type your answers instead.",
+    noPaste: "Paste ROI.bot's answer in the box first.",
+    listTitle: "From ROI.bot's report",
+    quoteLabel: "In ROI.bot's report:",
+    task: "Read our whole website, not just the home page: the About, Mission, Programs or Services, Impact, Results or Annual Report, News, Locations and Contact pages, and any reports linked from them. " +
+      "Also read our social media pages and our GuideStar (Candid) profile or Form 990. Then give us our report in four parts, in this order. " +
+      "Part 1, Step 1.1 Your Organization: a table with the columns Field, What I found and Source, and these rows: Name; Website; " +
+      "Location (street address, and whether it matches our ZIP); Area served; Mission (our exact words, 125 characters or fewer); Social media. " +
       "Then our keywords, in our own words, in five groups: Issue, People served, Services, Location and Results. " +
-      "Then “Two things to check”: what you couldn't find or confirm, as questions for us. " +
-      "List your sources with their dates. If you can't find something, say so instead of guessing.",
-    packageSection: "Step 1.1 Your Organization (from ROI.bot)"
+      "Part 2, Step 1.2 Your Programs, Stack Ranked: a table with the columns Rank, Program, Mission fit, Prominence, Evidence, Score and Why it ranks here. " +
+      "Score each program from 1 to 3 on Mission fit, Prominence and Evidence (3 is the highest), multiply the three for its Score, and rank from the highest Score down. " +
+      "In Why it ranks here, name the program's strongest result and its source, or say that no result is published. " +
+      "Part 3, Two things to check: what you couldn't find or confirm, as questions for us. Then list your sources with their dates. " +
+      "Part 4, our sheet, last, in plain text with no tables or bold, exactly like this: a line \"Organization Info\", then \"Name: \", \"Location (include zip): \", \"Web Site: \" and \"Mission Statement: \"; " +
+      "a line \"Programs (in order of priority)\", then for each program in your Part 2 order \"1. Program Name: \", \"* Description: \", \"* Outputs: \" (how many, of what, and the year) and \"* Current Impact Statement (if any): \"; " +
+      "a line \"Local Context/Data\", then one \"* \" line for each local fact, with its source and year; " +
+      "a line \"Benchmarks\", then one \"* \" line for each benchmark, with its source and year. End with the last benchmark. " +
+      "Write only what you found. If you can't find something, leave it blank and say so in Part 3 instead of guessing.",
+    packageSection: "Steps 1.1 and 1.2 from ROI.bot"
   },
 
   // Under the ZIP box: the place for that ZIP, from GeoNames' free ZIP list

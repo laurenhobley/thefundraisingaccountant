@@ -108,6 +108,63 @@ T.run("Fill from a document (read-documents.js)", function (check) {
   check("the ZIP still comes from the Location (include zip) line only", find(kw, "org.zip").text === "55999" && find(kw, "org.zip").quote.indexOf("include zip") > -1);
   check("nothing found in blank text", R.suggest("").length === 0 && R.suggest("   \n  ").length === 0);
   check("the same box is suggested once (the first one found)", R.suggest("Name: First Org\nName: Second Org").filter(function (g) { return g.path === "org.name"; }).length === 1);
+
+  // ROI.bot's report from the Step 1.1 prompt (Nov 11), for a made-up
+  // organization: Parts 1 to 3 are for the member to read; Part 4 is FAC's
+  // sheet, which the builder offers as suggestions. Chat answers often add
+  // bold marks and headings, so those are read through.
+  var report = [
+    "## Part 1, Step 1.1 Your Organization",
+    "| Field | What I found | Source |",
+    "|---|---|---|",
+    "| Name | Lakeside Family Shelter | GuideStar |",
+    "| Location | 12 Elm St, Lake Ruth, MN 55999 (matches your zip) | GuideStar |",
+    "Keywords",
+    "**Issue:** family homelessness, break the cycle",
+    "**People served:** parents, children",
+    "**Services:** emergency shelter, case management",
+    "**Location:** Lake Ruth",
+    "**Results:** stable housing",
+    "## Part 2, Step 1.2 Your Programs, Stack Ranked",
+    "| Rank | Program | Mission fit | Prominence | Evidence | Score | Why it ranks here |",
+    "| 1 | Shelter | 3 | 3 | 2 | 18 | Strongest result: 80 families housed (annual report, 2024). |",
+    "## Part 3, Two things to check",
+    "- Is the mission wording still current?",
+    "- I didn't find your social media links.",
+    "Sources: GuideStar (2025); Annual report (2024)",
+    "## Part 4",
+    "**Organization Info**",
+    "**Name:** Lakeside Family Shelter",
+    "**Location (include zip):** 12 Elm St, Lake Ruth, MN 55999",
+    "**Web Site:** https://example.org/lakeside",
+    "**Mission Statement:** A safe night and a way home for every family.",
+    "**Programs (in order of priority)**",
+    "1. **Program Name:** Shelter",
+    "* **Description:** Overnight rooms for families",
+    "* **Outputs:** 80 families housed in 2024",
+    "* **Current Impact Statement (if any):** Families move to stable homes",
+    "2. Program Name: Aftercare",
+    "* Description: Two years of check-ins",
+    "* Outputs:",
+    "* Current Impact Statement (if any):",
+    "**Local Context/Data**",
+    "* Rents in the county rose 12% in 2024 (County housing report, 2024)",
+    "**Benchmarks**",
+    "* A night of shelter costs $60 (State shelter survey, 2023)"
+  ].join("\n");
+  var rp = R.suggest(report);
+  function paths(list) { return list.map(function (g) { return g.path; }).join(); }
+  check("ROI.bot's report: Part 4's answers become suggestions, bold marks read through", paths(rp) ===
+    "org.name,org.zip,org.website,programs.0.name,programs.0.description,programs.0.outputs,programs.0.impact,programs.1.name,programs.1.description,pain.0,benchmarks.0" &&
+    find(rp, "org.name").text === "Lakeside Family Shelter" && find(rp, "org.zip").text === "55999" && find(rp, "org.website").text === "https://example.org/lakeside" &&
+    find(rp, "programs.0.outputs").text === "80 families housed in 2024" && find(rp, "programs.1.name").text === "Aftercare");
+  check("the tables, keywords, mission, things to check and sources suggest nothing", !rp.some(function (g) {
+    return /\|/.test(g.text) || /Is the mission|social media|GuideStar \(2025\)|family homelessness|safe night/.test(g.text); }));
+  check("local context and benchmarks keep their source and year", find(rp, "pain.0").text === "Rents in the county rose 12% in 2024 (County housing report, 2024)" &&
+    find(rp, "benchmarks.0").text === "A night of shelter costs $60 (State shelter survey, 2023)");
+  check("\"Two things to check\" and \"Sources\" end a list, so they're never read as a benchmark",
+    paths(R.suggest("Benchmarks\n* Meals cost $3 (Food bank, 2024)\nTwo things to check\n- Is this current?")) === "benchmarks.0" &&
+    paths(R.suggest("Local Context/Data\n* Rents rose (County, 2024)\n\nSources\nCounty report")) === "pain.0");
 });
 
 // The kit's Word and PDF files (tests/kit/*.docx and *.pdf, made from the

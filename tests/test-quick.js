@@ -16,15 +16,21 @@ T.run("Three questions: the prompt (quick.js)", function (check) {
   check("Context: the three answers in FAC's sheet wording, and nothing else", p.indexOf(
     "Context:\nOrganization Info\nName: Riverbend Food Bank\nLocation (include zip): 77001 (Houston, TX)\nWeb Site: https://example.org\n\nTask:\n") === 0);
   var T11 = Q.step11.task;
-  check("Task: Step 1.1 in the layout of Steve's Step 1.1 mockup", p.indexOf("Task:\n" + T11 + "\n\n") > -1 &&
+  check("Task: read the whole website, then the report in four parts: Steve's Step 1.1 mockup, his Step 1.2 mockup, what to check, FAC's sheet",
+    p.indexOf("Task:\n" + T11 + "\n\n") > -1 &&
+    T11.indexOf("Read our whole website, not just the home page") === 0 && T11.indexOf("Form 990") > -1 &&
     T11.indexOf("the columns Field, What I found and Source") > -1 &&
     T11.indexOf("Name; Website; Location (street address, and whether it matches our ZIP); Area served; Mission (our exact words, 125 characters or fewer); Social media.") > -1 &&
-    T11.indexOf("in five groups: Issue, People served, Services, Location and Results.") > -1 && T11.indexOf("“Two things to check”") > -1 &&
-    T11.indexOf("say so instead of guessing") > -1);
+    T11.indexOf("in five groups: Issue, People served, Services, Location and Results.") > -1 &&
+    T11.indexOf("Part 2, Step 1.2 Your Programs, Stack Ranked: a table with the columns Rank, Program, Mission fit, Prominence, Evidence, Score and Why it ranks here") > -1 &&
+    T11.indexOf("(3 is the highest), multiply the three for its Score") > -1 && T11.indexOf("Part 3, Two things to check") > -1 &&
+    T11.indexOf("\"Organization Info\"") > -1 && T11.indexOf("\"Programs (in order of priority)\"") > -1 && T11.indexOf("\"Local Context/Data\"") > -1 &&
+    T11.indexOf("\"Benchmarks\"") > -1 && T11.indexOf("instead of guessing") > -1);
   check("Constraints: FAC's 10 rules for AI, then the guardrail line last", p.indexOf("Constraints:\n- " + Q.rtcc.rules.join("\n- ") + "\n" + Q.guardrail) > -1 &&
     p.slice(-Q.guardrail.length) === Q.guardrail);
-  check("no figure the member didn't type: the only numbers are their ZIP, the step (1.1) and the mockup's 125-character limit",
-    (p.replace(Q.guardrail, "").match(/\d+/g) || []).join() === "77001,1,1,125");
+  check("no figure the member didn't type: the only numbers are their ZIP and FAC's own wording (step numbers, Parts 1 to 4, 125 characters, scores 1 to 3, the 990)",
+    (p.replace(Q.guardrail, "").match(/\d+/g) || []).join() === ["77001"].concat(T11.match(/\d+/g)).join() &&
+    T11.match(/\d+/g).every(function (n) { return ["990", "1", "2", "3", "4", "125"].indexOf(n) > -1; }));
   check("with no place for the ZIP, just the ZIP", FACQuick.build(Q, d, "").indexOf("Location (include zip): 77001\n") > -1);
 });
 

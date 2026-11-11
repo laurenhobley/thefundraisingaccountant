@@ -126,6 +126,10 @@
       '<p id="s11-msg" aria-live="polite" class="hint"></p>' +
       '<div class="f"><label for="story-out">' + esc(E.outputLabel) + '</label><p class="hint">' + esc(E.outputHelp) + '</p>' +
       '<textarea class="story-out" id="story-out" data-part="org">' + esc(o.draft || S.latest(state, "org")) + '</textarea></div>' +
+      // ROI.bot's report, read like "Fill from a document": each answer it
+      // finds (Part 4, FAC's sheet) is a suggestion, filled in only on Accept.
+      '<div class="actions"><button type="button" class="btn ghost" id="fill11" data-act="fill11">' + esc(E.fillButton) + '</button></div>' +
+      '<p id="s11-fill-msg" aria-live="polite" class="hint"></p>' + suggestionList("") +
       '<div class="f"><span class="lbl">' + esc(ST.roundsTitle) + '</span><div id="story-rounds"></div></div></div>';
   }
   function refreshStep11() {
@@ -152,12 +156,14 @@
   // ---------- Fill from a document ----------
   // The pasted text and the suggestions found in it are kept in memory
   // only, so nothing from the member's document is saved in the browser.
-  var docText = "", suggestions = [];
+  // suggestFrom: where the suggestions came from, "document" or ROI.bot's "report", for their labels.
+  var docText = "", suggestions = [], suggestFrom = "document";
   var DOC_TYPES = ".docx,.pdf,.txt";
 
   // Finds suggestions in docText and says how many, after "before" (e.g. "Read report.docx.").
   function findAnswers(before) {
     suggestions = FACRead.suggest(docText).map(function (s) { s.done = ""; return s; });
+    suggestFrom = "document";
     render("doc-text");
     var D = Q.documents, n = suggestions.length;
     $("doc-msg").textContent = (before ? before + " " : "") + (n ? D.found.replace(/\{n\}/g, n) : D.none);
@@ -208,7 +214,7 @@
   // its quote and Accept (or Replace my answer), Edit and Skip.
   // only: the paths on this screen, when the prefix covers more than that.
   function suggestionList(prefix, only) {
-    var D = Q.documents, rows = suggestions.map(function (s, k) {
+    var D = Q.documents, W = suggestFrom === "report" ? Q.step11 : D, rows = suggestions.map(function (s, k) {
       if (s.path.indexOf(prefix) !== 0 || (only && only.indexOf(s.path) < 0)) return "";
       var buttons = s.done ? '<span class="sugg-done">' + esc(D[s.done]) + '</span>' :
         alreadyThere(s) ? '<span class="sugg-done">' + esc(D.sameAlready) + '</span>' :
@@ -217,10 +223,10 @@
         '<button type="button" class="btn quiet" data-act="suggSkip" data-index="' + k + '">' + esc(D.skip) + '</button>';
       return '<div class="sugg" id="sugg-' + k + '"><span class="lbl">' + esc(suggestionName(s.path)) + '</span>' +
         '<p class="sugg-text">' + esc(s.text) + '</p>' +
-        '<p class="sugg-quote"><span class="ex-tag">' + esc(D.quoteLabel) + '</span>' + esc(s.quote) + '</p>' +
+        '<p class="sugg-quote"><span class="ex-tag">' + esc(W.quoteLabel) + '</span>' + esc(s.quote) + '</p>' +
         '<div class="actions">' + buttons + '</div></div>';
     }).join("");
-    return rows ? '<div class="suggs"><span class="lbl">' + esc(D.listTitle) + '</span>' + rows + '</div>' : "";
+    return rows ? '<div class="suggs"><span class="lbl">' + esc(W.listTitle) + '</span>' + rows + '</div>' : "";
   }
 
   // Puts a suggestion into its box, the way typing it would: a program by
@@ -1076,6 +1082,19 @@
     if (act === "downloadPkgMd") { saveFile(FACExport.markdown(Q, FACExport.packageText(Q, state)), mdName(FACExport.PACKAGE_FILE)); say(Q.review.downloaded); return; }
     if (act === "downloadVersion") { downloadVersion(i); return; }
     if (act === "copy11") { copyText(step11Prompt(), "s11-msg", Q.story.copied, $("s11-prompt")); return; }
+    if (act === "fill11") {
+      // Read ROI.bot's pasted report like a document: each answer it finds is
+      // offered with Accept, Edit or Skip; nothing is filled in on its own.
+      var E11 = Q.step11, rep = $("story-out").value;
+      if (!S.trim(rep)) { $("s11-fill-msg").textContent = E11.noPaste; return; }
+      S.addRound(state, "org", rep); save();
+      docText = rep;
+      suggestions = FACRead.suggest(rep).map(function (s) { s.done = ""; return s; });
+      suggestFrom = "report";
+      render("fill11");
+      $("s11-fill-msg").textContent = suggestions.length ? E11.found.replace(/\{n\}/g, suggestions.length) : E11.none;
+      return;
+    }
     if (act === "copyStep") {
       var sp = S.steps(state)[state.step].of;
       if (sp === "outcome" && !state.storyApproved) return;
