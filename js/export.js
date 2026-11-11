@@ -120,11 +120,14 @@ var FACExport = (function () {
     function q(sec, id) { return sec.questions.filter(function (x) { return x.id === id; })[0]; }
 
     L.push(org.title);
-    L.push(line(q(org, "name").label, answerText(Q, state, "org.name")));
-    // The ZIP, then its place from our copy of GeoNames' list: "77001 (Houston, TX)".
-    var where = window.FACZip && FACZip.place(state.org.zip.text);
-    L.push(line(Q.exportText.location, answerText(Q, state, "org.zip") + (where ? " (" + where + ")" : "")));
-    L.push(line(q(org, "website").label, answerText(Q, state, "org.website")));
+    // Every 1.1 box from questions.js, in its order (kit v3, Fix 3). The ZIP is
+    // FAC's Location line, with its place from our copy of GeoNames' list:
+    // "77001 (Houston, TX)".
+    S.fieldsOf(Q, "org").forEach(function (x) {
+      if (x.id !== "zip") { L.push(line(x.label, answerText(Q, state, "org." + x.id))); return; }
+      var where = window.FACZip && FACZip.place(state.org.zip.text);
+      L.push(line(Q.exportText.location, answerText(Q, state, "org.zip") + (where ? " (" + where + ")" : "")));
+    });
     // No Mission Statement or Key Words lines (Lauren, 2026-11-11): ROI.bot drafts them.
     L.push("");
 

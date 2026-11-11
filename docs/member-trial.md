@@ -19,7 +19,7 @@ Thank you for trying FAC's new prompt builder. It takes about 20 minutes. Please
 2. **Notice the questions that pop up** under an answer. Each time, decide what you'd do as a real member: fix the answer, or keep it as it is.
 3. **Label any number.** When an answer has a number, the builder asks where it comes from. Make up a reasonable source, for example "2024 annual report".
 4. **Leave and come back.** Close the tab partway through, then open the builder again. Your answers should still be there.
-5. **Review and export.** On the last screen, read the finished prompt, tick "I reviewed this", and press Copy prompt or Download .txt.
+5. **Review and export.** On the 2.5 Build the Prompt screen, read the finished prompt and press "Yes, copy my prompt" or Download .txt.
 6. **Paste into ROI.bot.** If you can, paste the prompt into ROI.bot and look at what comes back.
 7. **Try another device.** If you have time, do a few screens on your phone too.
 

@@ -27,7 +27,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 | `js/questions.js` | **All the wording members read:** questions, help, follow-ups, buttons, the how-to page, FAC's Final Prompt and the guardrail line. FAC owns this file. |
 | `js/sheet.js` | Stores the answers and their labels, runs the follow-up checks, and saves the draft in the browser. |
 | `js/export.js` | Builds the finished prompt in RTCC parts, with the member's answers in FAC's sheet format. |
-| `js/builder.js` | Shows the screens, the follow-ups, the review lock, and the Copy and Download buttons. |
+| `js/builder.js` | Shows the screens, the follow-ups, the Step 1.1 prompt box, and the "Yes, copy my prompt" and Download buttons. |
 | `js/read-documents.js` | "Fill from a document": finds suggested answers in the member's own text, Word or PDF file, in the browser. No AI: only lines written the way FAC's sheet writes them, plus a web address and a ZIP code. |
 | `js/quick.js` | quick.html: the three required fields, their follow-ups, and its prompt. |
 | `js/screen1.js` | Let's Get Started: the progress bar, Screen 1's three fields and the ZIP's place, Screen 2's four (the email must look like one, the phone have 10 to 15 digits), and Next (off until a screen is filled). |

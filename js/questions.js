@@ -64,7 +64,12 @@ var FAC_QUESTIONS = {
     emailPlaceholder: "name@yourorganization.org",
     phone: "Phone",
     phonePlaceholder: "Cell phone number",
-    nextLine: "Next: tell us about your programs."
+    nextLine: "Next: tell us about your programs.",
+    // On 1.1, when Screen 1 now says something different from the box
+    // (the member went back and changed it). Kit v3 Fix 2; draft for Steve.
+    changed: "On Screen 1 you typed “{value}”.",
+    useChanged: "Use what I typed on Screen 1",
+    keepChanged: "Keep this answer"
   },
 
   // quick.html: only the required fields of Screen 1 in Steve's Step 1
@@ -199,10 +204,11 @@ var FAC_QUESTIONS = {
         { id: "description", label: "Description", kind: "long", required: true, help: "What the program does and who it serves, in a sentence or two." },
         // Outputs and Outcomes are asked on 1.3 Outputs to Outcomes, not on each
         // program's screen (Steve's Step 1 flowchart, Nov 8): screen: "outcomes".
-        { id: "outputs", label: "Outputs", kind: "long", required: true, screen: "outcomes", help: "What the program delivered: how many, of what, and in which year." },
+        // screenLabel: what 1.3 calls the box; label stays FAC's sheet line in the prompt.
+        { id: "outputs", label: "Outputs", screenLabel: "Outputs (what you did)", kind: "long", required: true, screen: "outcomes", help: "What the program delivered: how many, of what, and in which year." },
         // "(if any)" stays because the prompt keeps FAC's sheet line word for word;
         // on screen, 1.3 calls it "Outcomes (what changed)".
-        { id: "impact", label: "Current Impact Statement", note: "(if any)", kind: "long", required: true, screen: "outcomes", help: "A short statement you already use about this program's impact." }
+        { id: "impact", label: "Current Impact Statement", screenLabel: "Outcomes (what changed)", note: "(if any)", kind: "long", required: true, screen: "outcomes", help: "A short statement you already use about this program's impact." }
       ]
     },
     {
@@ -555,8 +561,7 @@ var FAC_QUESTIONS = {
   outcomes: {
     title: "Outputs to Outcomes",
     intro: "One row per program, in your ranked order. Check what each program did and what changed.",
-    outputsLabel: "Outputs (what you did)",
-    outcomesLabel: "Outcomes (what changed)",
+
     placeholder: "Click to change",
     later: "Gray tags can be filled in later.",
     choiceAsk: "Go deeper now with your files and research (1.4 Add Context), or skip to Step 2?",

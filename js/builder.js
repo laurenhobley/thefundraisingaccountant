@@ -55,9 +55,21 @@
     return '<div class="f' + (q.kind === "zip" ? " f-zip" : "") + '">' +
       '<label for="' + id + '">' + esc(q.label) + (q.note ? ' <span class="opt">' + esc(q.note) + '</span>' : "") + (q.required ? '<span class="req">*</span>' : "") + '</label>' +
       (q.help ? '<p class="hint">' + esc(q.help) + '</p>' : "") +
-      input + (q.kind === "zip" ? '<p class="hint zip-place" id="' + id + '-place" aria-live="polite"></p>' : "") +
+      input + (q.kind === "zip" ? '<p class="hint zip-place" id="' + id + '-place" aria-live="polite"></p>' : "") + screen1Note(path) +
       followUpBox(path) + (S.needsLabel(path) ? labelBox(path) : "") +
       '</div>';
+  }
+
+  // Screen 1 now says something different from this box (the member went
+  // back and changed it): show it, with Use and Keep. Read on every screen
+  // build, so a change on Screen 1 shows up here. Never copied silently
+  // (kit v3, Fix 2).
+  function screen1Note(path) {
+    var p = path.split("."), v = p[0] === "org" && S.screen1Changes(state, S.loadScreen1())[p[1]], T = Q.screen1;
+    if (!v) return "";
+    return '<div class="sugg s1-changed" id="' + idOf(path) + '-s1"><p class="sugg-text">' + esc(T.changed.replace(/\{value\}/g, function () { return v; })) + '</p>' +
+      '<div class="actions"><button type="button" class="btn ghost" data-act="s1Use" data-id="' + p[1] + '">' + esc(T.useChanged) + '</button>' +
+      '<button type="button" class="btn quiet" data-act="s1Keep" data-id="' + p[1] + '">' + esc(T.keepChanged) + '</button></div></div>';
   }
 
   // The place for the ZIP code ("Houston, TX"), from our own copy of
@@ -88,7 +100,7 @@
       return '<button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, path) + '" data-focus="' + idOf(path) + '">' + esc(F.editLink) + '</button>';
     }
     var head = [S.trim(org.website.text), S.trim(org.zip.text)].filter(function (t) { return t; }).join(" · ");
-    var rows = S.section(Q, "org").questions.map(function (q) {
+    var rows = S.fieldsOf(Q, "org").map(function (q) {
       var value = q.id === "zip" ? '<span id="chk-zip">' + esc(zipWithPlace() || F.empty) + '</span>' : esc(S.trim(org[q.id].text) || F.empty);
       return '<tr><th scope="row">' + esc(q.label) + '</th><td>' + value + '</td><td class="chk-edit">' + edit("org." + q.id) + '</td></tr>';
     }).join("");
@@ -318,9 +330,11 @@
     for (var i = 0; i < S.included(state); i++) {
       var name = S.trim(state.programs[i].name.text) || Q.flow.empty, at = "programs." + i + ".";
       rows += '<div class="oo-row" id="oo-row-' + i + '"><span class="lbl">' + esc(programName(i) + ": " + name) + '</span>' +
-        suggestionList(at, [at + "outputs", at + "impact"]) + '<div class="oo-cells">' +
-        field({ label: O.outputsLabel, kind: "long", placeholder: O.placeholder, required: true }, at + "outputs") +
-        field({ label: O.outcomesLabel, kind: "long", placeholder: O.placeholder, required: true }, at + "impact") + '</div></div>';
+        suggestionList(at, S.fieldsOf(Q, "outcomes").map(function (q) { return at + q.id; })) + '<div class="oo-cells">' +
+        // Each 1.3 box's name, help and required come from its question in questions.js (kit v3, Fix 3).
+        S.fieldsOf(Q, "outcomes").map(function (q) {
+          return field({ label: q.screenLabel || q.label, kind: q.kind, help: q.help, placeholder: q.placeholder || O.placeholder, required: q.required }, at + q.id);
+        }).join("") + '</div></div>';
     }
     return heading(N.outcomes, O.title) + '<p class="hint">' + esc(O.intro) + '</p>' + rows +
       '<p class="hint">' + esc(O.later) + '</p>';
@@ -553,8 +567,10 @@
       // 1.2: the programs in their order, with their Stack Rank when ranked.
       var ranked = state.rank.use === "yes";
       if (!ranked) title = C.titleUnranked;
+      // Every box on the program's own screen, from questions.js (kit v3, Fix 3).
+      var own = S.fieldsOf(Q, "program");
       state.programs.forEach(function (p, i) {
-        row(programName(i), [p.name.text, p.description.text].filter(function (t) { return S.trim(t); }).join(" — ") +
+        row(programName(i), own.map(function (q) { return p[q.id].text; }).filter(function (t) { return S.trim(t); }).join(" — ") +
           (ranked && S.trim(state.rankRows[i].score) ? " (" + Q.rank.scoreLabel + " " + S.trim(state.rankRows[i].score) + ")" : "") +
           (i >= S.included(state) ? " (" + Q.rank.belowLine + ")" : ""), "programs." + i + ".name");
       });
@@ -562,8 +578,7 @@
       // 1.3: each program's Outputs and Outcomes, then go deeper or skip.
       for (var i = 0; i < S.included(state); i++) {
         var at = "programs." + i + ".", nm = S.trim(state.programs[i].name.text) || programName(i);
-        row(nm + " — " + Q.outcomes.outputsLabel, state.programs[i].outputs.text, at + "outputs");
-        row(nm + " — " + Q.outcomes.outcomesLabel, state.programs[i].impact.text, at + "impact");
+        S.fieldsOf(Q, "outcomes").forEach(function (q) { row(nm + " — " + (q.screenLabel || q.label), state.programs[i][q.id].text, at + q.id); });
       }
       extra = depthChoice();
     } else if (of === "benchmarks") {
@@ -582,7 +597,7 @@
   function programScreen(i) {
     var sec = S.section(Q, "programs"), n = state.programs.length;
     // Outputs and Outcomes are asked on 1.3, not here (Steve's Step 1 flowchart).
-    var here = sec.questions.filter(function (q) { return q.screen !== "outcomes"; });
+    var here = S.fieldsOf(Q, "program");
     return heading(N.program, sec.itemLabel + " " + (i + 1) + " of " + n, sec.note) +
       suggestionList("programs." + i + ".", here.map(function (q) { return "programs." + i + "." + q.id; })) +
       here.map(function (q) { return field(q, "programs." + i + "." + q.id); }).join("") +
@@ -1075,6 +1090,13 @@
     if (act === "removeDonorRow") { S.removeDonorRow(state, b.getAttribute("data-table"), i); unreview(); render(); return; }
     if (act === "rtccReset") { state.rtcc[b.getAttribute("data-part")] = null; unreview(); render(); return; }
     if (act === "findAnswers") { findAnswers(""); return; }
+    if (act === "s1Use" || act === "s1Keep") {
+      var sid = b.getAttribute("data-id"), sv = S.screen1Changes(state, S.loadScreen1())[sid];
+      if (sv && act === "s1Use") { S.useScreen1(Q, state, sid, sv); unreview(); }
+      else if (sv) S.keepScreen1(state, sid, sv);
+      render(idOf("org." + sid));
+      return;
+    }
     if (act === "suggSkip") { suggestions[i].done = "skipped"; render(); return; }
     if (act === "suggAccept") { acceptSuggestion(i); render(); return; }
     if (act === "suggEdit") { var put = acceptSuggestion(i); go(S.stepOf(state, put), idOf(put)); return; }

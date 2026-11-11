@@ -75,7 +75,10 @@ var FACSheet = (function () {
       funder: { challenge: null, response: null, outcome: null, roi: null },
       actions: [action(), action(), action()],
       assess: { ratings: ["", "", ""], takeaway: "" },
-      pkgReviewed: false
+      // The Screen 1 answer (name, website, ZIP) this box last took or the
+      // member chose to keep. A different Screen 1 answer is asked about,
+      // never copied over a typed one (kit v3, Fix 2).
+      screen1: { name: "", website: "", zip: "" }
     };
   }
 
@@ -176,7 +179,7 @@ var FACSheet = (function () {
       if (data.assess.ratings) s.assess.ratings = [0, 1, 2].map(function (i) { var v = data.assess.ratings[i]; return /^[1-5]$/.test(v) ? v : ""; });
       if (typeof data.assess.takeaway === "string") s.assess.takeaway = data.assess.takeaway;
     }
-    if (data.pkgReviewed === true) s.pkgReviewed = true;
+    ["name", "website", "zip"].forEach(function (k) { if (data.screen1 && typeof data.screen1[k] === "string") s.screen1[k] = data.screen1[k]; });
     // A draft from before the four columns (it has no driver names) keeps
     // its yes/no and red line, but not its scores: the columns changed.
     var R = data.rank || {}, current = !!R.names;
@@ -546,7 +549,18 @@ var FACSheet = (function () {
 
   // The program boxes asked on 1.3 Outputs to Outcomes, not on the program's
   // own screen (Steve's Step 1 flowchart; screen: "outcomes" in questions.js).
+  // A test checks this list matches questions.js.
   var ON_OUTCOMES = ["outputs", "impact"];
+
+  // Which questions each screen, its "Happy?" check and the prompt show,
+  // straight from questions.js, so a field added, renamed or removed there
+  // changes every place it appears (kit v3, Fix 3). "org": 1.1's boxes.
+  // "program": a program's own screen (1.2). "outcomes": 1.3.
+  function fieldsOf(Q, where) {
+    if (where === "org") return section(Q, "org").questions.slice();
+    var qs = section(Q, "programs").questions;
+    return qs.filter(function (q) { return where === "outcomes" ? q.screen === "outcomes" : q.screen !== "outcomes"; });
+  }
 
   // Which of Step 3's own boxes sit on which screen.
   var STORY_FIELDS = { challenge: ["keyFact"], response: [], outcome: ["clientStory", "clientQuote", "secondQuote"], roi: ["investment", "value", "roi", "everyDollar", "ask", "timeframe"], funder: ["investProgram", "investOutcomes", "investDollars"] };
@@ -731,15 +745,33 @@ var FACSheet = (function () {
   // under this key. The builder takes them into its boxes that are still
   // blank, so nothing is typed twice. Returns how many it filled.
   var SCREEN1 = "roi-screen1-v1";
+  var SCREEN1_MAP = { name: "org", website: "website", zip: "zip" };
   function importScreen1(Q, state, s1) {
     if (!s1) return 0;
-    var map = { name: "org", website: "website", zip: "zip" }, n = 0;
-    for (var id in map) {
-      var v = trim(s1[map[id]]);
-      if (v && !trim(state.org[id].text)) { setText(Q, state, "org." + id, v); n++; }
+    var n = 0;
+    for (var id in SCREEN1_MAP) {
+      var v = trim(s1[SCREEN1_MAP[id]]);
+      if (!v) continue;
+      if (!trim(state.org[id].text)) { setText(Q, state, "org." + id, v); n++; }
+      if (trim(state.org[id].text) === v) state.screen1[id] = v;
     }
     return n;
   }
+  // The boxes whose Screen 1 answer changed since the builder last took or
+  // kept it, and now differs from what the box holds: { id: "the Screen 1
+  // answer" }. The builder asks; it never copies over a typed answer.
+  function screen1Changes(state, s1) {
+    var out = {};
+    if (!s1) return out;
+    for (var id in SCREEN1_MAP) {
+      var v = trim(s1[SCREEN1_MAP[id]]), mine = trim(state.org[id].text);
+      if (v && mine && v !== mine && state.screen1[id] !== v) out[id] = v;
+    }
+    return out;
+  }
+  // The member's choice: use the Screen 1 answer, or keep the builder's.
+  function useScreen1(Q, state, id, v) { setText(Q, state, "org." + id, v); state.screen1[id] = v; }
+  function keepScreen1(state, id, v) { state.screen1[id] = v; }
   function loadScreen1(storage) {
     try { return JSON.parse((storage || window.localStorage).getItem(SCREEN1) || "null"); } catch (e) { return null; }
   }
@@ -881,10 +913,11 @@ var FACSheet = (function () {
     same: same, duplicateOf: duplicateOf, canConfirmSeparate: canConfirmSeparate, confirmSeparate: confirmSeparate,
     baseIssue: baseIssue, numbersIn: numbersIn, sharedCount: sharedCount, sameGroups: sameGroups, resolveOverlap: resolveOverlap,
     isAssumption: isAssumption, assumptionOpen: assumptionOpen, setLabel: setLabel, setNote: setNote,
-    calculations: calculations, mathProblem: mathProblem,
+    calculations: calculations, mathProblem: mathProblem, fieldsOf: fieldsOf, ON_OUTCOMES: ON_OUTCOMES,
     paths: paths, steps: steps, stepOf: stepOf, nextStep: nextStep, prevStep: prevStep, step2: step2, problems: problems, addVersion: addVersion,
     RANK_COLUMNS: RANK_COLUMNS, rankCheck: rankCheck, sortByScore: sortByScore, suggestLine: suggestLine, dollarOff: dollarOff, included: included,
     addDonorRow: addDonorRow, removeDonorRow: removeDonorRow, importLive: importLive, importScreen1: importScreen1, loadScreen1: loadScreen1, SCREEN1: SCREEN1,
+    screen1Changes: screen1Changes, useScreen1: useScreen1, keepScreen1: keepScreen1,
     addRound: addRound, latest: latest, STORY_PARTS: STORY_PARTS,
     addProgram: addProgram, removeProgram: removeProgram, addItem: addItem, removeItem: removeItem,
     save: save, load: load, clear: clear
