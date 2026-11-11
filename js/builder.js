@@ -5,9 +5,14 @@
 (function () {
   var Q = FAC_QUESTIONS, S = FACSheet;
   var $ = function (id) { return document.getElementById(id); };
+  var fresh = (function () { try { return !localStorage.getItem("fac-prompt-sheet-draft-v1"); } catch (e) { return false; } })();
   var state = S.load(Q);
   // What the member typed on Screen 1 (index.html) fills the blank boxes.
-  S.importScreen1(Q, state, S.loadScreen1());
+  var fromScreen1 = S.importScreen1(Q, state, S.loadScreen1());
+  // Coming from Let's Get Started with the name and ZIP already in, a new
+  // draft opens straight on the report screen (the 1.1 check), not on the
+  // same three questions again (Lauren, Nov 11).
+  if (fresh && fromScreen1 && !S.missing(Q, state, 0).length) state.step = 1;
   var screen = $("screen");
 
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
@@ -129,7 +134,10 @@
       // ROI.bot's report, read like "Fill from a document": each answer it
       // finds (Part 4, FAC's sheet) is a suggestion, filled in only on Accept.
       '<div class="actions"><button type="button" class="btn ghost" id="fill11" data-act="fill11">' + esc(E.fillButton) + '</button></div>' +
-      '<p id="s11-fill-msg" aria-live="polite" class="hint"></p>' + suggestionList("") +
+      '<p id="s11-fill-msg" aria-live="polite" class="hint"></p>' +
+      (suggestFrom === "report" && suggestions.some(function (s) { return !s.done && !alreadyThere(s) && !currentText(s.path); })
+        ? '<div class="actions"><button type="button" class="btn primary" id="acceptAll11" data-act="acceptAll11">' + esc(E.acceptAll) + '</button></div>' : "") +
+      suggestionList("") +
       '<div class="f"><span class="lbl">' + esc(ST.roundsTitle) + '</span><div id="story-rounds"></div></div></div>';
   }
   function refreshStep11() {
@@ -243,6 +251,8 @@
     }
     S.setText(Q, state, path, s.text);
     if (p[0] === "org") S.toScreen1(state, p[1]);
+    // Programs taken from ROI.bot's report: Next no longer asks them one by one.
+    if (p[0] === "programs" && suggestFrom === "report") state.programsFromReport = true;
     s.done = "accepted";
     unreview();
     save();
@@ -1082,6 +1092,16 @@
     if (act === "downloadPkgMd") { saveFile(FACExport.markdown(Q, FACExport.packageText(Q, state)), mdName(FACExport.PACKAGE_FILE)); say(Q.review.downloaded); return; }
     if (act === "downloadVersion") { downloadVersion(i); return; }
     if (act === "copy11") { copyText(step11Prompt(), "s11-msg", Q.story.copied, $("s11-prompt")); return; }
+    if (act === "acceptAll11") {
+      // Every report answer whose box is still blank, in one click. A box the
+      // member already filled keeps its answer (its suggestion stays, with
+      // Replace my answer). Each number still needs its label afterwards.
+      var took = 0;
+      suggestions.forEach(function (s, k) { if (!s.done && !alreadyThere(s) && !currentText(s.path)) { acceptSuggestion(k); took++; } });
+      render("fill11");
+      $("s11-fill-msg").textContent = Q.step11.acceptedAll.replace(/\{n\}/g, took);
+      return;
+    }
     if (act === "fill11") {
       // Read ROI.bot's pasted report like a document: each answer it finds is
       // offered with Accept, Edit or Skip; nothing is filled in on its own.

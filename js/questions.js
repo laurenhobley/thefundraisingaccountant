@@ -105,6 +105,8 @@ var FAC_QUESTIONS = {
     found: "Found {n} answers in ROI.bot's report. Check each one below: Accept, Edit or Skip. Nothing is filled in until you accept it, and a number still needs its label.",
     none: "No answers found. Check that ROI.bot's answer has Part 4 (\"Organization Info\", \"Programs\", \"Local Context/Data\", \"Benchmarks\"), or type your answers instead.",
     noPaste: "Paste ROI.bot's answer in the box first.",
+    acceptAll: "Accept all from the report",
+    acceptedAll: "Filled in {n} blank boxes from ROI.bot's report. Your own answers weren't changed: any suggestion left below is for a box you'd already filled. Each number still needs its label.",
     listTitle: "From ROI.bot's report",
     quoteLabel: "In ROI.bot's report:",
     task: "Read our whole website, not just the home page: the About, Mission, Programs or Services, Impact, Results or Annual Report, News, Locations and Contact pages, and any reports linked from them. " +

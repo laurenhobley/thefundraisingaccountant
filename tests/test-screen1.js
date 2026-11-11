@@ -24,9 +24,15 @@ T.runAsync("Let's Get Started (index.html)", function (check, done) {
     try {
       if (stage === "builder") {
         clearTimeout(timer);
+        var draft = JSON.parse(w.localStorage.getItem("fac-prompt-sheet-draft-v1"));
         check("Next on Screen 2 opens the builder with the name, website and ZIP filled in", /builder\.html$/.test(w.location.pathname) &&
-          $("f-org-name").value === "Riverbend Food Bank" && $("f-org-website").value === "https://example.org" && $("f-org-zip").value === "77001");
-        check("the builder's ← Previous on its first screen goes back to Screen 2", $("back").getAttribute("data-to") === "index.html#you");
+          draft.org.name.text === "Riverbend Food Bank" && draft.org.website.text === "https://example.org" && draft.org.zip.text === "77001");
+        check("it opens straight on the report screen (the 1.1 check), not the same three questions again (Nov 11)",
+          d.querySelector("#screen h2").textContent.indexOf(Q.flow.checkpoints.org.title) > -1 && !!$("s11-prompt") &&
+          $("s11-prompt").textContent.indexOf("Name: Riverbend Food Bank") > -1);
+        $("back").click();
+        check("← Previous goes to Organization Info, and from there back to Screen 2", $("f-org-name").value === "Riverbend Food Bank" &&
+          $("back").getAttribute("data-to") === "index.html#you");
         var bl = d.querySelector(".topbar .logo");
         check("the builder shows ROI.bot's logo top right", !!bl && bl.alt === "ROI.bot" && bl.complete && bl.naturalWidth > 0);
         done();

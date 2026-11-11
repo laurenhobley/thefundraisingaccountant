@@ -49,6 +49,10 @@ var FACSheet = (function () {
       // After 1.3: "deeper" (1.4 Add Context and 1.5 Add Constraints next) or
       // "skip" (straight to 2.1); "" until the member chooses.
       depth: "",
+      // True once the member accepts programs from ROI.bot's report: Next and
+      // Previous then skip the program-by-program screens (Lauren, Nov 11);
+      // the 1.2 check still lists every program with an Edit link.
+      programsFromReport: false,
       // 2 = Step 1 in Steve's 1.3 order (Outputs to Outcomes before 1.4 and 1.5).
       // 3 = Steve's Step 1 flowchart (Nov 8): a "Happy?" check after 1.1 and 1.3 too.
       flow: 3,
@@ -197,6 +201,7 @@ var FACSheet = (function () {
       if (v && typeof v.n === "number" && typeof v.at === "string" && typeof v.text === "string") s.versions.push({ n: v.n, at: v.at, text: v.text });
     }
     if (data.depth === "deeper" || data.depth === "skip") s.depth = data.depth;
+    if (data.programsFromReport === true) s.programsFromReport = true;
     // A draft from before Steve's 1.3 order: the old Step 1 review is now 1.3
     // Outputs to Outcomes, and Local Context to Constraints moved one on.
     var n = s.programs.length;
@@ -711,11 +716,18 @@ var FACSheet = (function () {
     return -1;
   }
   function isOutcomesCheck(st) { return st.kind === "check" && st.of === "outcomes"; }
+  // With programs from ROI.bot's report, the program screens are passed over
+  // (they stay reachable from the 1.2 check's Edit links and the progress bar).
+  function skipsProgram(state, st) { return state.programsFromReport && st && st.kind === "program"; }
   function nextStep(state, step) {
-    return isOutcomesCheck(steps(state)[step]) && state.depth === "skip" ? indexOf(state, "why") : step + 1;
+    var all = steps(state), to = isOutcomesCheck(all[step]) && state.depth === "skip" ? indexOf(state, "why") : step + 1;
+    while (to < all.length - 1 && skipsProgram(state, all[to])) to++;
+    return to;
   }
   function prevStep(state, step) {
-    return steps(state)[step].kind === "why" && state.depth === "skip" ? indexOf(state, "check", "outcomes") : step - 1;
+    var all = steps(state), to = all[step].kind === "why" && state.depth === "skip" ? indexOf(state, "check", "outcomes") : step - 1;
+    while (to > 0 && skipsProgram(state, all[to])) to--;
+    return to;
   }
   // 1.5 is optional: "Skip to Step 2" goes straight to 2.1.
   function step2(state) { return indexOf(state, "why"); }
