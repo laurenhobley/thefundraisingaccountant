@@ -51,7 +51,7 @@ T.runAsync("Let's Get Started (index.html)", function (check, done) {
       check("Next is orange; nothing else on the page is", w.getComputedStyle($("next1")).backgroundColor === "rgb(199, 97, 40)" &&
         w.getComputedStyle($("prev2")).backgroundColor !== "rgb(199, 97, 40)");
       check("no prompt, MISSING tags, counters or asterisks for members", !/prompt|MISSING|required|\*/i.test(d.body.textContent));
-      check("the next-step line waits for Screen 2", $("nextLine").hidden);
+      check("the next-step line waits for Screen 2, and has Steve's wording", $("nextLine").hidden && T1.nextLine === "Next we will scrub the web to learn about your programs");
       // Start blank: quick.html's test may have saved answers under the same key.
       ["s1-org", "s1-website", "s1-zip"].forEach(function (id) { type(id, ""); });
       check("Next is off until Screen 1 is filled", $("next1").disabled);

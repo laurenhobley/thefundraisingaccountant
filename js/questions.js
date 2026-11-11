@@ -64,7 +64,8 @@ var FAC_QUESTIONS = {
     emailPlaceholder: "name@yourorganization.org",
     phone: "Phone",
     phonePlaceholder: "Cell phone number",
-    nextLine: "Next: tell us about your programs.",
+    // Steve's wording, word for word (Nov 11).
+    nextLine: "Next we will scrub the web to learn about your programs",
     // On 1.1, when Screen 1 now says something different from the box
     // (the member went back and changed it). Kit v3 Fix 2; draft for Steve.
     changed: "On Screen 1 you typed “{value}”.",
