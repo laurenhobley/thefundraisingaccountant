@@ -15,11 +15,16 @@ T.run("Three questions: the prompt (quick.js)", function (check) {
   var p = FACQuick.build(Q, d, "Houston, TX");
   check("Context: the three answers in FAC's sheet wording, and nothing else", p.indexOf(
     "Context:\nOrganization Info\nName: Riverbend Food Bank\nLocation (include zip): 77001 (Houston, TX)\nWeb Site: https://example.org\n\nTask:\n") === 0);
-  check("Task: the drafted Step 1.1 task (basic info and 10–15 keywords in four groups, with sources)", p.indexOf("Task:\n" + K.task + "\n\n") > -1 &&
-    /recommend 10–15 keywords in four groups: Issue, People served, Services, Location\. List your sources\.$/.test(K.task));
+  var T11 = Q.step11.task;
+  check("Task: Step 1.1 in the layout of Steve's Step 1.1 mockup", p.indexOf("Task:\n" + T11 + "\n\n") > -1 &&
+    T11.indexOf("the columns Field, What I found and Source") > -1 &&
+    T11.indexOf("Name; Website; Location (street address, and whether it matches our ZIP); Area served; Mission (our exact words, 125 characters or fewer); Social media.") > -1 &&
+    T11.indexOf("in five groups: Issue, People served, Services, Location and Results.") > -1 && T11.indexOf("“Two things to check”") > -1 &&
+    T11.indexOf("say so instead of guessing") > -1);
   check("Constraints: FAC's 10 rules for AI, then the guardrail line last", p.indexOf("Constraints:\n- " + Q.rtcc.rules.join("\n- ") + "\n" + Q.guardrail) > -1 &&
     p.slice(-Q.guardrail.length) === Q.guardrail);
-  check("no figure the member didn't type: the only numbers are their ZIP and FAC's 10–15", (p.replace(Q.guardrail, "").match(/\d+/g) || []).join() === "77001,10,15");
+  check("no figure the member didn't type: the only numbers are their ZIP, the step (1.1) and the mockup's 125-character limit",
+    (p.replace(Q.guardrail, "").match(/\d+/g) || []).join() === "77001,1,1,125");
   check("with no place for the ZIP, just the ZIP", FACQuick.build(Q, d, "").indexOf("Location (include zip): 77001\n") > -1);
 });
 

@@ -17,7 +17,7 @@ var FACQuick = (function () {
   function line(label, value) { return (label + ": " + value).replace(/\s+$/, ""); }
 
   // The prompt in RTCC parts, like the builder's: Context (the three answers,
-  // in FAC's sheet wording), Task (the drafted Step 1.1 task), Constraints
+  // in FAC's sheet wording), Task (Step 1.1: step11.task), Constraints
   // (FAC's 10 rules for AI, then the guardrail line). place: "Houston, TX" or "".
   function build(Q, d, place) {
     var R = Q.rtcc, org = Q.sections.filter(function (s) { return s.id === "org"; })[0];
@@ -28,7 +28,7 @@ var FACQuick = (function () {
       line(label("name"), trim(d.org)),
       line(Q.exportText.location, trim(d.zip) + (place ? " (" + place + ")" : "")),
       line(label("website"), trim(d.website)), "");
-    out.push(R.taskHeading + ":", Q.quick.task, "");
+    out.push(R.taskHeading + ":", Q.step11.task, "");
     out.push(R.constraintsHeading + ":");
     (R.rules || []).forEach(function (r) { out.push("- " + r); });
     out.push(Q.guardrail);

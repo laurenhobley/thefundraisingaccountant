@@ -233,6 +233,8 @@ var FACExport = (function () {
     function section(title, body) { if (S.trim(body)) out.push("== " + title + " ==", S.trim(body), ""); }
     out.push(P.heading + (org ? ": " + org : ""), "");
     section(H.prompt, build(Q, state));
+    // Step 1.1's deliverable: ROI.bot's latest answer to the 1.1 prompt, as pasted.
+    section(Q.step11.packageSection, S.latest(state, "org"));
     section(H.whyNow, whyNow(Q, state).concat(investSentence(Q, state) ? [investSentence(Q, state)] : []).join("\n"));
     var k = S.included(state);
     section(H.programs, state.programs.map(function (p, i) {

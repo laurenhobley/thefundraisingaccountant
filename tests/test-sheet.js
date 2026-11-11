@@ -460,6 +460,8 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
     "story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
   check("each Step 3 box sits on its own screen", S.stepOf(s3, "story.keyFact") === 17 && S.stepOf(s3, "story.clientQuote") === 19 && S.stepOf(s3, "story.roi") === 20 && S.stepOf(s3, "story.investDollars") === 21);
   check("a pasted ROI.bot answer becomes round 1", S.addRound(s3, "challenge", "First try") && s3.storyOut.challenge.rounds.length === 1 && S.latest(s3, "challenge") === "First try");
+  check("Step 1.1's deliverable keeps its rounds too, and a saved draft keeps them", S.addRound(s3, "org", "Name | Org | GuideStar") && S.latest(s3, "org") === "Name | Org | GuideStar" &&
+    S.repair(Q, JSON.parse(JSON.stringify(s3))).storyOut.org.rounds.length === 1 && S.STORY_PARTS.indexOf("org") === -1);
   check("the same paste again isn't a new round", S.addRound(s3, "challenge", "First try") === false && s3.storyOut.challenge.rounds.length === 1);
   S.addRound(s3, "challenge", "Second try");
   check("a new paste is round 2, and the latest", s3.storyOut.challenge.rounds[1].n === 2 && S.latest(s3, "challenge") === "Second try");

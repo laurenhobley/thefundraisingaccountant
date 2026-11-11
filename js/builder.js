@@ -76,7 +76,7 @@
   }
   function refreshCheckZip() { var el = $("chk-zip"); if (el) el.textContent = zipWithPlace() || Q.flow.empty; }
   function needZipList() {
-    if (FACZip.place(S.get(state, "org.zip").text) === null) FACZip.load(function () { refreshZipPlace(); refreshCheckZip(); refreshReview(); refreshPackage(); });
+    if (FACZip.place(S.get(state, "org.zip").text) === null) FACZip.load(function () { refreshZipPlace(); refreshCheckZip(); refreshStep11(); refreshReview(); refreshPackage(); });
   }
 
   // The 1.1 check, laid out like Steve's Step 1.1 mockup: the organization
@@ -94,7 +94,35 @@
     }).join("");
     return '<div class="org-card"><span class="org-card-name">' + esc(S.trim(org.name.text) || F.empty) + '</span>' + (head ? '<span>' + esc(head) + '</span>' : "") + '</div>' +
       '<p>' + esc(C.text) + '</p>' +
-      '<div class="chk-table-wrap"><table class="chk-table"><thead><tr><th scope="col">' + esc(C.fieldHead) + '</th><th scope="col">' + esc(C.answerHead) + '</th><th scope="col"><span class="sr">' + esc(F.editLink) + '</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+      '<div class="chk-table-wrap"><table class="chk-table"><thead><tr><th scope="col">' + esc(C.fieldHead) + '</th><th scope="col">' + esc(C.answerHead) + '</th><th scope="col"><span class="sr">' + esc(F.editLink) + '</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+      step11Box();
+  }
+
+  // Step 1.1's deliverable (Lauren, Nov 11): the 1.1 prompt, which asks
+  // ROI.bot to answer in the layout of Steve's Step 1.1 mockup, with Copy and
+  // Open ROI.bot, and a box for ROI.bot's answer (each new paste a round,
+  // like Step 3's). Pasting is optional and never blocks Next.
+  function step11Prompt() {
+    var org = state.org;
+    return FACQuick.build(Q, { org: org.name.text, website: org.website.text, zip: org.zip.text }, FACZip.place(org.zip.text) || "");
+  }
+  function step11Box() {
+    var E = Q.step11, ST = Q.story, o = state.storyOut.org;
+    return '<div class="step11"><h3 class="lbl">' + esc(E.title) + '</h3><p class="hint">' + esc(E.intro) + '</p>' +
+      '<pre class="step-prompt" id="s11-prompt"></pre>' +
+      '<div class="actions"><button type="button" class="btn primary" id="copy11" data-act="copy11">' + esc(E.copyButton) + '</button>' + roiBotLink("openRoiBot11") + '</div>' +
+      '<p id="s11-msg" aria-live="polite" class="hint"></p>' +
+      '<div class="f"><label for="story-out">' + esc(E.outputLabel) + '</label><p class="hint">' + esc(E.outputHelp) + '</p>' +
+      '<textarea class="story-out" id="story-out" data-part="org">' + esc(o.draft || S.latest(state, "org")) + '</textarea></div>' +
+      '<div class="f"><span class="lbl">' + esc(ST.roundsTitle) + '</span><div id="story-rounds"></div></div></div>';
+  }
+  function refreshStep11() {
+    var pre = $("s11-prompt");
+    if (!pre) return;
+    pre.textContent = step11Prompt();
+    $("story-rounds").innerHTML = state.storyOut.org.rounds.slice().reverse().map(function (r) {
+      return '<details class="version"><summary>' + esc(Q.story.roundLabel.replace(/\{n\}/g, r.n)) + '</summary><pre class="version-text">' + esc(r.text) + '</pre></details>';
+    }).join("");
   }
 
   function heading(num, title, note) {
@@ -499,7 +527,7 @@
     else if (c.contains("takeaway")) state.assess.takeaway = el.value;
     else return false;
     unreview();
-    refreshStory(); refreshPackage();
+    refreshStory(); refreshStep11(); refreshPackage();
     save();
     return true;
   }
@@ -803,6 +831,7 @@
     $("next").hidden = state.step === steps.length - 1;
     refreshWhy();
     refreshStory();
+    refreshStep11();
     refreshPackage();
     refreshReview();
     refreshVersions();
@@ -1026,6 +1055,7 @@
     if (act === "downloadMd") { downloadPrompt(true); return; }
     if (act === "downloadPkgMd") { saveFile(FACExport.markdown(Q, FACExport.packageText(Q, state)), mdName(FACExport.PACKAGE_FILE)); say(Q.review.downloaded); return; }
     if (act === "downloadVersion") { downloadVersion(i); return; }
+    if (act === "copy11") { copyText(step11Prompt(), "s11-msg", Q.story.copied, $("s11-prompt")); return; }
     if (act === "copyStep") {
       var sp = S.steps(state)[state.step].of;
       if (sp === "outcome" && !state.storyApproved) return;

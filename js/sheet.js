@@ -69,7 +69,9 @@ var FACSheet = (function () {
       // the self-assessment.
       story: group(storyIds.map(function (id) { return { id: id }; })),
       storyApproved: false,
-      storyOut: { challenge: storyOut(), response: storyOut(), outcome: storyOut(), roi: storyOut() },
+      // "org" is Step 1.1's deliverable: ROI.bot's answer to the 1.1 prompt,
+      // pasted back on the 1.1 check (Steve's Step 1.1 mockup, Nov 11).
+      storyOut: { org: storyOut(), challenge: storyOut(), response: storyOut(), outcome: storyOut(), roi: storyOut() },
       funder: { challenge: null, response: null, outcome: null, roi: null },
       actions: [action(), action(), action()],
       assess: { ratings: ["", "", ""], takeaway: "" },
@@ -153,7 +155,7 @@ var FACSheet = (function () {
     copyGroup(s.wand, data.wand);
     copyGroup(s.story, data.story);
     if (data.storyApproved === true) s.storyApproved = true;
-    STORY_PARTS.forEach(function (p) {
+    ["org"].concat(STORY_PARTS).forEach(function (p) {
       var from = data.storyOut && data.storyOut[p], to = s.storyOut[p];
       if (from) {
         if (typeof from.draft === "string") to.draft = from.draft;
@@ -162,7 +164,7 @@ var FACSheet = (function () {
         else if (from.happy === true) to.choice = "keep";
         (from.rounds || []).forEach(function (r) { if (r && typeof r.n === "number" && typeof r.text === "string") to.rounds.push({ n: r.n, text: r.text }); });
       }
-      if (data.funder && typeof data.funder[p] === "string") s.funder[p] = data.funder[p];
+      if (p !== "org" && data.funder && typeof data.funder[p] === "string") s.funder[p] = data.funder[p];
     });
     if (data.actions && data.actions.length) s.actions = data.actions.slice(0, 3).map(function (a) {
       var x = action();

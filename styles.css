@@ -277,3 +277,7 @@ button.link { font: inherit; font-weight: 600; color: var(--accent); background:
 /* quick.html: the five questions, then the prompt. A follow-up line shows only when it has words. */
 #quick .fu-q:empty { display: none; }
 #q-result { gap: 16px; }
+
+/* Step 1.1's deliverable on the 1.1 check: the 1.1 prompt, Copy, Open ROI.bot, and the paste-back box. */
+.step11 { border-top: 1px solid var(--line); padding-top: 24px; display: grid; gap: 16px; min-width: 0; }
+.step11 h3 { margin: 0; font-size: 20px; }

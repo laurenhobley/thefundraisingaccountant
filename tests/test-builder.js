@@ -73,6 +73,20 @@ T.run("Builder screens (builder.html)", function (check) {
   check("the website's Edit goes back to it", $("counter").textContent === "Step 1 of 25" && document.activeElement.id === "f-org-website");
   $("next").click();
   check("its button says Next, and the progress bar keeps 1.1 current", $("next").textContent === FL.nextButton && parts().indexOf("1.1:current") === 0);
+  // Step 1.1's deliverable (Lauren, Nov 11): the 1.1 prompt, in the mockup's layout, then ROI.bot's answer pasted back.
+  var E11 = FAC_QUESTIONS.step11;
+  check("the check has Step 1.1's prompt, built from the member's own name, ZIP and website, asking for the mockup's layout",
+    document.querySelector("#screen .step11 h3").textContent === E11.title &&
+    $("s11-prompt").textContent === FACQuick.build(FAC_QUESTIONS, { org: "Test Org", website: "", zip: "77001" }, FACZip.place("77001") || "") &&
+    $("s11-prompt").textContent.indexOf("Task:\n" + E11.task) > -1);
+  check("with Copy the Step 1.1 prompt and Open ROI.bot in a new tab", $("copy11").textContent === E11.copyButton &&
+    $("openRoiBot11").getAttribute("href") === FAC_QUESTIONS.roiBotUrl && $("openRoiBot11").target === "_blank");
+  var out11 = $("story-out");
+  out11.value = "Name | Test Org | GuideStar"; out11.dispatchEvent(new Event("input", { bubbles: true })); out11.dispatchEvent(new Event("change", { bubbles: true }));
+  check("ROI.bot's pasted answer is kept as round 1", saved().storyOut.org.rounds.length === 1 && saved().storyOut.org.rounds[0].text === "Name | Test Org | GuideStar" &&
+    document.querySelectorAll("#story-rounds .version").length === 1);
+  check("and goes into the package, under its own heading", FACExport.packageText(FAC_QUESTIONS, FACSheet.load(FAC_QUESTIONS)).indexOf("== " + E11.packageSection + " ==\nName | Test Org | GuideStar\n") > -1);
+  check("pasting is optional: no follow-ups on the check", shown(".fu") === 0);
   $("next").click();
   check("then Program 1 of 1", $("counter").textContent === "Step 3 of 25" && /Program 1 of 1/.test(title()));
   check("on a program: 1.1 done (teal line to 1.2), 1.2 current", parts() === "1.1:done 1.2:current 1.3:todo 1.4:todo 1.5:todo" && document.querySelectorAll("#parts li")[1].classList.contains("after-done"));

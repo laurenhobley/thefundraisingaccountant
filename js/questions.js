@@ -68,18 +68,36 @@ var FAC_QUESTIONS = {
   },
 
   // quick.html: only the required fields of Screen 1 in Steve's Step 1
-  // flowchart (Organization, Website, ZIP; Lauren, 2026-11-09), then a short
-  // prompt. The labels are screen1's. The Task is drafted from the flowchart
-  // (1.1: draft basic info, recommend keywords) until Steve sends his
-  // Step 1.1 prompt. Draft for Steve, all of it.
+  // flowchart (Organization, Website, ZIP; Lauren, 2026-11-09), then the
+  // Step 1.1 prompt (step11.task, below). The labels are screen1's.
+  // Draft for Steve, all of it.
   quick: {
     pageTitle: "Get started in three questions",
     intro: "Answer these three questions and press Next. You'll get a prompt that asks ROI.bot to research your organization.",
     promptTitle: "Your prompt",
     promptIntro: "When it looks right, press “Yes, copy my prompt” and paste it into ROI.bot.",
-    task: "Read our website and public profiles. Draft our basic info (name, location, area served, mission in our exact words) and recommend 10–15 keywords in four groups: Issue, People served, Services, Location. List your sources.",
     fileName: "roi-bot-quick-prompt.txt",
     fullBuilder: "Want to tell the whole story? Use the full prompt builder."
+  },
+
+  // Step 1.1's deliverable (Lauren, 2026-11-11): the 1.1 prompt asks ROI.bot
+  // to answer in the layout of Steve's Step 1.1 mockup (Field / What I found
+  // / Source; keywords in five groups; "Two things to check"). Used by
+  // quick.html and by the builder's 1.1 check, where the member pastes the
+  // answer back. Draft for Steve, all of it.
+  step11: {
+    title: "Get your Step 1.1 from ROI.bot",
+    intro: "Copy this prompt into ROI.bot. It reads your website and public profiles and sends back your organization info and keywords, with their sources. Then paste its answer below.",
+    copyButton: "Copy the Step 1.1 prompt",
+    outputLabel: "Paste ROI.bot's answer here",
+    outputHelp: "Optional. Each new answer you paste is kept as a round, in this browser only, and goes into your package.",
+    task: "Read our website and public profiles (for example GuideStar, local news and social media). Then give us Step 1.1, Your Organization, in this format. " +
+      "First, a table with the columns Field, What I found and Source, and these rows: Name; Website; Location (street address, and whether it matches our ZIP); " +
+      "Area served; Mission (our exact words, 125 characters or fewer); Social media. " +
+      "Then our keywords, in our own words, in five groups: Issue, People served, Services, Location and Results. " +
+      "Then “Two things to check”: what you couldn't find or confirm, as questions for us. " +
+      "List your sources with their dates. If you can't find something, say so instead of guessing.",
+    packageSection: "Step 1.1 Your Organization (from ROI.bot)"
   },
 
   // Under the ZIP box: the place for that ZIP, from GeoNames' free ZIP list
