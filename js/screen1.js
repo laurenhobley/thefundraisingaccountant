@@ -2,7 +2,7 @@
   screen1.js: Let's Get Started (index.html), from FAC's ROI.bot Version 2
   build plan. Two screens, both 1.1 in the progress bar: Screen 1 asks for
   the organization name, website and ZIP (the ZIP shows its place to
-  confirm); Screen 2 asks for the member's name, title and phone. Each
+  confirm); Screen 2 asks for the member's name, title, email and phone. Each
   screen's Next stays off until its fields are filled; Screen 2 has
   ← Previous. What the member types is kept in this browser
   (FACSheet.SCREEN1's key), and Next on Screen 2 goes to the builder, which
@@ -15,6 +15,8 @@
   function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
   function v(id) { return $(id).value.replace(/^\s+|\s+$/g, ""); }
   function zipOk() { return /^\d{5}(-\d{4})?$/.test(v("s1-zip")); }
+  // An email looks like name@place.org: no spaces, one @, a dot after it.
+  function emailOk() { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v("s2-email")); }
   // A phone number has 10 to 15 digits, whatever else is typed around them.
   function phoneOk() { var n = v("s2-phone").replace(/\D/g, "").length; return n >= 10 && n <= 15; }
 
@@ -29,7 +31,7 @@
       '<span class="part-label">' + esc(name) + '</span></li>';
   }).join("");
 
-  var labels = { "s1-org": "org", "s1-website": "website", "s1-zip": "zip", "s2-name": "name", "s2-title": "jobTitle", "s2-phone": "phone" };
+  var labels = { "s1-org": "org", "s1-website": "website", "s1-zip": "zip", "s2-name": "name", "s2-title": "jobTitle", "s2-email": "email", "s2-phone": "phone" };
   $("brand").textContent = Q.brand;
   $("title").textContent = Q.title;
   for (var id in labels) { $(id + "-label").textContent = T[labels[id]]; $(id).placeholder = T[labels[id] + "Placeholder"]; }
@@ -38,7 +40,7 @@
   $("nextLine").textContent = T.nextLine;
 
   // What the member typed before, if they come back.
-  var keys = { org: "s1-org", website: "s1-website", zip: "s1-zip", name: "s2-name", title: "s2-title", phone: "s2-phone" };
+  var keys = { org: "s1-org", website: "s1-website", zip: "s1-zip", name: "s2-name", title: "s2-title", email: "s2-email", phone: "s2-phone" };
   try {
     var saved = JSON.parse(localStorage.getItem(STORE) || "null");
     if (saved) for (var k in keys) $(keys[k]).value = saved[k] || "";
@@ -62,7 +64,7 @@
 
   function update() {
     $("next1").disabled = !(v("s1-org") && v("s1-website") && zipOk());
-    $("next2").disabled = !(v("s2-name") && v("s2-title") && phoneOk());
+    $("next2").disabled = !(v("s2-name") && v("s2-title") && emailOk() && phoneOk());
     showPlace();
     var data = {};
     for (var k in keys) data[k] = v(keys[k]);

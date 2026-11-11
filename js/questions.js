@@ -58,6 +58,10 @@ var FAC_QUESTIONS = {
     namePlaceholder: "First and last name",
     jobTitle: "Title",
     jobTitlePlaceholder: "e.g. Executive Director",
+    // Steve's flowchart Screen 2: Name · Title · Email · Phone (Lauren, Nov 11). Kept in this
+    // browser only until HubSpot is connected. Placeholder: draft for Steve.
+    email: "Email",
+    emailPlaceholder: "name@yourorganization.org",
     phone: "Phone",
     phonePlaceholder: "Cell phone number",
     nextLine: "Next: tell us about your programs."
@@ -72,28 +76,10 @@ var FAC_QUESTIONS = {
     pageTitle: "Get started in three questions",
     intro: "Answer these three questions and press Next. You'll get a prompt that asks ROI.bot to research your organization.",
     promptTitle: "Your prompt",
-    promptIntro: "Read it, tick “I reviewed this”, then copy or download it and paste it into ROI.bot.",
+    promptIntro: "When it looks right, press “Yes, copy my prompt” and paste it into ROI.bot.",
     task: "Read our website and public profiles. Draft our basic info (name, location, area served, mission in our exact words) and recommend 10–15 keywords in four groups: Issue, People served, Services, Location. List your sources.",
     fileName: "roi-bot-quick-prompt.txt",
     fullBuilder: "Want to tell the whole story? Use the full prompt builder."
-  },
-
-  // Key Words in four groups (Steve's Step 1.1 instructions: 10–15 in the
-  // organization's own words; a group never goes empty without asking).
-  // The groups are the kwIssue, kwPeople, kwServices and kwLocation
-  // questions in Organization Info. Draft for Steve, apart from the title.
-  keywords: {
-    title: "Key Words",
-    intro: "10–15 keywords in your organization's own words, separated by commas, in four groups.",
-    count: "{n} keywords",
-    countHint: "(10–15 works best)",
-    // {group} is the group's name, e.g. "Issue".
-    missing: [
-      "Add at least one {group} keyword.",
-      "Still no {group} keyword. If you have none, you can keep it empty."
-    ],
-    keepButton: "Keep it empty",
-    kept: "Kept empty. Add a keyword any time."
   },
 
   // Under the ZIP box: the place for that ZIP, from GeoNames' free ZIP list
@@ -106,7 +92,7 @@ var FAC_QUESTIONS = {
   // "Fill from a document" on Organization Info (FAC's plan). Draft for Steve.
   documents: {
     title: "Fill from a document (optional)",
-    intro: "Paste text from your own document, or choose a file. The builder finds answers written the way FAC's sheet writes them (for example “Mission Statement: …” or “Program Name: …”), plus a web address and a ZIP code. Nothing is uploaded or saved: the document is read in this browser only.",
+    intro: "Paste text from your own document, or choose a file. The builder finds answers written the way FAC's sheet writes them (for example “Name: …” or “Program Name: …”), plus a web address and a ZIP code. Nothing is uploaded or saved: the document is read in this browser only.",
     fileLabel: "Choose a file (Word .docx, PDF or .txt)",
     reading: "Reading {file}…",
     readDone: "Read {file}.",
@@ -139,11 +125,11 @@ var FAC_QUESTIONS = {
     title: "How to use the ROI.bot prompt builder",
     intro: "This page walks you through FAC's ROI.bot prompt sheet, then gives you one finished prompt to paste into ROI.bot.",
     steps: [
-      "Gather what you need: your mission statement, your programs in order of priority, and what each program delivered, with numbers and the year.",
+      "Gather what you need: your programs in order of priority, and what each program delivered, with numbers and the year.",
       "Answer one section at a time and press Next. Your answers are saved in this browser, so you can stop and come back later.",
       "If a question appears under an answer, it's asking for something ROI.bot needs, such as a year or a source. Fix the answer, or keep it as it is and it will be marked Unsupported.",
       "Whenever an answer includes a number, say where it comes from: Known (add the source), Reasonable estimate (say how you got it) or Unsupported.",
-      "On the last screen, read your finished prompt. Tick “I reviewed this”, then copy it or download it.",
+      "On the last screen, read your finished prompt. Press “Yes, copy my prompt”, or download it.",
       "Open ROI.bot and paste the prompt in."
     ],
     privacy: "Nothing you type is sent anywhere. Your answers stay in this browser until you copy or download them.",
@@ -177,15 +163,10 @@ var FAC_QUESTIONS = {
         { id: "zip", label: "Location: ZIP code", kind: "zip", required: true, placeholder: "5-digit ZIP", help: "Where you do most of your work. ROI.bot uses your ZIP code to find local and state figures." },
         // The place shown under the ZIP box comes from GeoNames' ZIP list (zipPlace, below).
         // Not required here: Screen 1 already asks for it (Steve's Step 1 flowchart,
-        // Nov 8: at 1.1 the member confirms name, location, mission and keywords).
-        { id: "website", label: "Web Site", kind: "url", required: false, help: "Your main web address." },
-        { id: "mission", label: "Mission Statement", kind: "long", required: true, help: "Your mission statement, as you share it with donors." },
-        // Key Words in four groups (Steve's Step 1.1 instructions): each a
-        // comma-separated list, shown as chips. Wording in keywords, below.
-        { id: "kwIssue", label: "Issue", kind: "keywords", required: true, help: "The problem you work on, for example family homelessness." },
-        { id: "kwPeople", label: "People served", kind: "keywords", required: true, help: "Who you serve, in your words, for example homeless children and families." },
-        { id: "kwServices", label: "Services", kind: "keywords", required: true, help: "What you do, for example emergency shelter, case management." },
-        { id: "kwLocation", label: "Location", kind: "keywords", required: true, help: "Your city, area and counties served." }
+        // Nov 8).
+        { id: "website", label: "Web Site", kind: "url", required: false, help: "Your main web address." }
+        // No Mission Statement or Key Words here (Lauren, 2026-11-11): ROI.bot
+        // drafts them from the website (Steve's Step 1 flowchart, 1.1).
       ]
     },
     {
@@ -280,12 +261,11 @@ var FAC_QUESTIONS = {
     title: "Review your prompt",
     // The Step 2 review is the workbook's 2.5 Build the Prompt.
     title2: "Build the Prompt",
-    text: "Check the list and the finished prompt below. When it looks right, tick the box to unlock Copy and Download, then paste the prompt into ROI.bot.",
+    // No "I reviewed this" tick: members just press Yes (Lauren, 2026-11-09). Draft for Steve.
+    text: "Check the list and the finished prompt below. When it looks right, press “Yes, copy my prompt” and paste it into ROI.bot.",
     allClear: "Every answer and figure is settled.",
     previewTitle: "Your finished prompt",
-    checkbox: "I reviewed this",
-    locked: "Tick “I reviewed this” to unlock Copy and Download.",
-    copyButton: "Copy prompt",
+    copyButton: "Yes, copy my prompt",
     downloadButton: "Download .txt",
     downloadMdButton: "Download .md",
     copied: "Copied. Paste it into ROI.bot.",
@@ -317,7 +297,7 @@ var FAC_QUESTIONS = {
     happyLine: "Once you are happy with your {thing}, press Next to continue.",
     // 1.5 is optional, so it also offers the flowchart's "Skip to Step 2".
     skipToStep2: "Skip to Step 2",
-    happy: { org: "keywords", rank: "stack ranking", outcomes: "outputs to outcomes", pain: "context", benchmarks: "context", constraints: "constraints",
+    happy: { org: "organization info", rank: "stack ranking", outcomes: "outputs to outcomes", pain: "context", benchmarks: "context", constraints: "constraints",
       why: "pain statements", regular: "Donate Now table", major: "Major Donor Ladder" },
     editLink: "Edit",
     empty: "(blank)",
@@ -328,7 +308,7 @@ var FAC_QUESTIONS = {
     checkpoints: {
       // Laid out like Steve's Step 1.1 mockup (Nov 9); "Your answer" stands in
       // for its "What I found" until ROI.bot does the research. Draft for Steve.
-      org: { title: "Happy with your keywords?", text: "Check your organization info and key words. Edit anything that isn't right, then continue.",
+      org: { title: "Happy with your organization info?", text: "Check your organization info. Edit anything that isn't right, then continue.",
         fieldHead: "Field", answerHead: "Your answer" },
       programs: { title: "Happy with your stack ranking?", titleUnranked: "Happy with your programs?", text: "Check your programs and their order. Edit anything that isn't right, then continue." },
       outcomes: { title: "Happy with your outputs to outcomes?", text: "Check what each program did and what changed. Edit anything that isn't right." },
@@ -475,9 +455,8 @@ var FAC_QUESTIONS = {
   },
   packageText: {
     title: "Your package",
-    text: "Everything you made, in one file you can keep. Tick the box to unlock Copy and Download.",
-    checkbox: "I reviewed my package",
-    copyButton: "Copy package",
+    text: "Everything you made, in one file you can keep.",
+    copyButton: "Yes, copy my package",
     downloadButton: "Download package (.txt)",
     downloadMdButton: "Download package (.md)",
     heading: "ROI.bot package",

@@ -60,13 +60,13 @@ T.runAsync("Three questions: the page (quick.html)", function (check, done) {
       $("q-next").click();
       check("all three in: the prompt shows, built from the answers", !$("q-result").hidden &&
         $("q-preview").textContent === w.FACQuick.build(Q, { org: "Riverbend Food Bank", website: "https://example.org", zip: "77001" }, w.FACZip.place("77001") || ""));
-      check("Copy and Download are locked until \"I reviewed this\" is ticked; Open ROI.bot hidden", $("q-copy").disabled && $("q-download").disabled && $("q-open").hidden &&
-        $("q-msg").textContent === Q.review.locked);
-      $("q-reviewed").click();
-      check("ticking it unlocks them, and Open ROI.bot opens FAC's ROI.bot in a new tab", !$("q-copy").disabled && !$("q-download").disabled && !$("q-open").hidden &&
+      check("no \"I reviewed this\" tick: \"Yes, copy my prompt\" and Download are on right away; Open ROI.bot waits", !$("q-reviewed") &&
+        $("q-copy").textContent === Q.review.copyButton && !$("q-copy").disabled && !$("q-download").disabled && $("q-open").hidden);
+      $("q-copy").click();
+      check("one click on Yes copies it, and Open ROI.bot shows, opening FAC's ROI.bot in a new tab", !$("q-open").hidden &&
         $("q-open").getAttribute("href") === Q.roiBotUrl && $("q-open").target === "_blank");
       type("q-org", "Riverbend Food Bank ");
-      check("changing an answer clears the tick", !$("q-reviewed").checked && $("q-copy").disabled);
+      check("changing an answer means copying again: Open ROI.bot waits, Yes stays on", $("q-open").hidden && !$("q-copy").disabled);
       var kept = JSON.parse(w.localStorage.getItem("roi-screen1-v1"));
       check("kept in this browser under Screen 1's key, for the builder too", kept.org === "Riverbend Food Bank" && kept.zip === "77001" && kept.website === "https://example.org");
       type("q-website", "");

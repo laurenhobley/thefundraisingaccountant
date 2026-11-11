@@ -3,7 +3,8 @@
   Step 1 flowchart (Organization, Website, ZIP), then a short prompt for
   ROI.bot. All three are required. Next asks a follow-up under each one that's missing
   (and a ZIP that isn't 5 digits); once all three are in, the prompt shows,
-  and Copy and Download stay locked until "I reviewed this" is ticked.
+  with "Yes, copy my prompt" and Download (no review tick: Lauren, Nov 9).
+  Open ROI.bot shows once the prompt is copied or downloaded.
   The answers are kept in this browser under Screen 1's key, so the builder
   and Screen 1 share them (what Screen 1 saved for Screen 2 is left alone).
   Nothing is sent anywhere. FACQuick.build makes the prompt, for the tests.
@@ -53,7 +54,6 @@ var FACQuick = (function () {
     $("q-next").textContent = Q.flow.nextButton;
     $("q-result-title").textContent = K.promptTitle;
     $("q-result-intro").textContent = K.promptIntro;
-    $("q-reviewed-label").textContent = Q.review.checkbox;
     $("q-copy").textContent = Q.review.copyButton;
     $("q-download").textContent = Q.review.downloadButton;
     $("q-open").textContent = Q.openRoiBot;
@@ -81,11 +81,11 @@ var FACQuick = (function () {
       });
       return m;
     }
+    var done = false;
     function lock() {
-      var ok = $("q-reviewed").checked;
-      $("q-copy").disabled = $("q-download").disabled = !ok;
-      $("q-open").hidden = !ok;
-      $("q-msg").textContent = ok ? "" : Q.review.locked;
+      // Open ROI.bot once this version of the prompt is copied or downloaded.
+      $("q-open").hidden = !done;
+      if (!done) $("q-msg").textContent = "";
     }
     function refreshPrompt() {
       if ($("q-result").hidden) return;
@@ -102,8 +102,8 @@ var FACQuick = (function () {
 
     $("quick").addEventListener("input", function () {
       save(); showPlace(); showFollowUps();
-      // Any change clears the tick, so the member reviews what they copy.
-      $("q-reviewed").checked = false; lock(); refreshPrompt();
+      // Any change means a new prompt: copy it again.
+      done = false; lock(); refreshPrompt();
     });
     $("quick").addEventListener("submit", function (e) {
       e.preventDefault();
@@ -111,27 +111,26 @@ var FACQuick = (function () {
       var m = showFollowUps();
       if (m.length) { $(ids[m[0]]).focus(); return; }
       $("q-result").hidden = false;
-      $("q-reviewed").checked = false; lock(); refreshPrompt();
+      done = false; lock(); refreshPrompt();
       $("q-result-title").focus();
     });
-    $("q-reviewed").addEventListener("change", lock);
     $("q-copy").addEventListener("click", function () {
-      if (!$("q-reviewed").checked) return;
       var text = $("q-preview").textContent;
       function fallback() {
         var range = document.createRange(); range.selectNodeContents($("q-preview"));
         var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
         $("q-msg").textContent = Q.review.selected;
       }
+      done = true; lock();
       try { navigator.clipboard.writeText(text).then(function () { $("q-msg").textContent = Q.review.copied; }, fallback); }
       catch (e) { fallback(); }
     });
     $("q-download").addEventListener("click", function () {
-      if (!$("q-reviewed").checked) return;
       var url = URL.createObjectURL(new Blob([$("q-preview").textContent], { type: "text/plain;charset=utf-8" }));
       var a = document.createElement("a"); a.href = url; a.download = K.fileName;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      done = true; lock();
       $("q-msg").textContent = Q.review.downloaded;
     });
     showPlace(); lock();

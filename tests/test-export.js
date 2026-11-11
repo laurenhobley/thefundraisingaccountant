@@ -12,8 +12,7 @@ T.run("Export (js/export.js)", function (check) {
 
   S.addProgram(Q, s); S.addProgram(Q, s); S.addItem(s, "pain"); S.addItem(s, "benchmarks");
   set("org.name", "Riverbend Food Bank"); set("org.zip", "77999");
-  set("org.website", "https://example.org"); set("org.mission", "We feed families in need.");
-  set("org.kwIssue", "food insecurity"); set("org.kwServices", "weekend meals,  food pantry, "); keep("org.kwPeople"); keep("org.kwLocation");
+  set("org.website", "https://example.org");
   set("programs.0.name", "Weekend Meals"); set("programs.0.description", "Weekend meal kits for students");
   set("programs.0.outputs", "12,400 meals for 300 students in 2024"); source("programs.0.outputs", "known", "2024 annual report");
   set("programs.1.name", "Senior Pantry"); set("programs.1.description", "Monthly groceries for seniors");
@@ -34,8 +33,7 @@ T.run("Export (js/export.js)", function (check) {
     "Name: Riverbend Food Bank",
     "Location (include zip): 77999",
     "Web Site: https://example.org",
-    "Mission Statement: We feed families in need.",
-    "Key Words: Issue: food insecurity; Services: weekend meals, food pantry",
+    // No Mission Statement or Key Words lines since Nov 11: ROI.bot drafts them.
     "",
     "Programs (in order of priority)",
     "1. Program Name: Weekend Meals",

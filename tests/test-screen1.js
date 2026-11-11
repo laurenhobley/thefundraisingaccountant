@@ -56,20 +56,30 @@ T.runAsync("Let's Get Started (index.html)", function (check, done) {
       type("s1-zip", "77001");
       check("Screen 1 filled: Next is on", !$("next1").disabled);
       $("next1").click();
-      check("Next goes to Screen 2: Name, Title, Phone, with ← Previous, the new intro and the next-step line", $("s1").hidden && !$("s2").hidden &&
-        $("s2-name-label").textContent === T1.name && $("s2-title-label").textContent === T1.jobTitle && $("s2-phone-label").textContent === T1.phone &&
+      check("Next goes to Screen 2: Name, Title, Email, Phone (Steve's flowchart), with ← Previous, the new intro and the next-step line", $("s1").hidden && !$("s2").hidden &&
+        Array.prototype.map.call(d.querySelectorAll("#s2 input"), function (e) { return e.id; }).join() === "s2-name,s2-title,s2-email,s2-phone" &&
+        $("s2-name-label").textContent === T1.name && $("s2-title-label").textContent === T1.jobTitle && $("s2-email-label").textContent === T1.email &&
+        $("s2-email").type === "email" && $("s2-email").getAttribute("autocomplete") === "email" && w.getComputedStyle($("s2-email")).minHeight === w.getComputedStyle($("s2-name")).minHeight &&
+        $("s2-phone-label").textContent === T1.phone &&
         $("prev2").textContent === Q.flow.previousButton && $("intro").textContent === T1.intro2 && !$("nextLine").hidden && $("nextLine").textContent === T1.nextLine);
       check("no promise of a texted code until one can be sent", !/text you a code/i.test(d.body.textContent));
       $("prev2").click();
       check("← Previous goes back to Screen 1, answers kept", !$("s1").hidden && $("s2").hidden && $("s1-org").value === "Riverbend Food Bank");
       $("next1").click();
+      ["s2-name", "s2-title", "s2-email", "s2-phone"].forEach(function (id) { type(id, ""); });
       check("Next on Screen 2 is off until it's filled", $("next2").disabled);
-      type("s2-name", "Jordan Rivera"); type("s2-title", "Executive Director"); type("s2-phone", "713-555");
+      type("s2-name", "Jordan Rivera"); type("s2-title", "Executive Director"); type("s2-phone", "(713) 555-0100");
+      check("still off without an email (required)", $("next2").disabled);
+      type("s2-email", "jordan@example");
+      check("still off with an email that isn't one (no dot after the @)", $("next2").disabled);
+      type("s2-email", "jordan@example.org");
+      type("s2-phone", "713-555");
       check("still off with a phone number too short", $("next2").disabled);
       type("s2-phone", "(713) 555-0100");
       check("all filled: Next is on", !$("next2").disabled);
       var kept = JSON.parse(w.localStorage.getItem("roi-screen1-v1"));
-      check("everything is kept in this browser only, for later", kept.org === "Riverbend Food Bank" && kept.name === "Jordan Rivera" && kept.title === "Executive Director" && kept.phone === "(713) 555-0100");
+      check("everything is kept in this browser only, for later", kept.org === "Riverbend Food Bank" && kept.name === "Jordan Rivera" && kept.title === "Executive Director" &&
+        kept.email === "jordan@example.org" && kept.phone === "(713) 555-0100");
       w.FACZip.load(function () {
         try {
           type("s1-zip", "77001");

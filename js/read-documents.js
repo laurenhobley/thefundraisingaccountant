@@ -2,7 +2,7 @@
   read-documents.js: finds suggested answers in the member's own document
   text (pasted, or read from a Word or PDF file in this browser). No AI and
   nothing is sent anywhere: it only finds what is plainly written, the way
-  FAC's sheet writes it ("Mission Statement: ...", "Program Name: ..."),
+  FAC's sheet writes it ("Name: ...", "Program Name: ..."),
   plus a web address and a ZIP code anywhere in the text.
 
   Each suggestion is { path, text, quote }: where it goes, the answer, and
@@ -17,14 +17,15 @@ var FACRead = (function () {
     // "Location (include zip): Port Jensen, ME 04999" gives only the ZIP.
     { path: "org.zip", re: /^location\b[^:]*:\s*/i, zip: true },
     { path: "org.website", re: /^web\s?site\s*:\s*/i },
-    { path: "org.mission", re: /^mission(\s+statement)?\s*:\s*/i, long: true },
-    // Key Words in four groups. A plain "Key Words:" list doesn't say which
-    // group, so it goes to Issue for the member to sort. "Location:" right
+    // Mission Statement and Key Words aren't asked any more (Lauren, Nov 11).
+    // Their lines are still recognized, so they don't run on into other
+    // answers, but nothing is suggested from them ("skip"). "Location:" right
     // after a keyword group is that group, not the ZIP's line (below).
-    { path: "org.kwIssue", re: /^key\s?words\s*:\s*/i, long: true, kw: true },
-    { path: "org.kwIssue", re: /^issues?\s*:\s*/i, long: true, kw: true },
-    { path: "org.kwPeople", re: /^people\s+served\s*:\s*/i, long: true, kw: true },
-    { path: "org.kwServices", re: /^services\s*:\s*/i, long: true, kw: true }
+    { path: "", re: /^mission(\s+statement)?\s*:\s*/i, long: true, skip: true },
+    { path: "", re: /^key\s?words\s*:\s*/i, long: true, kw: true, skip: true },
+    { path: "", re: /^issues?\s*:\s*/i, long: true, kw: true, skip: true },
+    { path: "", re: /^people\s+served\s*:\s*/i, long: true, kw: true, skip: true },
+    { path: "", re: /^services\s*:\s*/i, long: true, kw: true, skip: true }
   ];
   var KW_LOCATION = /^location\s*:\s*/i;
   var PROGRAM = [
@@ -97,7 +98,6 @@ var FACRead = (function () {
         list = ""; item = null;
         if (l.org.zip && afterKw && KW_LOCATION.test(bare(line))) {
           var kl = take(i, KW_LOCATION, true);
-          add("org.kwLocation", kl.value, kl.quote);
           i = kl.next - 1;
           continue;
         }
@@ -106,7 +106,7 @@ var FACRead = (function () {
         if (l.org.zip) {
           var z = ZIP.exec(o.value);
           if (z) add("org.zip", z[0], o.quote);
-        } else add(l.org.path, l.org.path === "org.website" ? trim(o.value).replace(/[.,;:]+$/, "") : o.value, o.quote);
+        } else if (!l.org.skip) add(l.org.path, l.org.path === "org.website" ? trim(o.value).replace(/[.,;:]+$/, "") : o.value, o.quote);
         i = o.next - 1;
         continue;
       }

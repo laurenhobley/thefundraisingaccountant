@@ -25,25 +25,28 @@ T.run("Builder screens (builder.html)", function (check) {
   check("progress bar: Step 1 tab current, its five parts, 1.1 current", tabs() === "current todo todo" && parts() === "1.1:current 1.2:todo 1.3:todo 1.4:todo 1.5:todo" &&
     document.querySelector("#parts .current .part-label").textContent === "Your Organization");
   check("← Previous on step 1 goes back to Let's Get Started, Screen 2", $("back").getAttribute("data-to") === "index.html#you" && $("back").textContent === FAC_QUESTIONS.flow.previousButton);
-  check("Organization Info ends with \"Once you are happy with your keywords, press Next to continue.\"", document.querySelector("#screen .happy-line").textContent === FAC_QUESTIONS.flow.happyLine.replace("{thing}", "keywords") && $("next").textContent === "Next");
+  check("Organization Info asks only Name, ZIP code and Website: no Mission Statement or Key Words (Nov 11)",
+    Array.prototype.map.call(document.querySelectorAll("#screen .ans"), function (e) { return e.id; }).join() === "f-org-name,f-org-zip,f-org-website" &&
+    !$("f-org-mission") && !document.querySelector("#screen .kw-group, #screen .chips"));
+  check("Organization Info ends with \"Once you are happy with your organization info, press Next to continue.\"", document.querySelector("#screen .happy-line").textContent === FAC_QUESTIONS.flow.happyLine.replace("{thing}", "organization info") && $("next").textContent === "Next");
   check("no follow-ups before Next is pressed", shown(".fu") === 0);
 
   $("next").click();
   check("Next with blanks stays on Step 1", $("counter").textContent === "Step 1 of 25");
-  check("first Next: a follow-up under each of the 7 required answers (4 of them keyword groups)", shown(".fu") === 7);
+  check("first Next: a follow-up under each of the 2 required answers, Name and ZIP", shown(".fu") === 2);
   check("the website isn't required here (Screen 1 asks for it): no follow-up, no asterisk", fu("f-org-website") === "" &&
-    !document.querySelector('label[for="f-org-website"] .req') && !!document.querySelector('label[for="f-org-mission"] .req'));
-  check("first follow-up wording, and the keyword group's own", fu("f-org-name") === F.missing[0] && fu("f-org-zip") === F.missingZip[0] &&
-    fu("f-org-kwPeople") === FAC_QUESTIONS.keywords.missing[0].replace("{group}", "People served"));
+    !document.querySelector('label[for="f-org-website"] .req') && !!document.querySelector('label[for="f-org-name"] .req'));
+  check("first follow-up wording", fu("f-org-name") === F.missing[0] && fu("f-org-zip") === F.missingZip[0]);
   check("no Skip buttons after one follow-up", shown(".fu-skip") === 0);
   check("cursor goes to the first missing answer", document.activeElement.id === "f-org-name");
 
   $("next").click();
   check("second Next: second follow-up wording", fu("f-org-name") === F.missing[1] && fu("f-org-zip") === F.missingZip[1]);
-  check("second Next: a Skip button for each, \"Keep it empty\" for keyword groups", shown(".fu-skip") === 7 && $("f-org-kwIssue-fu").querySelector(".fu-skip").textContent === FAC_QUESTIONS.keywords.keepButton);
-
+  check("second Next: a Skip button for each", shown(".fu-skip") === 2);
+  skip("f-org-name");
+  check("Skip marks it skipped and Unsupported", !$("f-org-name-skipped").hidden && fu("f-org-name") === "" && saved().org.name.skipped === true);
   type("f-org-name", "Test Org");
-  check("answering hides its follow-up", fu("f-org-name") === "");
+  check("typing an answer clears the skipped flag and its follow-up", $("f-org-name-skipped").hidden && saved().org.name.skipped === false && fu("f-org-name") === "");
   type("f-org-zip", "7700");
   check("ZIP 7700 keeps its follow-up", fu("f-org-zip") !== "");
   type("f-org-zip", "77001");
@@ -52,47 +55,28 @@ T.run("Builder screens (builder.html)", function (check) {
   check("browsers can tell the ZIP, name and website boxes apart (not a driver's license)",
     $("f-org-zip").name === "postal-code" && $("f-org-zip").getAttribute("autocomplete") === "postal-code" &&
     $("f-org-name").getAttribute("autocomplete") === "organization" && $("f-org-website").getAttribute("autocomplete") === "url");
-  skip("f-org-mission");
-  check("Skip marks it skipped and Unsupported", !$("f-org-mission-skipped").hidden && fu("f-org-mission") === "" && saved().org.mission.skipped === true);
-  type("f-org-mission", "We help families");
-  check("typing an answer clears the skipped flag", $("f-org-mission-skipped").hidden && saved().org.mission.skipped === false);
-  check("no number: no label box", $("f-org-mission-lab").hidden);
-  type("f-org-mission", "We help 400 families");
-  check("number typed: label box appears", !$("f-org-mission-lab").hidden);
-
-  $("next").click();
-  check("Next still blocked by the four keyword groups", $("counter").textContent === "Step 1 of 25" && shown(".fu") === 4);
-  type("f-org-kwIssue", "homelessness, safety"); type("f-org-kwPeople", "families"); type("f-org-kwServices", "shelter");
-  check("keywords show as chips, with the total under the groups", document.querySelectorAll("#f-org-kwIssue-chips .chip").length === 2 &&
-    $("kw-count").textContent === FAC_QUESTIONS.keywords.count.replace("{n}", "4") + " " + FAC_QUESTIONS.keywords.countHint);
-  skip("f-org-kwLocation");
-  check("a group kept empty gets a quiet note, not Unsupported", $("f-org-kwLocation-skipped").textContent === FAC_QUESTIONS.keywords.kept && $("f-org-kwLocation-skipped").classList.contains("noted"));
   $("next").click();
 
-  // ---------- Flowchart check after 1.1: "Happy with your keywords?" ----------
+  // ---------- Flowchart check after 1.1: "Happy with your organization info?" ----------
   var FL = FAC_QUESTIONS.flow;
   function checkRows() { return Array.prototype.map.call(document.querySelectorAll("#screen .checklist li"), function (li) { return li.textContent; }); }
-  check("all answered or skipped: Next goes to the keywords check (Steve's flowchart)", $("counter").textContent === "Step 2 of 25" && title().indexOf(FL.checkpoints.org.title) > -1);
-  // Laid out like Steve's Step 1.1 mockup: the organization at the top, a Field / Your answer table, key words as chips by group.
+  check("all answered: Next goes to the 1.1 check", $("counter").textContent === "Step 2 of 25" && title().indexOf(FL.checkpoints.org.title) > -1);
+  // Laid out like Steve's Step 1.1 mockup: the organization at the top and a Field / Your answer table.
   var orgRows = Array.prototype.map.call(document.querySelectorAll("#screen .chk-table tbody tr"), function (tr) { return tr.textContent; });
   check("the organization's name and ZIP sit in the box at the top (no website yet)", document.querySelector("#screen .org-card").textContent === "Test Org77001");
-  check("a Field / Your answer table: name, ZIP, website, mission, each with Edit", orgRows.length === 4 && orgRows[0].indexOf("Test Org") > -1 &&
-    orgRows[1].indexOf("77001") > -1 && orgRows[2].indexOf(FL.empty) > -1 && orgRows[3].indexOf("We help 400 families") > -1 &&
+  check("a Field / Your answer table: name, ZIP, website, each with Edit; no mission or key words", orgRows.length === 3 && orgRows[0].indexOf("Test Org") > -1 &&
+    orgRows[1].indexOf("77001") > -1 && orgRows[2].indexOf(FL.empty) > -1 && !document.querySelector("#screen .chk-kw") &&
     orgRows.every(function (r) { return r.indexOf(FL.editLink) > -1; }) &&
     Array.prototype.map.call(document.querySelectorAll("#screen .chk-table thead th"), function (th) { return th.textContent; }).slice(0, 2).join() === "Field,Your answer");
-  check("key words as chips in their four groups, with the count; the kept-empty group says (blank)",
-    Array.prototype.map.call(document.querySelectorAll("#screen .chk-kw .chip"), function (c) { return c.textContent; }).join() === "homelessness,safety,families,shelter" &&
-    document.querySelectorAll("#screen .chk-kw-row").length === 4 && document.querySelectorAll("#screen .chk-kw-row")[3].textContent.indexOf(FL.empty) > -1 &&
-    $("chk-kw-count").textContent.indexOf(FAC_QUESTIONS.keywords.count.replace("{n}", "4")) === 0);
-  check("it ends with the keywords happy line, like the mockup", document.querySelector("#screen .happy-line").textContent === FL.happyLine.replace("{thing}", "keywords"));
-  document.querySelector('#screen .chk-kw-title button[data-act="goto"]').click();
-  check("the key words' Edit goes back to Issue", $("counter").textContent === "Step 1 of 25" && document.activeElement.id === "f-org-kwIssue");
+  check("it ends with the organization info happy line, like the mockup", document.querySelector("#screen .happy-line").textContent === FL.happyLine.replace("{thing}", "organization info"));
+  document.querySelectorAll('#screen .chk-table button[data-act="goto"]')[2].click();
+  check("the website's Edit goes back to it", $("counter").textContent === "Step 1 of 25" && document.activeElement.id === "f-org-website");
   $("next").click();
   check("its button says Next, and the progress bar keeps 1.1 current", $("next").textContent === FL.nextButton && parts().indexOf("1.1:current") === 0);
   $("next").click();
   check("then Program 1 of 1", $("counter").textContent === "Step 3 of 25" && /Program 1 of 1/.test(title()));
   check("on a program: 1.1 done (teal line to 1.2), 1.2 current", parts() === "1.1:done 1.2:current 1.3:todo 1.4:todo 1.5:todo" && document.querySelectorAll("#parts li")[1].classList.contains("after-done"));
-  check("answers saved in the browser", saved().org.mission.text === "We help 400 families");
+  check("answers saved in the browser", saved().org.name.text === "Test Org");
 
   // ---------- Programs ----------
   check("no Remove button with only one program", !document.querySelector('#screen [data-act="removeProgram"]'));
@@ -345,44 +329,41 @@ T.run("Builder screens (builder.html)", function (check) {
     !document.querySelector("#screen .happy-line"));
   var todo = Array.prototype.map.call(document.querySelectorAll("#screen .todo li"), function (li) { return li.textContent; });
   check("end screen lists everything still needing attention, in sheet order", todo.join(" | ") ===
-    "Mission Statement needs a label | " +
     "Program 2: Program Name was skipped (Unsupported) | Program 2: Description was skipped (Unsupported) | " +
     "Program 2: Outputs is marked Unsupported | Program 2: Current Impact Statement was skipped (Unsupported) | " +
     "Local context 1 is vague (Unsupported) | Local context 2 needs a label");
 
-  // ---------- Review and export ----------
+  // ---------- Review and export: just press Yes (no review tick, Nov 9) ----------
   var R = FAC_QUESTIONS.review;
   check("review screen shows the finished prompt", $("exportPreview").textContent === FACExport.build(FAC_QUESTIONS, FACSheet.load(FAC_QUESTIONS)) &&
     $("exportPreview").textContent.indexOf("Context:\nOrganization Info") === 0 && $("exportPreview").textContent.indexOf("Tone: Warm") > -1);
-  check("Copy and Download are locked until \"I reviewed this\" is ticked", $("copyPrompt").disabled && $("downloadPrompt").disabled && $("downloadPromptMd").disabled && $("exportMsg").textContent === R.locked);
-  check("Open ROI.bot stays hidden until reviewed", $("openRoiBot").hidden);
+  check("no \"I reviewed this\" tick: \"Yes, copy my prompt\" and Download are on right away", !$("reviewed") && !document.querySelector("#screen .review-check") &&
+    $("copyPrompt").textContent === R.copyButton && !$("copyPrompt").disabled && !$("downloadPrompt").disabled && !$("downloadPromptMd").disabled);
+  check("Open ROI.bot waits until the prompt is copied", $("openRoiBot").hidden);
   check("the save-a-copy line sits beside Download (no link until FAC adds one)",
     document.querySelector("#screen .save-copy").textContent === "Save a copy in your FA community google folder and watch your story evolve." && !document.querySelector("#screen .save-copy a"));
-  $("reviewed").click();
-  check("ticking it unlocks Copy and Download", !$("copyPrompt").disabled && !$("downloadPrompt").disabled && !$("downloadPromptMd").disabled && saved().reviewed === true);
-  check("then Open ROI.bot shows, opening FAC's ROI.bot in a new tab", !$("openRoiBot").hidden && $("openRoiBot").getAttribute("href") === FAC_QUESTIONS.roiBotUrl && $("openRoiBot").target === "_blank" && $("openRoiBot").rel === "noopener");
   check("no saved versions yet", saved().versions.length === 0 && $("versions").textContent === R.versionsNone);
   $("copyPrompt").click();
-  check("Copy keeps the prompt as version 1", saved().versions.length === 1 && saved().versions[0].text === $("exportPreview").textContent &&
-    document.querySelectorAll("#versions .version").length === 1);
+  check("one click on Yes copies it and keeps it as version 1", saved().versions.length === 1 && saved().versions[0].text === $("exportPreview").textContent &&
+    document.querySelectorAll("#versions .version").length === 1 && saved().reviewed === true);
+  check("then Open ROI.bot shows, opening FAC's ROI.bot in a new tab", !$("openRoiBot").hidden && $("openRoiBot").getAttribute("href") === FAC_QUESTIONS.roiBotUrl && $("openRoiBot").target === "_blank" && $("openRoiBot").rel === "noopener");
   $("copyPrompt").click();
   check("copying the same prompt again doesn't add a version", saved().versions.length === 1);
   check("Role, Task and Constraints are editable, starting from FAC's wording and the member's answers",
     $("rtcc-role").value === "" && $("rtcc-task").value === FAC_QUESTIONS.finalPrompt && $("rtcc-constraints").value.indexOf("Tone: Warm and hopeful") === 0);
   var tk = $("rtcc-task"); tk.value = "Write one donor email."; tk.dispatchEvent(new Event("input", { bubbles: true }));
-  check("editing the Task changes the preview and clears the tick", $("exportPreview").textContent.indexOf("Task:\nWrite one donor email.") > -1 &&
-    saved().reviewed === false && $("copyPrompt").disabled);
+  check("editing the Task changes the preview; Open ROI.bot waits for the new copy; Yes stays on", $("exportPreview").textContent.indexOf("Task:\nWrite one donor email.") > -1 &&
+    saved().reviewed === false && $("openRoiBot").hidden && !$("copyPrompt").disabled);
   document.querySelector('#screen button[data-act="rtccReset"][data-part="task"]').click();
   check("Use FAC's wording puts the Final Prompt back", $("rtcc-task").value === FAC_QUESTIONS.finalPrompt && saved().rtcc.task === null);
-  $("reviewed").click();
+  $("copyPrompt").click();
 
   document.querySelector('#screen .todo button[data-act="goto"]').click();
-  check("clicking a listed item jumps to it", $("counter").textContent === "Step 1 of 26" && document.activeElement.id === "f-org-mission");
-  check("jumping there doesn't clear the tick", saved().reviewed === true);
-  type("f-org-mission", "We help 450 families");
-  check("changing an answer clears the tick", saved().reviewed === false);
+  check("clicking a listed item jumps to it", $("counter").textContent === "Step 4 of 26" && document.activeElement.id === "f-programs-1-name");
+  check("jumping there keeps the copy", saved().reviewed === true);
+  type("f-programs-1-name", "Rent Help");
+  check("changing an answer means it needs copying again", saved().reviewed === false);
 
-  $("next").click(); $("next").click(); $("next").click();
   act("removeProgram");
   check("Remove this program asks for a second click", saved().programs.length === 2);
   act("removeProgram");
@@ -393,9 +374,10 @@ T.run("Builder screens (builder.html)", function (check) {
   var W2 = FAC_QUESTIONS.why;
   check("Next all the way through Step 1 (1.3, then 1.4 and 1.5) reaches 2.1 pain statements", $("counter").textContent === "Step 13 of 25" && title().indexOf(W2.number) > -1);
   document.querySelectorAll("#parts .dot")[4].click();
-  check("back on the review screen (2.5): still unticked and locked", $("counter").textContent === "Step 17 of 25" && !$("reviewed").checked && $("copyPrompt").disabled);
-  check("the preview now shows the new mission, and the location is the ZIP (with its place once the ZIP list has loaded)", $("exportPreview").textContent.indexOf("Mission Statement: We help 450 families") > -1 &&
-    /Location \(include zip\): 77001( \(Houston, TX\))?\n/.test($("exportPreview").textContent));
+  check("back on the review screen (2.5): Open ROI.bot waits for a new copy", $("counter").textContent === "Step 17 of 25" && $("openRoiBot").hidden && !$("copyPrompt").disabled);
+  check("the preview has no Mission Statement or Key Words lines, and the location is the ZIP (with its place once the ZIP list has loaded)",
+    !/Mission Statement|Key Words/.test($("exportPreview").textContent) &&
+    /Location \(include zip\): 77001( \(Houston, TX\))?\nWeb Site:/.test($("exportPreview").textContent));
   document.querySelectorAll("#parts .dot")[0].click();
   check("Step 2: Step 1 tab done with a check, Step 2 current, parts 2.1 to 2.5", tabs() === "done current todo" && document.querySelector("#stepsTabs .done .num").textContent === "✓" &&
     parts() === "2.1:current 2.2:todo 2.3:todo 2.4:todo 2.5:todo" && document.querySelectorAll("#parts .part-label")[2].textContent === "Major Donors");
@@ -501,14 +483,13 @@ T.run("Builder screens (builder.html)", function (check) {
   document.querySelector('#screen .rate[data-row="1"][value="4"]').click();
   check("a rating saves", saved().assess.ratings[1] === "4");
   $("next").click();
-  check("the package: last screen, locked until reviewed", $("next").hidden && $("counter").textContent === "Step 25 of 25" && $("copyPkg").disabled && $("downloadPkg").disabled && $("downloadPkgMd").disabled);
+  check("the package: last screen, with \"Yes, copy my package\" and Download on right away (no review tick)", $("next").hidden && $("counter").textContent === "Step 25 of 25" &&
+    !$("pkg-reviewed") && $("copyPkg").textContent === FAC_QUESTIONS.packageText.copyButton && !$("copyPkg").disabled && !$("downloadPkg").disabled && !$("downloadPkgMd").disabled);
   var pk = $("pkgPreview").textContent;
   check("the package holds the prompt, the story and the next steps", pk.indexOf(FACExport.build(FAC_QUESTIONS, FACSheet.load(FAC_QUESTIONS))) > -1 &&
     pk.indexOf(S3.fromRoibot) > -1 && pk.indexOf("Title: Share the package") > -1);
   check("the package has the member's own ROI and ask, with the For every $1 line and timeframe", pk.indexOf("== " + FAC_QUESTIONS.packageText.sections.roiAsk + " ==\nInvestment (gift amount): $500\n") > -1 &&
     pk.indexOf("For every $1: For every $1 invested, $3 of value is created") > -1 && pk.indexOf("Timeframe: over 12 months") > -1);
-  $("pkg-reviewed").click();
-  check("ticking I reviewed my package unlocks Copy and Download", !$("copyPkg").disabled && !$("downloadPkg").disabled && !$("downloadPkgMd").disabled && saved().pkgReviewed === true);
 
   // ---------- Fill from a document (made-up text) ----------
   var DOC = FAC_QUESTIONS.documents;
@@ -524,8 +505,8 @@ T.run("Builder screens (builder.html)", function (check) {
     "1. Program Name: Family Pantry\n2. Program Name: Rent Help\n   * Outputs: 75 households in 2024";
   docT.dispatchEvent(new Event("input", { bubbles: true }));
   act("findAnswers");
-  check("Find answers: each suggestion with its exact quote, and a count", $("doc-msg").textContent === DOC.found.replace("{n}", "7") &&
-    document.querySelectorAll("#screen .sugg").length === 7 && sugg("Name").querySelector(".sugg-quote").textContent === DOC.quoteLabel + "Name: Riverbend Family Services");
+  check("Find answers: each suggestion with its exact quote, and a count (the Mission Statement line is skipped)", $("doc-msg").textContent === DOC.found.replace("{n}", "6") &&
+    document.querySelectorAll("#screen .sugg").length === 6 && !sugg("Mission Statement") && sugg("Name").querySelector(".sugg-quote").textContent === DOC.quoteLabel + "Name: Riverbend Family Services");
   check("nothing is filled in until accepted", $("f-org-name").value === "" && saved().org.name.text === "");
   check("a box with an answer says Replace my answer; a blank one says Accept", sugg("Web Site").querySelector('[data-act="suggAccept"]').textContent === DOC.replace &&
     sugg("Name").querySelector('[data-act="suggAccept"]').textContent === DOC.accept);

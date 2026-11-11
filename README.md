@@ -8,7 +8,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 
 | Page | What it is |
 |---|---|
-| `index.html` | Screen 1, "Tell Your Story with Numbers" (FAC's Version 2 build plan): organization name, website and ZIP code, then Continue. Until ROI.bot's chat is built, Continue opens the builder with those three filled in. |
+| `index.html` | Let's Get Started, "Tell Your Story with Numbers" (FAC's Version 2 build plan and Steve's Step 1 flowchart), in two screens: Screen 1 asks the organization name, website and ZIP code; Screen 2 asks the member's name, title, email and phone (all required, kept in this browser only until HubSpot is connected). Until ROI.bot's chat is built, Next on Screen 2 opens the builder with the name, website and ZIP filled in. |
 | `quick.html` | Only Screen 1's required fields from Steve's Step 1 flowchart (organization name, website, ZIP code), then a short prompt asking ROI.bot to research the organization (draft Task for Steve), with "I reviewed this", Copy, Download and Open ROI.bot. Shares Screen 1's saved answers. |
 | `builder.html` | The prompt sheet builder: Steps 1 to 3 of the workbook, one section per screen, with the two-row progress bar. |
 | `pain-statement.html` | The version 1 pain statement form, kept working but not linked (the builder's 2.1 covers it and can bring in its answers). |
@@ -30,7 +30,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 | `js/builder.js` | Shows the screens, the follow-ups, the review lock, and the Copy and Download buttons. |
 | `js/read-documents.js` | "Fill from a document": finds suggested answers in the member's own text, Word or PDF file, in the browser. No AI: only lines written the way FAC's sheet writes them, plus a web address and a ZIP code. |
 | `js/quick.js` | quick.html: the three required fields, their follow-ups, and its prompt. |
-| `js/screen1.js` | Screen 1: the progress bar, the three fields, the ZIP's place, and Continue (off until all three are filled). |
+| `js/screen1.js` | Let's Get Started: the progress bar, Screen 1's three fields and the ZIP's place, Screen 2's four (the email must look like one, the phone have 10 to 15 digits), and Next (off until a screen is filled). |
 | `js/zip-place.js` | Shows the place (city and state) for the ZIP code a member types, on both pages, and adds it to the prompt: "77001 (Houston, TX)". |
 | `lib/` | Our own saved copies, with their licences: mammoth 1.13.0 (Word, BSD licence) and pdf.js 6.4.299 (PDF, Apache licence, by Mozilla), loaded only when a member chooses a file; and `zip-places.js`, US ZIP codes with their place and state from [GeoNames](https://www.geonames.org/) (CC BY 4.0; their readme is `geonames-readme.txt`), loaded only when a ZIP is typed. Nothing is sent anywhere. |
 | `images/roi-bot-logo.png` | ROI.bot's logo, from FAC, shown top right on every page. |
@@ -44,7 +44,7 @@ Live site: https://laurenhobley.github.io/thefundraisingaccountant/
 **The screens** follow FAC's flowchart and workshop workbook, three steps in order. In Step 1, as in Steve's Step 1 flowchart, each section ends with its own "Happy?" check, listing the answers with Edit links.
 
 **Step 1, Pick Your Story**
-1. **1.1** Organization Info, with Key Words in four groups (Issue, People served, Services, Location; shown as chips with a running count), and an optional "Fill from a document" panel: the member pastes text or chooses a Word, PDF or .txt file, and each suggested answer shows the exact lines it came from, with Accept, Edit or Skip. Nothing is filled in until they accept it, and the document is never saved or sent. Name, ZIP, mission and key words are required; the website is optional here because Screen 1 asks for it. Then "Happy with your keywords?"
+1. **1.1** Organization Info: name, ZIP code and website only (no Mission Statement or Key Words since Nov 11: ROI.bot drafts them from the website), and an optional "Fill from a document" panel: the member pastes text or chooses a Word, PDF or .txt file, and each suggested answer shows the exact lines it came from, with Accept, Edit or Skip. Nothing is filled in until they accept it, and the document is never saved or sent. Name and ZIP are required; the website is optional here because Screen 1 asks for it. Then "Happy with your organization info?"
 2. **1.2** one screen per program (name and description, both required), then an optional stack rank from FAC's template (three drivers the member names, plus Money, each scored 1–3; the member types the Stack Rank, the tool checks it equals the four multiplied and sorts by it, then suggests where the Stack Ranks jump most; the member draws the red line, and programs below it are left out of the prompt). Then "Happy with your stack ranking?"
 3. **1.3** Outputs to Outcomes: one row per program above the red line, its Outputs and its Outcomes (the Current Impact Statement) side by side, both required. Then "Happy with your outputs to outcomes?", which asks "Go deeper now… or skip to Step 2?"
 4. **1.4** Add Context: Local Context/Data (from FAC's sheet) and Benchmarks (with source, program and how it connects), both optional. Then "Happy with your context?"
@@ -79,7 +79,7 @@ Each check lists the answers with Edit links. Each prompt the member copies or d
 - a calculation that doesn't add up
 - an "if…" figure with no source
 
-**Export.** Copy and Download stay locked until the member ticks "I reviewed this".
+**Export.** No review tick: the member presses "Yes, copy my prompt" (or Download), and Open ROI.bot appears once they have. The Step 3 package works the same way, with "Yes, copy my package".
 
 ## Changing the wording
 
@@ -93,7 +93,7 @@ Edit the text between quotes in `js/questions.js`. Keep the structure the same. 
 
 Open `tests/tests.html` in a browser, from the files or from the live site. The live-form tests only run on the live site.
 
-`tests/kit/` has three made-up organizations with flaws planted on purpose: a missing ZIP, a duplicate program, double counting, a wrong calculation, a "TBD", an output with no year and an "if" figure with no source. The test page checks each flaw is caught. The `.txt`, `.docx` and `.pdf` files are the same sheets, for trying the builder by hand and for testing "Fill from a document". From the files on your computer, Chrome needs to be started with `--allow-file-access-from-files` for the Word tests, and the PDF tests run only from a web address (browsers won't load pdf.js from files on the computer); on the live site they all run. Use made-up data for testing, never real member data.
+`tests/kit/` has three made-up organizations with flaws planted on purpose: a missing ZIP, a duplicate program, double counting, a wrong calculation, missing Outcomes, an output with no year and an "if" figure with no source. The test page checks each flaw is caught. The `.txt`, `.docx` and `.pdf` files are the same sheets, for trying the builder by hand and for testing "Fill from a document". From the files on your computer, Chrome needs to be started with `--allow-file-access-from-files` for the Word tests, and the PDF tests run only from a web address (browsers won't load pdf.js from files on the computer); on the live site they all run. Use made-up data for testing, never real member data.
 
 ## Hosting
 

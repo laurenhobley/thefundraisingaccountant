@@ -56,16 +56,8 @@
       '<label for="' + id + '">' + esc(q.label) + (q.note ? ' <span class="opt">' + esc(q.note) + '</span>' : "") + (q.required ? '<span class="req">*</span>' : "") + '</label>' +
       (q.help ? '<p class="hint">' + esc(q.help) + '</p>' : "") +
       input + (q.kind === "zip" ? '<p class="hint zip-place" id="' + id + '-place" aria-live="polite"></p>' : "") +
-      (q.kind === "keywords" ? '<div class="chips" id="' + id + '-chips" aria-hidden="true"></div>' : "") +
       followUpBox(path) + (S.needsLabel(path) ? labelBox(path) : "") +
       '</div>';
-  }
-
-  // Key Words: each group's keywords as chips under its box, and the total.
-  function refreshKeywords(path) {
-    var chips = $(idOf(path) + "-chips"), count = $("kw-count");
-    if (chips) chips.innerHTML = S.keywordList(S.get(state, path).text).map(function (k) { return '<span class="chip">' + esc(k) + '</span>'; }).join("");
-    if (count) count.textContent = Q.keywords.count.replace(/\{n\}/g, S.keywordCount(state)) + " " + Q.keywords.countHint;
   }
 
   // The place for the ZIP code ("Houston, TX"), from our own copy of
@@ -88,29 +80,21 @@
   }
 
   // The 1.1 check, laid out like Steve's Step 1.1 mockup: the organization
-  // at the top, a Field / Your answer table, and the key words as chips in
-  // their four groups with the count. Only the member's own answers.
+  // at the top and a Field / Your answer table (name, ZIP, website: no
+  // mission or key words since Nov 11). Only the member's own answers.
   function orgCheck(C) {
-    var F = Q.flow, org = state.org, K = Q.keywords;
+    var F = Q.flow, org = state.org;
     function edit(path) {
       return '<button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, path) + '" data-focus="' + idOf(path) + '">' + esc(F.editLink) + '</button>';
     }
     var head = [S.trim(org.website.text), S.trim(org.zip.text)].filter(function (t) { return t; }).join(" · ");
-    var rows = ["name", "zip", "website", "mission"].map(function (id) {
-      var q = S.section(Q, "org").questions.filter(function (x) { return x.id === id; })[0];
-      var value = id === "zip" ? '<span id="chk-zip">' + esc(zipWithPlace() || F.empty) + '</span>' : esc(S.trim(org[id].text) || F.empty);
-      return '<tr><th scope="row">' + esc(q.label) + '</th><td>' + value + '</td><td class="chk-edit">' + edit("org." + id) + '</td></tr>';
-    }).join("");
-    var groups = S.KEYWORD_GROUPS.map(function (g) {
-      var q = S.section(Q, "org").questions.filter(function (x) { return x.id === g; })[0], list = S.keywordList(org[g].text);
-      return '<div class="chk-kw-row"><span class="lbl">' + esc(q.label) + ':</span><div class="chips">' +
-        (list.length ? list.map(function (k) { return '<span class="chip">' + esc(k) + '</span>'; }).join("") : '<span class="hint">' + esc(F.empty) + '</span>') + '</div></div>';
+    var rows = S.section(Q, "org").questions.map(function (q) {
+      var value = q.id === "zip" ? '<span id="chk-zip">' + esc(zipWithPlace() || F.empty) + '</span>' : esc(S.trim(org[q.id].text) || F.empty);
+      return '<tr><th scope="row">' + esc(q.label) + '</th><td>' + value + '</td><td class="chk-edit">' + edit("org." + q.id) + '</td></tr>';
     }).join("");
     return '<div class="org-card"><span class="org-card-name">' + esc(S.trim(org.name.text) || F.empty) + '</span>' + (head ? '<span>' + esc(head) + '</span>' : "") + '</div>' +
       '<p>' + esc(C.text) + '</p>' +
-      '<div class="chk-table-wrap"><table class="chk-table"><thead><tr><th scope="col">' + esc(C.fieldHead) + '</th><th scope="col">' + esc(C.answerHead) + '</th><th scope="col"><span class="sr">' + esc(F.editLink) + '</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-      '<div class="chk-kw"><div class="chk-kw-title"><span class="lbl">' + esc(K.title) + '</span> ' + edit("org.kwIssue") + '</div>' + groups +
-      '<p class="hint" id="chk-kw-count">' + esc(K.count.replace(/\{n\}/g, S.keywordCount(state)) + " " + K.countHint) + '</p></div>';
+      '<div class="chk-table-wrap"><table class="chk-table"><thead><tr><th scope="col">' + esc(C.fieldHead) + '</th><th scope="col">' + esc(C.answerHead) + '</th><th scope="col"><span class="sr">' + esc(F.editLink) + '</span></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   function heading(num, title, note) {
@@ -119,16 +103,10 @@
 
   var N = Q.flow.numbers;
 
-  // 1.1 Organization Info. The four keyword groups sit together under "Key
-  // Words", with the total under them.
+  // 1.1 Organization Info: name, ZIP and website only (Lauren, 2026-11-11).
   function orgScreen() {
-    var sec = S.section(Q, "org"), K = Q.keywords;
-    var plain = sec.questions.filter(function (q) { return q.kind !== "keywords"; });
-    var groups = sec.questions.filter(function (q) { return q.kind === "keywords"; });
-    return heading(N.org, sec.title) + docPanel() + plain.map(function (q) { return field(q, "org." + q.id); }).join("") +
-      '<fieldset class="kw-group"><legend class="lbl">' + esc(K.title) + '</legend><p class="hint">' + esc(K.intro) + '</p>' +
-      groups.map(function (q) { return field(q, "org." + q.id); }).join("") +
-      '<p class="hint kw-count" id="kw-count" aria-live="polite"></p></fieldset>';
+    var sec = S.section(Q, "org");
+    return heading(N.org, sec.title) + docPanel() + sec.questions.map(function (q) { return field(q, "org." + q.id); }).join("");
   }
 
   // ---------- Fill from a document ----------
@@ -477,7 +455,6 @@
     var P = Q.packageText;
     return heading("✓", P.title) + '<p>' + esc(P.text) + '</p>' +
       '<pre id="pkgPreview"></pre>' +
-      '<label class="review-check"><input type="checkbox" id="pkg-reviewed"' + (state.pkgReviewed ? " checked" : "") + '> ' + esc(P.checkbox) + '</label>' +
       '<div class="actions"><button type="button" class="btn primary" id="copyPkg" data-act="copyPkg">' + esc(P.copyButton) + '</button>' +
       '<button type="button" class="btn ghost" id="downloadPkg" data-act="downloadPkg">' + esc(P.downloadButton) + '</button>' +
       '<button type="button" class="btn ghost" id="downloadPkgMd" data-act="downloadPkgMd">' + esc(P.downloadMdButton) + '</button></div>' +
@@ -488,9 +465,6 @@
     var pre = $("pkgPreview");
     if (pre) {
       pre.textContent = FACExport.packageText(Q, state);
-      $("pkg-reviewed").checked = state.pkgReviewed;
-      $("copyPkg").disabled = $("downloadPkg").disabled = $("downloadPkgMd").disabled = !state.pkgReviewed;
-      if (!state.pkgReviewed) say(Q.review.locked.replace(Q.review.checkbox, Q.packageText.checkbox));
     }
     var inv = $("invest-sentence");
     if (inv) inv.textContent = FACExport.investSentence(Q, state);
@@ -523,7 +497,6 @@
     else if (c.contains("act")) state.actions[+el.getAttribute("data-row")][el.getAttribute("data-k")] = el.value;
     else if (c.contains("rate")) { if (e.type !== "change") return true; state.assess.ratings[+el.getAttribute("data-row")] = el.value; }
     else if (c.contains("takeaway")) state.assess.takeaway = el.value;
-    else if (el.id === "pkg-reviewed") { state.pkgReviewed = el.checked; refreshPackage(); save(); return true; }
     else return false;
     unreview();
     refreshStory(); refreshPackage();
@@ -546,7 +519,7 @@
         ' <button type="button" class="link" data-act="goto" data-step="' + S.stepOf(state, path) + '" data-focus="' + idOf(path) + '">' + esc(F.editLink) + '</button></li>');
     }
     var title = C.title, extra = "";
-    // 1.1: what the member confirms (name, location, mission, keywords), and the website.
+    // 1.1: the organization's name, ZIP and website.
     if (of === "org") return heading(N.check, title) + orgCheck(C);
     if (of === "programs") {
       // 1.2: the programs in their order, with their Stack Rank when ranked.
@@ -656,7 +629,7 @@
   }
 
   // The last screen: what still needs attention, the finished prompt, and
-  // the "I reviewed this" lock on Copy and Download.
+  // "Yes, copy my prompt" (no review tick: Lauren, 2026-11-09).
   function reviewScreen() {
     var probs = S.problems(state, Q);
     var words = { needsLabel: "needs a label", needsNote: "needs a source note", unsupported: "is marked Unsupported",
@@ -677,7 +650,6 @@
     var two = S.steps(state)[state.step].stage === 2;
     return heading(two ? N.review2 : N.review, two ? R.title2 : R.title) + '<p>' + esc(R.text) + '</p>' + list + rtccEditor() +
       '<div class="f"><span class="lbl">' + esc(R.previewTitle) + '</span><pre id="exportPreview"></pre></div>' +
-      '<label class="review-check"><input type="checkbox" id="reviewed"' + (state.reviewed ? " checked" : "") + '> ' + esc(R.checkbox) + '</label>' +
       '<div class="actions">' +
       '<button type="button" class="btn primary" id="copyPrompt" data-act="copy">' + esc(R.copyButton) + '</button>' +
       '<button type="button" class="btn ghost" id="downloadPrompt" data-act="download">' + esc(R.downloadButton) + '</button>' +
@@ -738,25 +710,24 @@
       box("constraints", H.constraintsHeading, "", E.resetConstraints) + '</div>';
   }
 
-  // Copy and Download stay locked until "I reviewed this" is ticked.
+  // Copy and Download are always on. state.reviewed now means "copied or
+  // downloaded since the last change": Open ROI.bot shows once it is.
   function refreshReview() {
     var pre = $("exportPreview");
     if (!pre) return;
     pre.textContent = FACExport.build(Q, state);
-    $("reviewed").checked = state.reviewed;
-    $("copyPrompt").disabled = $("downloadPrompt").disabled = $("downloadPromptMd").disabled = !state.reviewed;
     $("openRoiBot").hidden = !state.reviewed;
-    if (!state.reviewed) say(Q.review.locked);
   }
   function say(text) { var m = $("exportMsg"); if (m) m.textContent = text; }
 
-  // Any change to the answers means the prompt changed: review it again.
-  function unreview() { state.reviewed = false; state.pkgReviewed = false; }
+  // Any change to the answers means the prompt changed: copy it again.
+  function unreview() { state.reviewed = false; }
 
   function copyPrompt() {
-    if (!state.reviewed) return;
     var text = FACExport.build(Q, state);
+    state.reviewed = true;
     keepVersion(text);
+    refreshReview();
     function fallback() {
       var range = document.createRange();
       range.selectNodeContents($("exportPreview"));
@@ -781,9 +752,10 @@
 
   // The .txt, or (md) the same prompt as a Markdown file. Either is kept as a version.
   function downloadPrompt(md) {
-    if (!state.reviewed) return;
+    state.reviewed = true;
     var text = FACExport.build(Q, state);
     keepVersion(text);
+    refreshReview();
     if (md) saveFile(FACExport.markdown(Q, text), mdName(FACExport.FILE_NAME));
     else saveFile(text, FACExport.FILE_NAME);
     say(Q.review.downloaded);
@@ -848,7 +820,7 @@
     var H = Q.flow.happy, k = st.kind;
     if (k === "donors") return H[st.of];
     if (k === "end") return "";
-    // Steve's Step 1.1 mockup ends its check with the keywords line too.
+    // Steve's Step 1.1 mockup ends its check with the happy line too.
     if (k === "check" && st.of === "org") return H.org;
     return H[k] || "";
   }
@@ -924,11 +896,9 @@
     // The flag under the answer: kept as is (Unsupported), or a noted same group.
     var flag = $(id + "-skipped"), base = S.baseIssue(Q, path, a, state), shared = S.sharedCount(state, path);
     var noted = a.overlap === "same" && !!shared;
-    // A keyword group kept empty is the member's choice: a quiet note, not Unsupported.
-    var keptEmpty = a.skipped && base === "missing" && S.isKeywords(path);
     flag.hidden = !((a.skipped && base) || noted);
-    flag.classList.toggle("noted", (noted && !(a.skipped && base)) || keptEmpty);
-    flag.textContent = keptEmpty ? Q.keywords.kept : a.skipped && base ? (base === "vague" ? F.keptVague : base === "output" ? F.keptOutput : base === "math" ? F.keptMath : base === "dollar" ? F.keptDollar : F.skipped)
+    flag.classList.toggle("noted", noted && !(a.skipped && base));
+    flag.textContent = a.skipped && base ? (base === "vague" ? F.keptVague : base === "output" ? F.keptOutput : base === "math" ? F.keptMath : base === "dollar" ? F.keptDollar : F.skipped)
       : noted ? F.overlapSameNote.replace(/\{program\}/g, programName(shared.other)) : "";
 
     $(id).classList.toggle("invalid", open);
@@ -949,12 +919,10 @@
       btn.textContent = F.separateButton;
       btn.hidden = !S.canConfirmSeparate(a);
     } else {
-      var group = kind === "missing" && S.isKeywords(path);
       var lines = kind === "vague" ? (S.notNeeded(Q, path, a) ? F.notNeeded : F.vague) : kind === "output" ? F[S.outputGap(a.text)] : kind === "math" ? F.mathWrong : kind === "dollar" ? F.dollarWrong :
-        path === "org.zip" ? F.missingZip : group ? Q.keywords.missing : F.missing;
-      text = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text)).replace(/\{calc\}/g, function () { return S.mathProblem(a.text); })
-        .replace(/\{group\}/g, function () { return nameOf(path); });
-      btn.textContent = group ? Q.keywords.keepButton : kind === "missing" ? F.skipButton : F.keepButton;
+        path === "org.zip" ? F.missingZip : F.missing;
+      text = lines[a.asks - 1].replace(/\{word\}/g, S.vagueWord(Q, a.text)).replace(/\{calc\}/g, function () { return S.mathProblem(a.text); });
+      btn.textContent = kind === "missing" ? F.skipButton : F.keepButton;
       btn.hidden = !S.canSkip(a);
     }
     fu.querySelector(".fu-q").textContent = text;
@@ -964,7 +932,6 @@
   function refresh(path) {
     refreshFollowUp(path);
     if (path === "org.zip") { refreshZipPlace(); needZipList(); }
-    if (S.isKeywords(path)) refreshKeywords(path);
     var box = $(idOf(path) + "-lab");
     if (!box) return;
     var a = S.get(state, path), st = S.status(a);
@@ -999,7 +966,6 @@
   screen.addEventListener("change", onEdit);
   function onEdit(e) {
     var el = e.target, path = el.getAttribute("data-path");
-    if (el.id === "reviewed") { state.reviewed = el.checked; refreshReview(); save(); return; }
     if (el.id === "doc-text") { docText = el.value; return; }
     if (el.id === "doc-file") { if (e.type === "change" && el.files && el.files[0]) readChosenFile(el.files[0]); return; }
     if (onRankEdit(e)) return;
@@ -1058,7 +1024,7 @@
     if (act === "copy") { copyPrompt(); return; }
     if (act === "download") { downloadPrompt(); return; }
     if (act === "downloadMd") { downloadPrompt(true); return; }
-    if (act === "downloadPkgMd") { if (state.pkgReviewed) { saveFile(FACExport.markdown(Q, FACExport.packageText(Q, state)), mdName(FACExport.PACKAGE_FILE)); say(Q.review.downloaded); } return; }
+    if (act === "downloadPkgMd") { saveFile(FACExport.markdown(Q, FACExport.packageText(Q, state)), mdName(FACExport.PACKAGE_FILE)); say(Q.review.downloaded); return; }
     if (act === "downloadVersion") { downloadVersion(i); return; }
     if (act === "copyStep") {
       var sp = S.steps(state)[state.step].of;
@@ -1068,8 +1034,8 @@
     }
     if (act === "copyFunder") { copyText(FACExport.funderText(Q, state), "step-msg", Q.story.copied, null); return; }
     if (act === "funderReset") { state.funder[b.getAttribute("data-part")] = null; unreview(); render(); return; }
-    if (act === "copyPkg") { if (state.pkgReviewed) copyText(FACExport.packageText(Q, state), "exportMsg", Q.review.copied, $("pkgPreview")); return; }
-    if (act === "downloadPkg") { if (state.pkgReviewed) { saveFile(FACExport.packageText(Q, state), FACExport.PACKAGE_FILE); say(Q.review.downloaded); } return; }
+    if (act === "copyPkg") { copyText(FACExport.packageText(Q, state), "exportMsg", Q.review.copied, $("pkgPreview")); return; }
+    if (act === "downloadPkg") { saveFile(FACExport.packageText(Q, state), FACExport.PACKAGE_FILE); say(Q.review.downloaded); return; }
     if (act === "importLive") {
       S.importLive(Q, state, liveDraft()); unreview(); render();
       if ($("why-imported")) $("why-imported").textContent = Q.why.imported;

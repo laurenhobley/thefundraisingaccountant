@@ -31,6 +31,8 @@ T.run("Test kit (tests/kit/)", function (check) {
   });
   var kinds = {};
   FAC_TEST_KIT.forEach(function (org) { org.flaws.forEach(function (f) { kinds[f.issue] = true; }); });
-  check("together they cover all seven kinds of follow-up",
-    ["missing", "vague", "output", "math", "assumption", "duplicate", "overlap"].every(function (k) { return kinds[k]; }));
+  // "vague" was Prairie's "TBD" mission, which the builder no longer asks
+  // (Nov 11); vague answers are tested in test-sheet.js and test-builder.js.
+  check("together they cover six kinds of follow-up (vague is tested elsewhere)",
+    ["missing", "output", "math", "assumption", "duplicate", "overlap"].every(function (k) { return kinds[k]; }));
 });

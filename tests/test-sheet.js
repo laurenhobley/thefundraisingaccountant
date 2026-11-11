@@ -6,7 +6,9 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   var s = S.blank(Q);
   check("blank sheet starts with 1 program", s.programs.length === 1);
-  check("blank sheet has every Organization Info question", ["name", "zip", "website", "mission", "kwIssue", "kwPeople", "kwServices", "kwLocation"].every(function (id) { return !!s.org[id]; }) && !s.org.city && !s.org.keywords);
+  check("blank sheet has Organization Info's name, ZIP and website, and no mission or key words", Object.keys(s.org).join() === "name,zip,website" && !s.org.city && !s.org.keywords);
+  var oldOrg = S.repair(Q, { org: { name: { text: "A" }, mission: { text: "We help" }, kwIssue: { text: "hunger" }, keywords: { text: "x" } } });
+  check("an old draft's mission and key words are dropped", Object.keys(oldOrg.org).join() === "name,zip,website" && oldOrg.org.name.text === "A");
   check("blank sheet has no numbers in it", S.problems(s).length === 0);
   check("screens follow Steve's flowchart: each Step 1 section, then its Happy? check, then Step 2 (no Step 1 review)", S.steps(s).map(function (x) { return x.kind + (x.of ? ":" + x.of : ""); }).join() === "org,check:org,program,rank,check:programs,outcomes,check:outcomes,pain,benchmarks,check:benchmarks,constraints,check:constraints,why,donors:regular,donors:major,wand,end,story:challenge,story:response,story:outcome,story:roi,funder,actions,assess,package");
 
@@ -82,7 +84,7 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
 
   // Missing answers: follow-ups, then skip.
   var m = S.blank(Q);
-  check("blank Organization Info: 7 required answers missing (not the website, which Screen 1 asks)", S.missing(Q, m, 0).join() === "org.name,org.zip,org.mission,org.kwIssue,org.kwPeople,org.kwServices,org.kwLocation");
+  check("blank Organization Info: name and ZIP missing (not the website, which Screen 1 asks)", S.missing(Q, m, 0).join() === "org.name,org.zip");
   check("blank program: Program Name and Description missing", S.missing(Q, m, 2).join() === "programs.0.name,programs.0.description");
   check("blank 1.3: Outputs and Outcomes missing", S.missing(Q, m, S.stepOf(m, "programs.0.outputs")).join() === "programs.0.outputs,programs.0.impact");
   check("the Happy? checks block nothing", S.missing(Q, m, 1).length === 0 && S.missing(Q, m, S.stepOf(m, "programs.0.outputs") + 1).length === 0);
@@ -93,37 +95,27 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("ZIP 7700 counts as missing", S.missing(Q, m, 0).indexOf("org.zip") > -1);
   S.setText(Q, m,"org.zip", "77001");
   check("ZIP 77001 is answered", S.missing(Q, m, 0).indexOf("org.zip") === -1);
-  var web = S.get(m, "org.mission");
+  var web = S.get(m, "org.name");
   S.ask(Q, m, 0);
   check("first Next: 1 follow-up, can't skip yet", web.asks === 1 && !S.canSkip(web));
-  S.skip(m, "org.mission");
+  S.skip(m, "org.name");
   check("skip refused before the second follow-up", web.skipped === false);
   S.ask(Q, m, 0);
   check("second Next: 2 follow-ups, can skip", web.asks === 2 && S.canSkip(web));
   S.ask(Q, m, 0);
   check("follow-ups stop at 2", web.asks === 2);
-  S.skip(m, "org.mission");
-  check("skipped answer no longer blocks Next", web.skipped && S.missing(Q, m, 0).indexOf("org.mission") === -1);
-  check("end screen list shows it as skipped", S.problems(m, Q).some(function (p) { return p.path === "org.mission" && p.status === "skipped"; }));
-  check("and other missing answers as still blank", S.problems(m, Q).some(function (p) { return p.path === "org.kwPeople" && p.status === "blank"; }));
-  S.setText(Q, m,"org.mission", " ");
+  S.skip(m, "org.name");
+  check("skipped answer no longer blocks Next", web.skipped && S.missing(Q, m, 0).indexOf("org.name") === -1);
+  check("end screen list shows it as skipped", S.problems(m, Q).some(function (p) { return p.path === "org.name" && p.status === "skipped"; }));
+  check("and other missing answers as still blank", S.problems(m, Q).some(function (p) { return p.path === "programs.0.name" && p.status === "blank"; }));
+  S.setText(Q, m,"org.name", " ");
   check("typing only a space keeps the skip", web.skipped);
-  S.setText(Q, m,"org.mission", "We help families");
+  S.setText(Q, m,"org.name", "Test Org");
   check("a real answer clears the skip and the follow-ups", !web.skipped && web.asks === 0);
   var r2 = S.repair(Q, { org: { website: { text: "", asks: 2, skipped: true }, city: { text: "Old Town, MN" }, name: { asks: "lots", skipped: "yes" } } });
   check("old draft: follow-ups and skips kept", r2.org.website.asks === 2 && r2.org.website.skipped === true);
   check("old draft with a city: the city is left out (ZIP only now)", !r2.org.city && FACExport.build(Q, r2).indexOf("Old Town") === -1);
 
-  // Key Words in four groups.
-  var kwOld = S.repair(Q, { org: { keywords: { text: " shelter, meals " } } });
-  check("an old draft's single Key Words list moves into Issue, for sorting", kwOld.org.kwIssue.text === "shelter, meals" && !kwOld.org.keywords);
-  check("keywords split at commas, blanks dropped; the total counts every group", S.keywordList("a, b,, c ,").join("|") === "a|b|c" &&
-    (S.setText(Q, kwOld, "org.kwServices", "pantry, meals"), S.keywordCount(kwOld) === 4));
-  check("keywords never need a figure label (\"24/7 shelter\")", !S.needsLabel("org.kwServices"));
-  var kwE = S.blank(Q);
-  S.get(kwE, "org.kwLocation").asks = 2; S.skip(kwE, "org.kwLocation");
-  check("a keyword group kept empty isn't listed as a problem; an untouched one is", !S.problems(kwE, Q).some(function (p) { return p.path === "org.kwLocation"; }) &&
-    S.problems(kwE, Q).some(function (p) { return p.path === "org.kwIssue" && p.status === "blank"; }));
   check("old draft: bad follow-up values dropped", r2.org.name.asks === 0 && r2.org.name.skipped === false);
 
   // Filler words: found as whole words, in any capitals.
@@ -137,9 +129,9 @@ T.run("Answers and labels (js/sheet.js)", function (check) {
   check("finds \"N/a\" and \"n/a\"", S.vagueWord(Q, "N/a") === "N/a" && S.vagueWord(Q, "Benchmarks: n/a") === "n/a");
   var na = S.blank(Q);
   S.setText(Q, na, "benchmarks.0", "N/a");
-  S.setText(Q, na, "org.mission", "N/A");
+  S.setText(Q, na, "programs.0.name", "N/A");
   check("optional \"N/a\": vague, and the follow-up says leave it blank", S.issueOf(Q, "benchmarks.0", S.get(na, "benchmarks.0")) === "vague" && S.notNeeded(Q, "benchmarks.0", S.get(na, "benchmarks.0")));
-  check("required \"N/A\": the usual vague follow-up", S.issueOf(Q, "org.mission", S.get(na, "org.mission")) === "vague" && !S.notNeeded(Q, "org.mission", S.get(na, "org.mission")));
+  check("required \"N/A\": the usual vague follow-up", S.issueOf(Q, "programs.0.name", S.get(na, "programs.0.name")) === "vague" && !S.notNeeded(Q, "programs.0.name", S.get(na, "programs.0.name")));
   check("\"TBD\" on an optional answer: the usual vague follow-up", !S.notNeeded(Q, "pain.0", { text: "TBD" }));
 
   // "24/7" is a schedule, not a figure.

@@ -25,10 +25,10 @@ T.run("Fill from a document (read-documents.js)", function (check) {
 
   // The three made-up kit sheets, written the way the .txt files are.
   function sheetText(org) {
-    var A = org.answers, L = ["Organization Info", "Name: " + A.org.name,
+    var A = org.answers, W = A.sheet, L = ["Organization Info", "Name: " + A.org.name,
       "Location (include zip): " + A.org.zip,
-      "Web Site: " + A.org.website, "Mission Statement: " + A.org.mission, "Key Words:",
-      "Issue: " + A.org.kwIssue, "People served: " + A.org.kwPeople, "Services: " + A.org.kwServices, "Location: " + A.org.kwLocation, "", "Programs (in order of priority)"];
+      "Web Site: " + A.org.website, "Mission Statement: " + W.mission, "Key Words:",
+      "Issue: " + W.kwIssue, "People served: " + W.kwPeople, "Services: " + W.kwServices, "Location: " + W.kwLocation, "", "Programs (in order of priority)"];
     A.programs.forEach(function (p, i) {
       L.push((i + 1) + ". Program Name: " + p.name, "   * Description: " + p.description, "   * Outputs: " + p.outputs, "   * Current Impact Statement (if any): " + p.impact);
     });
@@ -44,6 +44,9 @@ T.run("Fill from a document (read-documents.js)", function (check) {
     A.programs.forEach(function (p, i) { for (var f in p) if (!s.programs[i] || S.trim(s.programs[i][f].text) !== p[f]) same = false; });
     A.pain.forEach(function (t, i) { if (S.trim(s.pain[i].text) !== t) same = false; });
     check(org.name + ": every answer found, word for word", same && s.programs.length === A.programs.length);
+    check(org.name + ": the sheet's Mission Statement and Key Words lines are skipped, and don't run into other answers",
+      got.every(function (g) { return /^(org\.(name|zip|website)|programs\.|pain\.|benchmarks\.)/.test(g.path); }) &&
+      got.every(function (g) { return g.text.indexOf(A.sheet.kwIssue) === -1 && g.text.indexOf(A.sheet.kwServices) === -1; }));
     check(org.name + ": each suggestion quotes a line of the document exactly", got.length > 0 && got.every(function (g) {
       return g.quote.split("\n").every(function (q) { return text.split("\n").some(function (l) { return S.trim(l) === q; }); });
     }));
@@ -82,8 +85,8 @@ T.run("Fill from a document (read-documents.js)", function (check) {
   check("labelled answers: name, and only the ZIP from the location line (no city box)", find(p, "org.name").text === "Riverbend Family Services" &&
     !find(p, "org.city") && find(p, "org.zip").text === "55999" && find(p, "org.zip").quote === "Location (include zip): Lake Ruth, MN 55999");
   check("\"Website:\" counts as Web Site, without the full stop at the end", find(p, "org.website").text === "www.example.org/riverbend");
-  check("a wrapped mission is joined, and its quote keeps both lines", find(p, "org.mission").text === "We help families in crisis find food, housing and hope." &&
-    find(p, "org.mission").quote === "Mission Statement: We help families in crisis find\nfood, housing and hope.");
+  check("a wrapped Mission Statement and Key Words aren't suggested (no longer asked), and don't run into other answers",
+    !find(p, "org.mission") && !p.some(function (g) { return /^org\.kw/.test(g.path) || g.text.indexOf("hope") > -1 || g.text.indexOf("housing,") > -1; }));
   check("programs follow the document's order; a wrapped output is joined", find(p, "programs.0.name").text === "Family Pantry" &&
     find(p, "programs.0.outputs").text === "410 families served in 2024" && find(p, "programs.1.name").text === "Rent Help" && find(p, "programs.1.outputs").text === "75 households in 2024");
   check("a program with no Description gets no Description suggestion", !find(p, "programs.1.description"));
@@ -99,12 +102,10 @@ T.run("Fill from a document (read-documents.js)", function (check) {
   check("free text: only the web address and a ZIP after a state's letters", plain.length === 2 && find(plain, "org.website").text === "https://example.org/report" &&
     find(plain, "org.zip").text === "55999-1234");
   check("a count like 12345 is never taken for a ZIP", !R.suggest("We served 12345 meals in 2024.").length);
-  // Key Words in four groups.
-  var kw = R.suggest("Location (include zip): Lake Ruth, MN 55999\nKey Words: shelter, meals\nPeople served: families\nServices: food pantry\nLocation: Lake Ruth, Harris County");
-  check("a single Key Words list goes to Issue, for the member to sort", find(kw, "org.kwIssue").text === "shelter, meals");
-  check("People served, Services, and Location right after them, go to their groups", find(kw, "org.kwPeople").text === "families" && find(kw, "org.kwServices").text === "food pantry" &&
-    find(kw, "org.kwLocation").text === "Lake Ruth, Harris County");
-  check("the ZIP still comes from the Location (include zip) line", find(kw, "org.zip").text === "55999" && find(kw, "org.zip").quote.indexOf("include zip") > -1);
+  // Key Words lines are skipped; a "Location:" keyword line after them isn't taken for the ZIP.
+  var kw = R.suggest("Location (include zip): Lake Ruth, MN 55999\nKey Words: shelter, meals\nPeople served: families\nServices: food pantry\nLocation: Lake Ruth, MN 55111");
+  check("Key Words, People served, Services and their Location line suggest nothing", kw.length === 1);
+  check("the ZIP still comes from the Location (include zip) line only", find(kw, "org.zip").text === "55999" && find(kw, "org.zip").quote.indexOf("include zip") > -1);
   check("nothing found in blank text", R.suggest("").length === 0 && R.suggest("   \n  ").length === 0);
   check("the same box is suggested once (the first one found)", R.suggest("Name: First Org\nName: Second Org").filter(function (g) { return g.path === "org.name"; }).length === 1);
 });

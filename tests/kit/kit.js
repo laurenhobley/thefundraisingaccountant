@@ -5,7 +5,9 @@
   written as a member might have them, for trying the builder by hand.
 
   Each flaw names the answer it's in and the follow-up the builder should ask:
-  "missing", "vague", "output", "math", "assumption", "duplicate" or "overlap".
+  "missing", "output", "math", "assumption", "duplicate" or "overlap". The
+  sheets still have Mission Statement and Key Words lines (in "sheet"), which
+  the builder no longer asks for; "Fill from a document" skips them.
 */
 var FAC_TEST_KIT = [
   {
@@ -19,7 +21,10 @@ var FAC_TEST_KIT = [
       { path: "programs.1.impact", issue: "missing", what: "Program 2 has no Outcomes" }
     ],
     answers: {
-      org: { name: "Maple Street Youth Center", zip: "", website: "https://example.org/maple",
+      org: { name: "Maple Street Youth Center", zip: "", website: "https://example.org/maple" },
+      // On the sheet only: the builder no longer asks for these (Nov 11), and
+      // "Fill from a document" must skip them.
+      sheet: {
         mission: "We give young people a safe place to learn and grow after school.",
         kwIssue: "youth, after-school", kwPeople: "middle schoolers, teens", kwServices: "homework help, mentoring, sports", kwLocation: "Maple Falls" },
       programs: [
@@ -40,7 +45,10 @@ var FAC_TEST_KIT = [
       { path: "programs.1.impact", issue: "missing", what: "Program 2 has no Outcomes" }
     ],
     answers: {
-      org: { name: "Harbor Light Shelter", zip: "04999", website: "https://example.org/harbor",
+      org: { name: "Harbor Light Shelter", zip: "04999", website: "https://example.org/harbor" },
+      // On the sheet only: the builder no longer asks for these (Nov 11), and
+      // "Fill from a document" must skip them.
+      sheet: {
         mission: "Safe shelter and a warm meal for anyone without a home.",
         kwIssue: "homelessness", kwPeople: "adults without a home", kwServices: "shelter, meals", kwLocation: "Port Jensen" },
       programs: [
@@ -55,12 +63,14 @@ var FAC_TEST_KIT = [
     name: "Prairie Health Clinic",
     file: "prairie-health-clinic.txt",
     flaws: [
-      { path: "org.mission", issue: "vague", what: "Mission Statement is \"TBD\"" },
       { path: "programs.0.outputs", issue: "output", what: "Outputs has no year" },
       { path: "benchmarks.0", issue: "assumption", what: "An \"if\" figure with no source" }
     ],
     answers: {
-      org: { name: "Prairie Health Clinic", zip: "67999", website: "https://example.org/prairie",
+      org: { name: "Prairie Health Clinic", zip: "67999", website: "https://example.org/prairie" },
+      // On the sheet only: the builder no longer asks for these (Nov 11), and
+      // "Fill from a document" must skip them.
+      sheet: {
         mission: "TBD",
         kwIssue: "health care, rural", kwPeople: "rural families", kwServices: "free clinic, checkups", kwLocation: "Dune City" },
       programs: [

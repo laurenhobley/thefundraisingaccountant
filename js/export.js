@@ -124,8 +124,8 @@ var FACExport = (function () {
     // The ZIP, then its place from our copy of GeoNames' list: "77001 (Houston, TX)".
     var where = window.FACZip && FACZip.place(state.org.zip.text);
     L.push(line(Q.exportText.location, answerText(Q, state, "org.zip") + (where ? " (" + where + ")" : "")));
-    ["website", "mission"].forEach(function (id) { L.push(line(q(org, id).label, answerText(Q, state, "org." + id))); });
-    L.push(line(Q.keywords.title, keywordsText(Q, state)));
+    L.push(line(q(org, "website").label, answerText(Q, state, "org.website")));
+    // No Mission Statement or Key Words lines (Lauren, 2026-11-11): ROI.bot drafts them.
     L.push("");
 
     // Only programs above the red line, if the member stack ranked them.
@@ -175,17 +175,6 @@ var FACExport = (function () {
 
   // One step's prompt: FAC's line from the workbook, that step's inputs (only
   // the ones filled in, with their labels), then the guardrail line.
-  // FAC's "Key Words:" line with the four groups in it: "Issue: family
-  // homelessness; Services: emergency shelter, case management". A group
-  // left empty is left out.
-  function keywordsText(Q, state) {
-    var org = S.section(Q, "org");
-    return S.KEYWORD_GROUPS.map(function (id) {
-      var list = S.keywordList(state.org[id].text);
-      return list.length ? org.questions.filter(function (x) { return x.id === id; })[0].label + ": " + list.join(", ") : "";
-    }).filter(function (t) { return t; }).join("; ");
-  }
-
   // The member's own 3.4 boxes, in order.
   var ROI_ASK = ["investment", "value", "roi", "everyDollar", "ask", "timeframe"];
 
@@ -298,7 +287,7 @@ var FACExport = (function () {
   }
 
   return {
-    markdown: markdown, build: build, keywordsText: keywordsText, answerText: answerText, defaults: defaults, parts: parts, whyNow: whyNow, FILE_NAME: FILE_NAME,
+    markdown: markdown, build: build, answerText: answerText, defaults: defaults, parts: parts, whyNow: whyNow, FILE_NAME: FILE_NAME,
     stepPrompt: stepPrompt, funderPart: funderPart, funderText: funderText, investSentence: investSentence, packageText: packageText, PACKAGE_FILE: PACKAGE_FILE
   };
 })();

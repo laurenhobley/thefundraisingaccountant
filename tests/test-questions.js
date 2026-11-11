@@ -30,7 +30,7 @@ T.run("Questions (js/questions.js)", function (check) {
     [Q.flow.numbers.org, Q.flow.numbers.program, Q.flow.numbers.outcomes, Q.flow.numbers.pain, Q.flow.numbers.benchmarks, Q.flow.numbers.constraints, Q.flow.numbers.review2].join() === "1.1,1.2,1.3,1.4,1.4,1.5,2.5");
   check("the three \"Happy with…?\" checks have their wording", ["programs", "benchmarks", "constraints"].every(function (k) { return !!Q.flow.checkpoints[k].title && !!Q.flow.checkpoints[k].text; }));
   check("Version 2 buttons: \"← Previous\" and \"Next\", and the happy line for each part", Q.flow.previousButton === "← Previous" && Q.flow.nextButton === "Next" &&
-    Q.flow.happyLine === "Once you are happy with your {thing}, press Next to continue." && ["keywords", "stack ranking", "outputs to outcomes", "context", "constraints", "pain statements", "Donate Now table", "Major Donor Ladder"].every(function (t) { for (var k in Q.flow.happy) if (Q.flow.happy[k] === t) return true; return false; }));
+    Q.flow.happyLine === "Once you are happy with your {thing}, press Next to continue." && ["organization info", "stack ranking", "outputs to outcomes", "context", "constraints", "pain statements", "Donate Now table", "Major Donor Ladder"].every(function (t) { for (var k in Q.flow.happy) if (Q.flow.happy[k] === t) return true; return false; }));
   check("stack rank: FAC's template columns (Driver 1-3, Money), matching the sheet's, and its messages",
     Q.rank.columns.map(function (c) { return c.label; }).join() === "Driver 1,Driver 2,Driver 3,Money" && Q.rank.columns.map(function (c) { return c.id; }).join() === S.RANK_COLUMNS.join() &&
     ["ask", "yes", "no", "needChoice", "needNames", "needScores", "wrongScore", "sortButton", "lineLabel", "belowLine"].every(function (k) { return !!Q.rank[k]; }));
@@ -49,8 +49,8 @@ T.run("Questions (js/questions.js)", function (check) {
   check("RTCC headings are there; Role is empty until FAC writes it", ["roleHeading", "contextHeading", "taskHeading", "constraintsHeading"].every(function (k) { return !!Q.rtcc[k]; }) && Q.rtcc.role === "");
   check("saved versions have their wording", ["versionsTitle", "versionsNone", "versionDownload"].every(function (k) { return !!Q.review[k]; }) &&
     Q.review.versionLabel.indexOf("{n}") > -1 && Q.review.versionLabel.indexOf("{date}") > -1);
-  check("Organization Info asks: Name, ZIP code (no city and state), Website, Mission Statement, and Key Words in four groups",
-    labels("org") === "Name, Location: ZIP code, Web Site, Mission Statement, Issue, People served, Services, Location" && Q.keywords.title === "Key Words");
+  check("Organization Info asks only Name, ZIP code (no city and state) and Website: no Mission Statement or Key Words (Nov 11)",
+    labels("org") === "Name, Location: ZIP code, Web Site" && !Q.keywords);
   check("Organization Info: all required but the website, which Screen 1 asks for (Steve's flowchart)",
     S.section(Q, "org").questions.filter(function (q) { return !q.required; }).map(function (q) { return q.id; }).join() === "website");
   check("Programs ask: Program Name, Description, Outputs, Current Impact Statement",
@@ -59,8 +59,8 @@ T.run("Questions (js/questions.js)", function (check) {
   check("every program question is required; Outputs and Outcomes are asked on 1.3 (Steve's flowchart)",
     S.section(Q, "programs").questions.every(function (q) { return q.required; }) &&
     S.section(Q, "programs").questions.filter(function (q) { return q.screen === "outcomes"; }).map(function (q) { return q.id; }).join() === "outputs,impact");
-  check("checks after 1.1, 1.2 and 1.3 have their flowchart titles; 1.5 can skip to Step 2; Magic Wand is optional",
-    Q.flow.checkpoints.org.title === "Happy with your keywords?" && Q.flow.checkpoints.programs.title === "Happy with your stack ranking?" &&
+  check("checks after 1.1, 1.2 and 1.3 have their titles; 1.5 can skip to Step 2; Magic Wand is optional",
+    Q.flow.checkpoints.org.title === "Happy with your organization info?" && Q.flow.checkpoints.programs.title === "Happy with your stack ranking?" &&
     Q.flow.checkpoints.outcomes.title === "Happy with your outputs to outcomes?" && Q.flow.checkpoints.benchmarks.title === "Happy with your context?" &&
     Q.flow.skipToStep2 === "Skip to Step 2" && Q.wand.note === "(optional)");
   check("Local Context/Data and Benchmarks are optional", S.section(Q, "pain").optional && S.section(Q, "benchmarks").optional);
@@ -93,8 +93,9 @@ T.run("Questions (js/questions.js)", function (check) {
   check("duplicate follow-ups name the other {program}", [Q.followUps.duplicateName, Q.followUps.duplicateDescription].every(function (l) { return l.indexOf("{program}") > -1; }));
   check("These are separate programs button has wording", !!Q.followUps.separateButton);
   check("shared-number follow-up names the {program} and the {number}", Q.followUps.overlap.indexOf("{program}") > -1 && Q.followUps.overlap.indexOf("{number}") > -1);
-  check("review screen has its wording (checkbox, Copy, Download, messages)",
-    ["title", "text", "allClear", "previewTitle", "checkbox", "locked", "copyButton", "downloadButton", "copied", "selected", "downloaded"].every(function (k) { return !!Q.review[k]; }));
+  check("review screen has its wording (Yes, copy my prompt; Download; messages), and no review tick",
+    ["title", "text", "allClear", "previewTitle", "copyButton", "downloadButton", "copied", "selected", "downloaded"].every(function (k) { return !!Q.review[k]; }) &&
+    Q.review.copyButton === "Yes, copy my prompt" && Q.packageText.copyButton === "Yes, copy my package" && !Q.review.checkbox && !Q.review.locked && !Q.packageText.checkbox);
   check("export uses FAC's \"Location (include zip)\" line", Q.exportText.location === "Location (include zip)");
   check("export source note and same-group note have their slots",
     Q.exportText.source.indexOf("{note}") > -1 && ["{program}", "{other}", "{number}"].every(function (k) { return Q.exportText.sameGroup.indexOf(k) > -1; }));
