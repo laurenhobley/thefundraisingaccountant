@@ -64,3 +64,9 @@ reference/
 CLAUDE.md
 PROGRESS.md
 DECISIONS.md
+
+# ---------- Starter kit v3 folders (FAC documents and notes; keep private) ----------
+FAC_documents/
+reference_test_data/
+feedback/
+BUILD_NOTES.md
