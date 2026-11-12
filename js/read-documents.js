@@ -41,7 +41,7 @@ var FACRead = (function () {
     { list: "", re: /^(organization\s+info|programs?\b|final\s+prompt|constraints?\b)/i },
     // The other parts of ROI.bot's Step 1.1 and 1.2 report end a list too,
     // so they're never read as a benchmark (Nov 11).
-    { list: "", re: /^(two\s+things\s+to\s+check|sources?\b|part\s+\d|step\s+\d\.\d)/i }
+    { list: "", re: /^((one|two)\s+things?\s+to\s+check|needs\s+checking|sources?\b|part\s+\d|step\s+\d\.\d)/i }
   ];
   var BULLET = /^\s*([*•●○◦▪‣–-]|\d+[.)])\s+/;
   var ZIP = /\b(\d{5})(-\d{4})?\b/;

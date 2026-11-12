@@ -68,3 +68,66 @@ T.run("ROI.bot's report first (builder.html)", function (check) {
   check("and Edit still opens that program's own screen", /Program 2 of 2/.test(title()) && $("f-programs-1-description").value === "Two years of check-ins");
   $("clear").click(); $("clear").click();
 });
+
+T.run("Step 1.3 like Steve's Family Promise example (sheet.js)", function (check) {
+  var Q = FAC_QUESTIONS, S = FACSheet, now = new Date(2026, 10, 11);
+  var items = S.splitItems("Volunteers: 2,800+ (undated, GuideStar); Families sheltered: ___\nNights of shelter: ___");
+  check("an answer splits into named lines at \";\" or a new line; \"___\" is a blank",
+    JSON.stringify(items) === JSON.stringify([{ label: "Volunteers", value: "2,800+ (undated, GuideStar)" }, { label: "Families sheltered", value: "" }, { label: "Nights of shelter", value: "" }]));
+  check("a line with no name before a colon stays whole (\"86% … (Community Impact: 2019)\")",
+    S.splitItems("86% of graduating families reached stable housing (Community Impact: 2019)")[0].label === "" &&
+    S.splitItems("Served 414 families in 2024")[0].value === "Served 414 families in 2024");
+  check("lines join back, with ___ for a named blank and empty unnamed lines dropped",
+    S.joinItems([{ label: "Volunteers", value: "2,800+" }, { label: "Meals", value: "" }, { label: "", value: " " }]) === "Volunteers: 2,800+; Meals: ___");
+  check("a figure with no year is undated; more than 18 months old is old; recent is fine; no number, nothing to check",
+    S.figureAge("2,800+ (undated, GuideStar)", now).kind === "undated" && S.figureAge("86% housed (2019)", now).kind === "old" && S.figureAge("86% housed (2019)", now).year === 2019 &&
+    S.figureAge("48 families (2025)", now).kind === "" && S.figureAge("Families save income", now).kind === "" && S.figureAge("90% in FY24", now).kind === "old");
+  var st = S.blank(Q);
+  S.setText(Q, st, "programs.0.name", "Shelter");
+  S.setText(Q, st, "programs.0.outputs", "Volunteers: 2,800+ (undated, GuideStar); Families sheltered: 48 in 2025 (From you)");
+  S.setText(Q, st, "programs.0.impact", "86% reached stable housing (2019)");
+  var f = S.figuresToCheck(st, now);
+  check("One thing to check lists the old and undated figures, in order", f.length === 2 && f[0].label === "Volunteers" && f[0].kind === "undated" && f[1].kind === "old" && f[1].year === 2019);
+});
+
+T.run("Step 1.3 like Steve's Family Promise example (builder.html)", function (check) {
+  var Q = FAC_QUESTIONS, O = Q.outcomes;
+  function $(id) { return document.getElementById(id); }
+  function type(id, text) { var e = $(id); e.value = text; e.dispatchEvent(new Event("input", { bubbles: true })); }
+  function saved() { return JSON.parse(localStorage.getItem("fac-prompt-sheet-draft-v1")); }
+  function title() { return document.querySelector("#screen h2").textContent; }
+  $("clear").click(); $("clear").click();
+  type("f-org-name", "Lakeside Family Shelter"); type("f-org-zip", "55999");
+  $("next").click(); $("next").click();
+  type("f-programs-0-name", "Shelter"); type("f-programs-0-description", "Overnight rooms for families");
+  $("next").click();
+  document.querySelector('#screen .rank-use[value="no"]').click();
+  $("next").click(); $("next").click();
+  check("on 1.3", title() === Q.flow.numbers.outcomes + O.title);
+  check("Steve's intro, and a table: Program | Outputs (what you did) | Outcomes (what changed)",
+    document.querySelector("#screen .hint").textContent === O.intro &&
+    Array.prototype.map.call(document.querySelectorAll("#screen .oo-head [role=columnheader]"), function (h) { return h.textContent.replace("*", ""); }).join("|") ===
+      "Program|Outputs (what you did)|Outcomes (what changed)" && document.querySelector("#oo-row-0 .oo-prog").textContent === "Program 1: Shelter");
+  check("an empty cell is one gray \"Click to change\" line", document.querySelectorAll('#oo-row-0 .oo-item[data-path="programs.0.outputs"]').length === 1 &&
+    document.querySelector('#oo-row-0 .oo-item[data-path="programs.0.outputs"]').placeholder === O.placeholder);
+  type("f-programs-0-outputs", "Volunteers: 2,800+ (undated, GuideStar); Families sheltered: ___");
+  var lines = document.querySelectorAll('#oo-row-0 .oo-item[data-path="programs.0.outputs"]');
+  check("each output shows on its own named line, and a ___ is a gray blank", lines.length === 2 &&
+    document.querySelectorAll("#oo-row-0 .oo-name")[0].textContent === "Volunteers:" && lines[0].value === "2,800+ (undated, GuideStar)" &&
+    document.querySelectorAll("#oo-row-0 .oo-name")[1].textContent === "Families sheltered:" && lines[1].value === "");
+  lines[1].value = "48 in 2025"; lines[1].dispatchEvent(new Event("input", { bubbles: true })); lines[1].dispatchEvent(new Event("change", { bubbles: true }));
+  check("a figure the member fills in is labeled (From you), and saved in the answer",
+    lines[1].value === "48 in 2025 " + O.fromYou && saved().programs[0].outputs.text === "Volunteers: 2,800+ (undated, GuideStar); Families sheltered: 48 in 2025 (From you)");
+  type("f-programs-0-impact", "86% of families reached stable housing (Community Impact, 2019)");
+  check("One thing to check lists the undated and old figures, and asks for newer numbers", !$("oo-check").hidden &&
+    $("oo-check").querySelector(".lbl").textContent === O.checkTitle &&
+    $("oo-check-text").textContent === O.checkText.replace("{list}", "Shelter: Volunteers (undated); Shelter: 86% of families reached stable housing (Community Impact, 2019) (2019)"));
+  check("Gray tags can be filled in later, and under Next: go deeper or skip", document.querySelector("#screen").textContent.indexOf(O.later) > -1 &&
+    !$("afterNext").hidden && $("afterNext").textContent === O.nextNote);
+  document.querySelector('#oo-row-0 [data-act="ooAdd"][data-path="programs.0.impact"]').click();
+  check("+ Add a line adds a blank line and puts the cursor there", document.querySelectorAll('#oo-row-0 .oo-item[data-path="programs.0.impact"]').length === 2 &&
+    document.activeElement === document.querySelectorAll('#oo-row-0 .oo-item[data-path="programs.0.impact"]')[1]);
+  $("next").click();
+  check("Next goes on to the 1.3 check, and the line under Next goes away", title().indexOf(Q.flow.checkpoints.outcomes.title) > -1 && $("afterNext").hidden);
+  $("clear").click(); $("clear").click();
+});

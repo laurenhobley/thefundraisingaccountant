@@ -111,20 +111,25 @@ var FAC_QUESTIONS = {
     listTitle: "From ROI.bot's report",
     quoteLabel: "In ROI.bot's report:",
     task: "Read our whole website, not just the home page: the About, Mission, Programs or Services, Impact, Results or Annual Report, News, Locations and Contact pages, and any reports linked from them. " +
-      "Also read our social media pages and our GuideStar (Candid) profile or Form 990. Then give us our report in four parts, in this order. " +
+      "Also read our social media pages and our GuideStar (Candid) profile or Form 990. Then give us our report in five parts, in this order. " +
       "Part 1, Step 1.1 Your Organization: a table with the columns Field, What I found and Source, and these rows: Name; Website; " +
       "Location (street address, and whether it matches our ZIP); Area served; Mission (our exact words, 125 characters or fewer); Social media. " +
       "Then our keywords, in our own words, in five groups: Issue, People served, Services, Location and Results. " +
       "Part 2, Step 1.2 Your Programs, Stack Ranked: a table with the columns Rank, Program, Mission fit, Prominence, Evidence, Score and Why it ranks here. " +
       "Score each program from 1 to 3 on Mission fit, Prominence and Evidence (3 is the highest), multiply the three for its Score, and rank from the highest Score down. " +
       "In Why it ranks here, name the program's strongest result and its source, or say that no result is published. " +
-      "Part 3, Two things to check: what you couldn't find or confirm, as questions for us. Then list your sources with their dates. " +
-      "Part 4, our sheet, last, in plain text with no tables or bold, exactly like this: a line \"Organization Info\", then \"Name: \", \"Location (include zip): \", \"Web Site: \" and \"Mission Statement: \"; " +
-      "a line \"Programs (in order of priority)\", then for each program in your Part 2 order \"1. Program Name: \", \"* Description: \", \"* Outputs: \" (how many, of what, and the year) and \"* Current Impact Statement (if any): \"; " +
+      // Part 3: Steve's Step 1.3 prompt and Family Promise Step 1.3 example (Nov 11).
+      "Part 3, Step 1.3 Outputs to Outcomes: a table with the columns Program, Outputs (what you did) and Outcomes (what changed), one row per program in your Part 2 order. " +
+      "Outputs are counts such as families served, nights, meals, classes or volunteers; Outcomes are measured changes such as % housed or % employed. " +
+      "Write each one as its name, a colon and its number, with its year and source in brackets, like \"Volunteers: [number] ([year or undated], [source])\"; if there is no number with a source, write \"___\" for us to fill in. " +
+      "Then One thing to check: the figures that are more than 18 months old or undated. " +
+      "Part 4, Two things to check: what you couldn't find or confirm, as questions for us. Then list your sources with their dates. " +
+      "Part 5, our sheet, last, in plain text with no tables or bold, exactly like this: a line \"Organization Info\", then \"Name: \", \"Location (include zip): \", \"Web Site: \" and \"Mission Statement: \"; " +
+      "a line \"Programs (in order of priority)\", then for each program in your Part 2 order \"1. Program Name: \", \"* Description: \", \"* Outputs: \" (that program's outputs from Part 3, separated by semicolons) and \"* Current Impact Statement (if any): \" (its outcomes from Part 3, separated by semicolons); " +
       "a line \"Local Context/Data\", then one \"* \" line for each local fact, with its source and year; " +
       "a line \"Benchmarks\", then one \"* \" line for each benchmark, with its source and year. End with the last benchmark. " +
-      "Write only what you found. If you can't find something, leave it blank and say so in Part 3 instead of guessing.",
-    packageSection: "Steps 1.1 and 1.2 from ROI.bot"
+      "Write only what you found. Never invent a number or a source. If you can't find something, leave it blank and say so in Part 4 instead of guessing.",
+    packageSection: "Steps 1.1 to 1.3 from ROI.bot"
   },
 
   // Under the ZIP box: the place for that ZIP, from GeoNames' free ZIP list
@@ -579,13 +584,27 @@ var FAC_QUESTIONS = {
   // 1.3 Outputs to Outcomes (Steve's Step 1.3 instructions): one row per
   // program above the red line, in rank order. Outcomes is each program's
   // Current Impact Statement. Then go deeper (1.4, 1.5) or skip to 2.1.
-  // Draft for Steve, apart from the title, "later" and choiceAsk.
+  // Laid out like Steve's Family Promise Step 1.3 example (Nov 11): a table,
+  // each output or outcome on its own line, gray "Click to change" blanks,
+  // "One thing to check" for old or undated figures. Wording from the
+  // example and Steve's 1.3 instructions, except where marked draft.
   outcomes: {
     title: "Outputs to Outcomes",
-    intro: "One row per program, in your ranked order. Check what each program did and what changed.",
-
+    // The example's words, with "tell me" (its chat bar) as editing the lines here.
+    intro: "Here's what each program does and what changes because of it, in your ranked order. Check it, then change anything that isn't right.",
+    programHead: "Program",
     placeholder: "Click to change",
+    // A line's name, for a new line. Draft for Steve.
+    addLine: "+ Add a line",
+    editText: "Edit as text",
+    // Added to a figure the member fills in or changes (Steve's 1.3 instructions: labeled "From you").
+    fromYou: "(From you)",
+    checkTitle: "One thing to check",
+    // {list}: the figures, e.g. "Shelter: Volunteers (undated); 86% of families… (2019)". Draft for Steve.
+    checkText: "These figures are old (more than 18 months) or undated: {list}. Do you have newer numbers?",
+    checkUndated: "undated",
     later: "Gray tags can be filled in later.",
+    nextNote: "Next, you can go deeper with context and rules, or skip to Step 2, Get the Right #s.",
     choiceAsk: "Go deeper now with your files and research (1.4 Add Context), or skip to Step 2?",
     deeper: "Go deeper (1.4 Add Context)",
     skip: "Skip to Step 2",

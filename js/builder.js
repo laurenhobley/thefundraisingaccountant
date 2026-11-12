@@ -342,19 +342,101 @@
   // program above the red line, in rank order, with its Outputs and its
   // Outcomes (the Current Impact Statement), both required (Steve's Step 1
   // flowchart). Its check asks go deeper or skip.
+  //
+  // Laid out like Steve's Family Promise Step 1.3 example (Nov 11): a table
+  // (Program | Outputs | Outcomes), each output or outcome on its own line
+  // ("Volunteers: 2,800+ (undated, GuideStar)"), gray "Click to change"
+  // blanks, and "One thing to check" for figures over 18 months old or
+  // undated. Each box is still saved as one answer (its lines joined with
+  // "; "), so follow-ups, labels and the prompt work as before. "Edit as
+  // text" opens the whole answer in one box.
   function outcomesScreen() {
-    var O = Q.outcomes, rows = "";
+    var O = Q.outcomes, cols = S.fieldsOf(Q, "outcomes"), rows = "";
     for (var i = 0; i < S.included(state); i++) {
       var name = S.trim(state.programs[i].name.text) || Q.flow.empty, at = "programs." + i + ".";
-      rows += '<div class="oo-row" id="oo-row-' + i + '"><span class="lbl">' + esc(programName(i) + ": " + name) + '</span>' +
-        suggestionList(at, S.fieldsOf(Q, "outcomes").map(function (q) { return at + q.id; })) + '<div class="oo-cells">' +
-        // Each 1.3 box's name, help and required come from its question in questions.js (kit v3, Fix 3).
-        S.fieldsOf(Q, "outcomes").map(function (q) {
-          return field({ label: q.screenLabel || q.label, kind: q.kind, help: q.help, placeholder: q.placeholder || O.placeholder, required: q.required }, at + q.id);
-        }).join("") + '</div></div>';
+      rows += '<div class="oo-row" id="oo-row-' + i + '" role="row"><span class="lbl oo-prog" role="rowheader">' + esc(programName(i) + ": " + name) + '</span>' +
+        suggestionList(at, cols.map(function (q) { return at + q.id; })) +
+        // Each column's name, help and required come from its question in questions.js (kit v3, Fix 3).
+        cols.map(function (q) { return ooCell(q, at + q.id); }).join("") + '</div>';
     }
-    return heading(N.outcomes, O.title) + '<p class="hint">' + esc(O.intro) + '</p>' + rows +
-      '<p class="hint">' + esc(O.later) + '</p>';
+    return heading(N.outcomes, O.title) + '<p class="hint">' + esc(O.intro) + '</p>' +
+      '<div class="oo-table" role="table"><div class="oo-head" role="row"><span role="columnheader">' + esc(O.programHead) + '</span>' +
+      cols.map(function (q) { return '<span role="columnheader">' + esc(q.screenLabel || q.label) + (q.required ? '<span class="req">*</span>' : "") + '</span>'; }).join("") +
+      '</div>' + rows + '</div>' +
+      '<p class="hint">' + esc(O.later) + '</p>' +
+      '<div class="oo-check" id="oo-check" hidden><span class="lbl">' + esc(O.checkTitle) + '</span><p id="oo-check-text"></p></div>';
+  }
+  // One Outputs or Outcomes cell: its lines, "+ Add a line", the whole
+  // answer as text (folded away), then its follow-up and label boxes.
+  function ooCell(q, path) {
+    var id = idOf(path), O = Q.outcomes, name = q.screenLabel || q.label;
+    return '<div class="f oo-cell" data-col="' + esc(name) + '" role="cell">' +
+      '<div class="oo-lines" id="' + id + '-lines">' + ooLines(path, name) + '</div>' +
+      '<button type="button" class="link oo-add" data-act="ooAdd" data-path="' + path + '">' + esc(O.addLine) + '</button>' +
+      '<details class="oo-text"><summary>' + esc(O.editText) + '</summary>' +
+      '<label for="' + id + '">' + esc(name) + (q.required ? '<span class="req">*</span>' : "") + '</label>' +
+      (q.help ? '<p class="hint">' + esc(q.help) + '</p>' : "") +
+      '<textarea class="ans" id="' + id + '" data-path="' + path + '" placeholder="' + esc(q.placeholder || O.placeholder) + '"></textarea></details>' +
+      followUpBox(path) + (S.needsLabel(path) ? labelBox(path) : "") + '</div>';
+  }
+  function ooLines(path, name) {
+    var items = S.splitItems(S.get(state, path).text);
+    if (!items.length) items = [{ label: "", value: "" }];
+    return items.map(function (it, k) { return ooLine(path, k, it, name); }).join("");
+  }
+  function ooLine(path, k, it, name) {
+    return '<div class="oo-line">' + (it.label ? '<span class="oo-name">' + esc(it.label) + ':</span>' : "") +
+      '<textarea rows="1" class="oo-item" data-path="' + path + '" data-k="' + k + '" data-label="' + esc(it.label) + '" data-orig="' + esc(it.value) + '"' +
+      ' placeholder="' + esc(Q.outcomes.placeholder) + '" aria-label="' + esc(name + (it.label ? ": " + it.label : "")) + '">' + esc(it.value) + '</textarea></div>';
+  }
+  // The lines again from the saved answer (after "Edit as text"), unless the
+  // member is typing in one of them.
+  // Puts the cursor in a box. On 1.3 that's the cell's first blank line (or
+  // its first line), not the folded "Edit as text" box.
+  function focusBox(id) {
+    var lines = $(id + "-lines"), target = $(id);
+    if (lines) { var blank = Array.prototype.filter.call(lines.querySelectorAll(".oo-item"), function (x) { return !S.trim(x.value); })[0]; target = blank || lines.querySelector(".oo-item") || target; }
+    if (target) target.focus();
+  }
+  var ooTyping = false;
+  function refreshLines(path) {
+    var box = $(idOf(path) + "-lines");
+    if (!box || ooTyping || box.contains(document.activeElement)) return;
+    var q = S.fieldsOf(Q, "outcomes").filter(function (x) { return x.id === path.split(".")[2]; })[0];
+    box.innerHTML = ooLines(path, q ? q.screenLabel || q.label : "");
+  }
+  // A line typed in: the box's answer is all its lines joined. When the
+  // member changes a figure (on leaving the line), it's labeled "(From you)",
+  // as Steve's 1.3 instructions say.
+  function ooEdit(el, type) {
+    var path = el.getAttribute("data-path"), O = Q.outcomes;
+    if (type === "change") {
+      var v = S.trim(el.value);
+      if (v && v !== S.trim(el.getAttribute("data-orig")) && v.indexOf(O.fromYou) < 0) { el.value = v + " " + O.fromYou; el.setAttribute("data-orig", el.value); }
+    }
+    var items = Array.prototype.map.call(screen.querySelectorAll('.oo-item[data-path="' + path + '"]'), function (x) {
+      return { label: x.getAttribute("data-label"), value: x.value };
+    });
+    S.setText(Q, state, path, S.joinItems(items));
+    var ta = $(idOf(path)); if (ta) ta.value = S.get(state, path).text;
+    unreview();
+    // The lines are what the member is typing in: keep them, don't rebuild them.
+    ooTyping = true;
+    try { refresh(path); } finally { ooTyping = false; }
+    save();
+  }
+  // "One thing to check" (Steve's example): figures over 18 months old or undated.
+  function refreshOOCheck() {
+    var box = $("oo-check");
+    if (!box) return;
+    var O = Q.outcomes, list = S.figuresToCheck(state, new Date());
+    box.hidden = !list.length;
+    $("oo-check-text").textContent = list.length ? O.checkText.replace(/\{list\}/g, function () {
+      return list.map(function (f) {
+        var prog = S.trim(state.programs[f.program].name.text) || programName(f.program), fig = f.label || (f.value.length > 90 ? f.value.slice(0, 87) + "…" : f.value);
+        return prog + ": " + fig + " (" + (f.kind === "old" ? f.year : O.checkUndated) + ")";
+      }).join("; ");
+    }) : "";
   }
 
   // The 1.3 check's question: go deeper (1.4, 1.5) or skip to Step 2.
@@ -867,11 +949,14 @@
     refreshPackage();
     refreshReview();
     refreshVersions();
+    refreshOOCheck();
+    // Under Next on 1.3, as in Steve's example.
+    var after = $("afterNext");
+    if (after) { after.hidden = st.kind !== "outcomes"; after.textContent = st.kind === "outcomes" ? Q.outcomes.nextNote : ""; }
     needZipList();
     save();
 
-    var target = focusId && $(focusId);
-    if (target) target.focus();
+    if (focusId) focusBox(focusId);
     return st;
   }
 
@@ -992,6 +1077,7 @@
   // Shows or hides the label box for one answer, without rebuilding the screen.
   function refresh(path) {
     refreshFollowUp(path);
+    if (/^programs\.\d+\.(outputs|impact)$/.test(path)) { refreshLines(path); refreshOOCheck(); }
     if (path === "org.zip") { refreshZipPlace(); needZipList(); }
     var box = $(idOf(path) + "-lab");
     if (!box) return;
@@ -1028,6 +1114,7 @@
   function onEdit(e) {
     var el = e.target, path = el.getAttribute("data-path");
     if (el.id === "doc-text") { docText = el.value; return; }
+    if (el.classList.contains("oo-item")) { ooEdit(el, e.type); return; }
     if (el.id === "doc-file") { if (e.type === "change" && el.files && el.files[0]) readChosenFile(el.files[0]); return; }
     if (onRankEdit(e)) return;
     if (el.classList.contains("depth-choice")) { if (e.type === "change") { state.depth = el.value; $("depth-msg").textContent = ""; unreview(); save(); } return; }
@@ -1134,6 +1221,13 @@
     if (act === "removeDonorRow") { S.removeDonorRow(state, b.getAttribute("data-table"), i); unreview(); render(); return; }
     if (act === "rtccReset") { state.rtcc[b.getAttribute("data-part")] = null; unreview(); render(); return; }
     if (act === "findAnswers") { findAnswers(""); return; }
+    if (act === "ooAdd") {
+      // A new blank line in that cell, ready to type in (saved once it has words).
+      var ap = b.getAttribute("data-path"), lines = $(idOf(ap) + "-lines"), cq = S.fieldsOf(Q, "outcomes").filter(function (x) { return x.id === ap.split(".")[2]; })[0];
+      lines.insertAdjacentHTML("beforeend", ooLine(ap, lines.querySelectorAll(".oo-item").length, { label: "", value: "" }, cq ? cq.screenLabel || cq.label : ""));
+      lines.querySelector(".oo-line:last-child .oo-item").focus();
+      return;
+    }
     if (act === "s1Use" || act === "s1Keep") {
       var sid = b.getAttribute("data-id"), sv = S.screen1Changes(state, S.loadScreen1())[sid];
       if (sv && act === "s1Use") { S.useScreen1(Q, state, sid, sv); unreview(); }
@@ -1203,7 +1297,7 @@
     if (!m.length) { go(S.nextStep(state, state.step)); return; }
     m.forEach(refresh);
     save();
-    $(idOf(m[0])).focus();
+    focusBox(idOf(m[0]));
   });
 
   var clearArmed = false;

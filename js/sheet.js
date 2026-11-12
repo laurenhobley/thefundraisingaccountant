@@ -319,6 +319,55 @@ var FACSheet = (function () {
     return n && y ? "" : !n && !y ? "outputNoNumberOrYear" : !n ? "outputNoNumber" : "outputNoYear";
   }
 
+  // ---------- 1.3 lines (Steve's Family Promise Step 1.3 example) ----------
+
+  // An Outputs or Outcomes box as its lines: "Volunteers: 2,800+ (undated,
+  // GuideStar); Families sheltered: ___" gives [{ label: "Volunteers",
+  // value: "2,800+ (undated, GuideStar)" }, { label: "Families sheltered",
+  // value: "" }]. Lines are split at ";" or a new line. A line's name is the
+  // words before its first colon, starting with a letter, with no brackets,
+  // % or $ ("Still housed after 2 years: ___" is a name); "___" is a blank
+  // the member can fill in later.
+  function splitItems(text) {
+    return String(text || "").split(/\s*;\s*|\s*\n+\s*/).map(trim).filter(function (x) { return x; }).map(function (x) {
+      var m = /^([A-Za-z][^:()%$]{0,60}):\s*(.*)$/.exec(x), label = m ? trim(m[1]) : "", value = m ? trim(m[2]) : x;
+      if (/^_+$/.test(value)) value = "";
+      return { label: label, value: value };
+    });
+  }
+  // The lines back as one answer, with ___ for a blank named line.
+  function joinItems(items) {
+    return items.filter(function (it) { return it.label || trim(it.value); }).map(function (it) {
+      var v = trim(it.value) || "___";
+      return it.label ? it.label + ": " + v : v;
+    }).join("; ");
+  }
+  // A figure's age, for "One thing to check" (Steve's 1.3 prompt: "figures
+  // that are old (more than 18 months) or undated"): "undated", "old" (with
+  // its latest year), or "" (fine, or no figure at all). now: a Date.
+  function figureAge(value, now) {
+    var v = String(value || "");
+    if (!hasCount(v)) return { kind: "" };
+    var years = [], m, re = /(^|[^\d,.])((19|20)\d{2})(?!\d)(?!,\d)/g;
+    while ((m = re.exec(v))) years.push(+m[2]);
+    var fy = /\bFY\s?(\d{2})(\d{2})?/gi;
+    while ((m = fy.exec(v))) years.push(m[2] ? +(m[1] + m[2]) : 2000 + +m[1]);
+    if (!years.length) return { kind: "undated" };
+    var y = Math.max.apply(null, years), months = now.getFullYear() * 12 + now.getMonth() + 1 - (y * 12 + 12);
+    return months > 18 ? { kind: "old", year: y } : { kind: "" };
+  }
+  // Every old or undated figure on 1.3, program by program, in rank order.
+  function figuresToCheck(state, now) {
+    var out = [];
+    for (var i = 0; i < included(state); i++) ON_OUTCOMES.forEach(function (id) {
+      splitItems(state.programs[i][id].text).forEach(function (it) {
+        var age = figureAge(it.value, now);
+        if (age.kind) out.push({ program: i, id: id, label: it.label, value: it.value, kind: age.kind, year: age.year });
+      });
+    });
+    return out;
+  }
+
   // ---------- Arithmetic check ----------
 
   // Checks only the member's own math. It never works out a figure to show.
@@ -946,7 +995,7 @@ var FACSheet = (function () {
     same: same, duplicateOf: duplicateOf, canConfirmSeparate: canConfirmSeparate, confirmSeparate: confirmSeparate,
     baseIssue: baseIssue, numbersIn: numbersIn, sharedCount: sharedCount, sameGroups: sameGroups, resolveOverlap: resolveOverlap,
     isAssumption: isAssumption, assumptionOpen: assumptionOpen, setLabel: setLabel, setNote: setNote,
-    calculations: calculations, mathProblem: mathProblem, fieldsOf: fieldsOf, ON_OUTCOMES: ON_OUTCOMES,
+    calculations: calculations, mathProblem: mathProblem, fieldsOf: fieldsOf, ON_OUTCOMES: ON_OUTCOMES, splitItems: splitItems, joinItems: joinItems, figureAge: figureAge, figuresToCheck: figuresToCheck,
     paths: paths, steps: steps, stepOf: stepOf, nextStep: nextStep, prevStep: prevStep, step2: step2, problems: problems, addVersion: addVersion,
     RANK_COLUMNS: RANK_COLUMNS, rankCheck: rankCheck, sortByScore: sortByScore, suggestLine: suggestLine, dollarOff: dollarOff, included: included,
     addDonorRow: addDonorRow, removeDonorRow: removeDonorRow, importLive: importLive, importScreen1: importScreen1, loadScreen1: loadScreen1, SCREEN1: SCREEN1,
